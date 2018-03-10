@@ -238,17 +238,18 @@ def train_pruned(args):
                 n_unpruned = ctx.count_unpruned()
                 if n_unpruned > 20000 and n_epoch >= 1:
                     ctx.prune(1)
-                accuracy = (torch.max(scores, 1)[1].view(model_in.size(0)).data == labels.data).sum() / model_in.size(0)
+                accuracy = (torch.max(scores, 1)[1].view(model_in.size(0)).data == labels.data).float().sum() / model_in.size(0)
                 print("train accuracy: {:>10}, loss: {:>25}, unpruned: {}".format(accuracy, loss.data[0], n_unpruned))
         accuracy = 0
         n = 0
         model.eval()
-        for model_in, labels in dev_loader:
-            model_in = Variable(model_in.cuda(), volatile=True)
-            labels = Variable(labels.cuda(), volatile=True)
-            scores = model(model_in)
-            accuracy += (torch.max(scores, 1)[1].view(model_in.size(0)).data == labels.data).sum()
-            n += model_in.size(0)
+        with torch.no_grad():
+            for model_in, labels in dev_loader:
+                model_in = Variable(model_in.cuda())
+                labels = Variable(labels.cuda())
+                scores = model(model_in)
+                accuracy += (torch.max(scores, 1)[1].view(model_in.size(0)).data == labels.data).float().sum()
+                n += model_in.size(0)
         print("dev accuracy: {:>10}".format(accuracy / n))
         torch.save(model.state_dict(), "test.pt")
         # if trainer.save(-accuracy):
@@ -257,12 +258,13 @@ def train_pruned(args):
     model.eval()
     n = 0
     accuracy = 0
-    for model_in, labels in test_loader:
-        model_in = Variable(model_in.cuda(), volatile=True)
-        labels = Variable(labels.cuda(), volatile=True)
-        scores = model(model_in)
-        accuracy += (torch.max(scores, 1)[1].view(model_in.size(0)).data == labels.data).sum()
-        n += model_in.size(0)
+    with torch.no_grad():
+        for model_in, labels in test_loader:
+            model_in = Variable(model_in.cuda() )
+            labels = Variable(labels.cuda())
+            scores = model(model_in)
+            accuracy += (torch.max(scores, 1)[1].view(model_in.size(0)).data == labels.data).float().sum()
+            n += model_in.size(0)
     print("test accuracy: {:>10}".format(accuracy / n))
 
 def init_model(input_file=None, use_cuda=True):
@@ -277,7 +279,7 @@ def main():
     parser.add_argument("--dir", type=str, default="local_data")
     parser.add_argument("--in_file", type=str, default="")
     parser.add_argument("--out_file", type=str, default="output.pt")
-    parser.add_argument("--n_epochs", type=int, default=200)
+    parser.add_argument("--n_epochs", type=int, default=15)
     args, _ = parser.parse_known_args()
     global model
     init_model(input_file=args.in_file)
