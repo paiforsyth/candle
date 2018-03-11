@@ -295,7 +295,7 @@ def main():
     parser.add_argument("--use_cuda", action="store_true")
     args, _ = parser.parse_known_args()
     global model
-    init_model(input_file=args.in_file, use_cuda= args.use_cuda)
+    init_model(input_file=args.in_file)
     # train_binary(args)
     train_pruned(args)
 

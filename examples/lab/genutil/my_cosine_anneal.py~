@@ -1,0 +1,12 @@
+import math
+class MyAnneal:
+    def __init__(self, optim, init_lr, Tmax, cur_step=-1):
+        self.optim=optim
+        self.init_lr=init_lr
+        self.Tmax=Tmax
+        self.cur_step=cur_step 
+    def step(self):
+        cur_step+=1
+        lr=0.5*self.init_lr*(1+math.cos(cur_step/Tmax*math.pi) )
+        for param_group in self.optim.param_groups:
+            param_group['lr']=lr

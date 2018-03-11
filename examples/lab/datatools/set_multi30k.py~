@@ -1,0 +1,27 @@
+from  . import text_tool
+def load(args):
+    indexer=wordindexer.WordIndexer()
+    def index_words(filename):
+        f= open( os.path.join(args.ds_path,filename) )
+        for line in f:
+                sentence=line
+                sentence = text_tool.normalize_string(sentence) 
+                indexer.add_sentence(sentence)
+        f.close()
+        index_words("train.en")    
+        indexer= indexer.trimmed(args.data_trim)
+        vects, missing_words = word_vectors.fasttext_from_file(args, indexer) 
+        src_sequences = []
+        tgt_sequences = []
+        raw_sequences = []
+        def get_sentences(filename):
+            with open( os.path.join(args.ds_path,filename) ) as f:
+                for line in f:
+                    sentence=line
+                    norm_sentence=text_tool.normalize_string(sentence)
+                    seq=indexer.sentence2seq(norm_sentence,include_sos_eos=True) 
+                    src_sequences.append(seq)
+                    tgt_sequences.append(category)
+                    raw_sentences.append(sentence)
+
+

@@ -1,0 +1,9 @@
+#based on https://github.com/ibadami/pytorch-semseg/blob/4f9fa49efa4114f91afe02a9958efc1c05f44d97/train.py
+class PolyLrDecayer:
+    def __init__(self,max_iter):
+        self.max_iter=max_iter
+        self.cur_iter=0
+    def set_lr_poly(optimizer, init_lr, iter,  max_iter=30000, power=0.9,):
+
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = init_lr*(1 - iter/max_iter)**power
