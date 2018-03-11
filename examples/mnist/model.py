@@ -6,7 +6,6 @@ import random
 from PIL import Image
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import ExponentialLR
-import cv2
 import numpy as np
 import torch
 import torch.nn as nn
@@ -203,7 +202,8 @@ def train_pruned(args):
     model = ConvModel()
     if args.in_file:
         model.load(args.in_file)
-    model = model.cuda()
+    if args.use_cuda:
+        model = model.cuda()
     ctx = model.g_ctx
     ctx.print_info()
     model_params = ctx.list_model_params()
@@ -223,10 +223,13 @@ def train_pruned(args):
         print("Epoch: {}".format(n_epoch + 1))
         model.train()
         for i, (model_in, labels) in enumerate(train_loader):
+            if args.use_cuda:
+                model_in = model_in.cuda()
+                labels = labels.cuda()
             model_optim.zero_grad()
 
-            model_in = Variable(model_in.cuda(), requires_grad=False)
-            labels = Variable(labels.cuda(), requires_grad=False)
+            model_in = Variable(model_in, requires_grad=False)
+            labels = Variable(labels, requires_grad=False)
 
             scores = model(model_in)
             loss = criterion(scores, labels)
@@ -245,8 +248,12 @@ def train_pruned(args):
         model.eval()
         with torch.no_grad():
             for model_in, labels in dev_loader:
-                model_in = Variable(model_in.cuda())
-                labels = Variable(labels.cuda())
+                if args.use_cuda:
+                    model_in = model_in.cuda()
+                    labels = labels.cuda()
+          
+                model_in = Variable(model_in)
+                labels = Variable(labels)
                 scores = model(model_in)
                 accuracy += (torch.max(scores, 1)[1].view(model_in.size(0)).data == labels.data).float().sum()
                 n += model_in.size(0)
@@ -260,15 +267,20 @@ def train_pruned(args):
     accuracy = 0
     with torch.no_grad():
         for model_in, labels in test_loader:
-            model_in = Variable(model_in.cuda() )
-            labels = Variable(labels.cuda())
+            if args.use_cuda:
+                model_in = model_in.cuda()
+                labels = labels.cuda()
+          
+            model_in = Variable(model_in )
+            labels = Variable(labels)
             scores = model(model_in)
             accuracy += (torch.max(scores, 1)[1].view(model_in.size(0)).data == labels.data).float().sum()
             n += model_in.size(0)
     print("test accuracy: {:>10}".format(accuracy / n))
 
 def init_model(input_file=None, use_cuda=True):
-    model.cuda()
+    if use_cuda:
+        model.cuda()
     model.eval()
 
 model = ConvModel()
@@ -280,9 +292,10 @@ def main():
     parser.add_argument("--in_file", type=str, default="")
     parser.add_argument("--out_file", type=str, default="output.pt")
     parser.add_argument("--n_epochs", type=int, default=15)
+    parser.add_argument("--use_cuda", action="store_true")
     args, _ = parser.parse_known_args()
     global model
-    init_model(input_file=args.in_file)
+    init_model(input_file=args.in_file, use_cuda= args.use_cuda)
     # train_binary(args)
     train_pruned(args)
 
