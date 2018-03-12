@@ -54,7 +54,6 @@ def add_args(parser):
     parser.add_argument("--coupled_ensemble",type=str, choices=["on", "off"], default="off")
     parser.add_argument("--coupled_ensemble_size", type=int, default=4)
     
-    parser.add_argument("--proxy_context_type", type=str, choices=["none", "prune_context"], default="none")
     
 
     parser.add_argument("--cifar_shuffle_val_set",action="store_true")

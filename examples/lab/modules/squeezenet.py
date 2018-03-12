@@ -14,7 +14,7 @@ from . import shake_shake
 from torch.autograd import Variable
 
 
-
+import candle.context
    # Used ideas from
         # -pyramidnets by Han et al.
         # -resnext by Xie et al. (aggregated residual transformations) 
@@ -78,6 +78,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_excitation_shake_shake", action="store_true")
 
 
+    parser.add_argument("--squeezenet_proxy_context_type", type=str, choices=["no_context","identity_context", "prune_context"], default="no_context")
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
 class Fire(serialmodule.SerializableModule):
@@ -140,7 +141,7 @@ class ResFire(serialmodule.SerializableModule):
 
 class NextFire(serialmodule.SerializableModule):
 
-    def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE):
+    def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None):
         super().__init__()
         layer_dict = collections.OrderedDict()
         layer_dict["bn1"] = nn.BatchNorm2d(in_channels)
@@ -155,6 +156,9 @@ class NextFire(serialmodule.SerializableModule):
         if final_bn:
             logging.info("Making NextFire layer with a final batchnorm")
             layer_dict["final_bn"]=nn.BatchNorm2d(num_expand)
+        if proxy_ctx is not None:
+            logging.info("wrapping layers using a proxy context")
+            layer_dict = proxy_ctx.wrap_dict(layer_dict)
         self.seq= nn.Sequential(layer_dict)
         self.skip=skip
         self.skipmode=skipmode
@@ -258,14 +262,22 @@ class FireSkipMode(Enum):
     PAD=2
 
 class ExcitationFire(serialmodule.SerializableModule):
-    def __init__(self,fire_to_wrap, in_channels, out_channels, r, skip, skipmode, fire_to_wrap2=None, shake_shake_enable=False,shake_shake_mode= shake_shake.ShakeMode.IMAGE):
+    def __init__(self,fire_to_wrap, in_channels, out_channels, r, skip, skipmode, fire_to_wrap2=None, shake_shake_enable=False,shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx = None):
         super().__init__()
+        compressed_dim=max(1,math.floor( in_channels/r  ))
         self.in_channels = in_channels
         self.out_channels = out_channels
-        compressed_dim=max(1,math.floor( in_channels/r  ))
-        self.compress=nn.Linear(in_channels, compressed_dim  )
+        if proxy_ctx is None:
+            self.compress=nn.Linear(in_channels, compressed_dim  )
+            self.expand=nn.Linear(compressed_dim, out_channels)
+        else:
+            self.compress= proxy_ctx.wrap(nn.Linear(in_channels, compressed_dim  ))
+            self.expand=proxy_ctx.wrap(nn.Linear(compressed_dim, out_channels))
+        
         self.wrapped=fire_to_wrap
-        self.expand=nn.Linear(compressed_dim, out_channels)
+            
+
+
         self.skip=skip
         self.shake_shake_enable=shake_shake_enable
         if skip:
@@ -389,7 +401,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -458,7 +470,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                 final_fc=args.squeezenet_final_fc,
                 final_size=args.squeezenet_final_size,
                 next_fire_shake_shake=args.squeezenet_next_fire_shake_shake,
-                excitation_shake_shake=args.squeezenet_excitation_shake_shake
+                excitation_shake_shake=args.squeezenet_excitation_shake_shake,
+                proxy_context_type = args.squeezenet_proxy_context_type 
                 )
         return SqueezeNet(config)
 
@@ -474,6 +487,12 @@ class SqueezeNet(serialmodule.SerializableModule):
         if config.mode == "densefire":
             logging.info("Making a dense squeezenet.")
             assert config.num_fires == len(config.dense_fire_depth_list)
+        if config.proxy_context_type == "identity_context":
+            proxy_ctx = candle.context.Context()
+        elif config.proxy_context_type == "no_context":
+            proxy_ctx = None
+        else:
+            raise Exception("unknown proxy_context_type")
         num_fires=config.num_fires #8
         first_layer_num_convs=config.num_conv1_filters
         first_layer_conv_width=config.conv1_size
@@ -522,9 +541,9 @@ class SqueezeNet(serialmodule.SerializableModule):
                 elif config.mode == "next_fire":
                     name = "next_fire{}".format(i+2)
                     survival_prob = 1-0.5*i/num_fires 
-                    to_add = NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake )
+                    to_add = NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx )
                     if config.excitation_shake_shake:
-                        to_add2= NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake )
+                        to_add2= NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx )
                    
                 else:
                     name="fire{}".format(i+2)
@@ -536,7 +555,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                         to_add2.skip=False
                     else:
                         to_add2=None
-                    to_add=ExcitationFire(to_add, in_channels=self.channel_counts[i], out_channels=e, r=config.excitation_r, skip=skip_here, skipmode=config.skipmode, shake_shake_enable=config.excitation_shake_shake, fire_to_wrap2=to_add2)
+                    to_add=ExcitationFire(to_add, in_channels=self.channel_counts[i], out_channels=e, r=config.excitation_r, skip=skip_here, skipmode=config.skipmode, shake_shake_enable=config.excitation_shake_shake, fire_to_wrap2=to_add2, proxy_ctx=proxy_ctx)
                     name="ExcitationFire{}".format(i+2)
                 layer_dict[name]=to_add
 

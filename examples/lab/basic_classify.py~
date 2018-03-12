@@ -351,7 +351,7 @@ def run(args, ensemble_test=False):
             accumulated_loss+=loss.data[0]
             context.tb_writer.write_train_loss(loss.data[0])
             if step % report_interval == 0:
-                monitoring.reporting.report(epoch_start_time,step,len(context.train_loader), accumulated_loss / report_interval)
+                reporting.report(epoch_start_time,step,len(context.train_loader), accumulated_loss / report_interval)
                 accumulated_loss = 0
         #added tor try to clear computation graph after every eppoch
         del loss
