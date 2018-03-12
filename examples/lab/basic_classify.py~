@@ -54,7 +54,6 @@ def add_args(parser):
     parser.add_argument("--coupled_ensemble",type=str, choices=["on", "off"], default="off")
     parser.add_argument("--coupled_ensemble_size", type=int, default=4)
     
-    parser.add_argument("--proxy_context_type", type=str, choices=["none", "prune_context"], default="none")
     
 
     parser.add_argument("--cifar_shuffle_val_set",action="store_true")
@@ -348,8 +347,8 @@ def run(args, ensemble_test=False):
                 torch.nn.utils.clip_grad.clip_grad_norm(context.model.parameters(), args.grad_norm_clip)
             context.optimizer.step()
             
-            accumulated_loss+=loss.data[0]
-            context.tb_writer.write_train_loss(loss.data[0])
+            accumulated_loss+=loss.item()
+            context.tb_writer.write_train_loss(loss.item())
             if step % report_interval == 0:
                 reporting.report(epoch_start_time,step,len(context.train_loader), accumulated_loss / report_interval)
                 accumulated_loss = 0

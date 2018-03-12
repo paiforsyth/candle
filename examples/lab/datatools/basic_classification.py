@@ -14,7 +14,8 @@ def evaluate(context, loader):
    correct=0
    total=0
    context.model.eval()
-   for batch, *other in loader:
+   with torch.no_grad():
+    for batch, *other in loader:
         categories=other[0]
         if context.data_type==DataType.SEQUENCE:
             pad_mat = other[1]
@@ -24,7 +25,7 @@ def evaluate(context, loader):
         _,predictions=torch.max(scores,dim=1)
         if predictions.is_cuda:
             categories=categories.cuda(predictions.get_device())
-        correct+= torch.sum(predictions==categories).cpu().data[0]
+        correct+= torch.sum(predictions==categories).float().cpu().item()
    context.model.train()
    return correct / total 
 
@@ -130,10 +131,11 @@ def ensemble_predict(contexts, loader, meta_model=None):
             if context.data_type==DataType.SEQUENCE:
                 pad_mat = other[1]
 
-            scores= context.model(batch,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch)  #should have dimension batchsize by number of categories
-            scores=F.log_softmax(scores,dim=1)
-            scores=scores.unsqueeze(2)
-            score_list_2d[i].append(scores.data)
+            with torch.no_grad():
+             scores= context.model(batch,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch)  #should have dimension batchsize by number of categories
+             scores=F.log_softmax(scores,dim=1)
+             scores=scores.unsqueeze(2)
+             score_list_2d[i].append(scores.data)
        context.model.train()
        context.stash_model()
     
@@ -169,11 +171,11 @@ def make_ensemble_prediction_report(contexts, loader, filename, meta_model=None)
         f.write(str(index)+","+str(prediction) + "\n")
     f.close()
 
-def make_var_wrap_collater(args,volatile=False ):
+def make_var_wrap_collater(args ):
     def collater(batch_in):
        batch_in, categories, *rest=torch.utils.data.dataloader.default_collate(batch_in)
-       batch_in = Variable(batch_in, volatile = volatile)
-       categories =Variable(categories,volatile = volatile)
+       batch_in = Variable(batch_in)
+       categories =Variable(categories)
        if args.cuda:
            batch_in = batch_in.cuda()
            categories = categories.cuda()

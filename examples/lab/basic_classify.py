@@ -167,13 +167,13 @@ def make_context(args):
        indexer= None
        if args.mode == "train":
             train_loader=data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle= True, collate_fn=basic_classification.make_var_wrap_collater(args))
-            val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True))
+            val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args))
        elif  args.mode == "test":
-            test_loader=data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True))
-            val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True)) #certain ensemble methods use the val dataset 
+            test_loader=data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args))
+            val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args)) #certain ensemble methods use the val dataset 
             assert(args.resume_mode == "standard" or args.resume_mode == "ensemble")
-            if args.holdout:
-                    holdout_loader=data.DataLoader(holdout_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True))
+            # if args.holdout:
+                    # holdout_loader=data.DataLoader(holdout_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True))
    else:
        raise Exception("Unknown data type.")
         
@@ -347,8 +347,8 @@ def run(args, ensemble_test=False):
                 torch.nn.utils.clip_grad.clip_grad_norm(context.model.parameters(), args.grad_norm_clip)
             context.optimizer.step()
             
-            accumulated_loss+=loss.data[0]
-            context.tb_writer.write_train_loss(loss.data[0])
+            accumulated_loss+=loss.item()
+            context.tb_writer.write_train_loss(loss.item())
             if step % report_interval == 0:
                 reporting.report(epoch_start_time,step,len(context.train_loader), accumulated_loss / report_interval)
                 accumulated_loss = 0
