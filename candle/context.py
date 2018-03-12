@@ -1,5 +1,6 @@
 import argparse
 import itertools
+import collections
 
 import torch
 import torch.nn as nn
@@ -80,10 +81,11 @@ class Context(object):
         provider = self.build_provider(layer)
 
         if isinstance(layer, nn.modules.conv._ConvNd):
-            stride, padding, dilation = layer.stride, layer.padding, layer.dilation
+            stride, padding, dilation, groups = layer.stride, layer.padding, layer.dilation, layer.groups
             kwargs["stride"] = stride
             kwargs["padding"] = padding
             kwargs["dilation"] = dilation
+            kwargs["groups"] = groups
             if isinstance(layer, nn.Conv3d):
                 return ProxyConv3d(provider, **kwargs)
             elif isinstance(layer, nn.Conv2d):
@@ -94,7 +96,7 @@ class Context(object):
                 raise ValueError("Unsupported!")
         elif isinstance(layer, nn.Linear):
             return ProxyLinear(provider, **kwargs)
-        elif isinstance(layer, nn.layers.rnn.RNNBase):
+        elif isinstance(layer, nn.modules.rnn.RNNBase):
             mode, input_size, hidden_size = layer.mode, layer.input_size, layer.hidden_size
             num_layers, bias, batch_first = layer.num_layers, layer.bias, layer.batch_first
             bidirectional, dropout = layer.bidirectional, layer.dropout
@@ -115,6 +117,21 @@ class Context(object):
     def bypass(self, layer):
         self.registry.register_proxy("fake", FakeProxy(layer.parameters()))
         return layer
+
+    def wrap_dict(self, layer_dict):
+        '''
+            Idea is to wrap every wrapable layer in an OrderedDict of layers
+        '''
+        wrapped_layer_dict = collections.OrderedDict()
+        for name, layer in layer_dict.items():
+            if len(list(layer.parameters()))==0:
+                continue
+            try:
+                wrapped = self.wrap(layer)
+            except ValueError:
+                wrapped = self.bypass(layer)
+            wrapped_layer_dict[name] = wrapped 
+        return wrapped_layer_dict
 
 class MixedContext(object):
     def __init__(self, config, *contexts, **kwargs):

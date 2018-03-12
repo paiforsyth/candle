@@ -139,7 +139,7 @@ class ProxyLayer(nn.Module):
         raise NotImplementedError
 
 class _ProxyConvNd(ProxyLayer):
-    def __init__(self, weight_provider, conv_fn, stride=1, padding=0, dilation=1, **kwargs):
+    def __init__(self, weight_provider, conv_fn, stride=1, padding=0, dilation=1, groups=1, **kwargs):
         super().__init__(weight_provider, **kwargs)
         sizes = weight_provider.sizes
         self.bias = len(sizes) == 2
@@ -147,8 +147,9 @@ class _ProxyConvNd(ProxyLayer):
         self.stride = stride
         self.padding = padding
         self.dilation = dilation
+        self.groups=groups
         self.conv_fn = conv_fn
-        self._conv_kwargs = dict(dilation=dilation, padding=padding, stride=stride)
+        self._conv_kwargs = dict(dilation=dilation, padding=padding, stride=stride,groups=groups)
         if not self.bias:
             self._conv_kwargs["bias"] = None
 
