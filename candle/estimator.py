@@ -1,3 +1,5 @@
+import gc
+
 from torch.autograd import Variable
 import torch
 import torch.autograd as ag
@@ -11,6 +13,15 @@ from .nested import *
 class Function(object):
     def __call__(self, *args, **kwargs):
         raise NotImplementedError
+
+class RebarFunction(Function):
+    def __init__(self, function, temp):
+        self.function = function
+        self.temp = temp
+        self.concrete_fn = ConcreteRelaxation(temp)
+
+    def __call__(self, theta, noise):
+        return self.function(self.concrete_fn(theta))
 
 class ProbabilityDistribution(Function):
     def draw(self, *args, **kwargs):
@@ -81,6 +92,10 @@ class Heaviside(Function):
     def __call__(self, x):
         return x.clamp(0, 1).ceil()
 
+class Round(Function):
+    def __call__(self, x):
+        return x.round()
+
 class REINFORCEEstimator(GradientEstimator):
     def __init__(self, f, p):
         self.f = f
@@ -90,8 +105,8 @@ class REINFORCEEstimator(GradientEstimator):
         b = self.p.draw() if b is None else b
         p = self.p(b)
         f_b = self.f(b)
-        dlogp_dtheta = theta.apply_fn(lambda x, out: ag.grad([out], [x])[0], p.log())
-        return f_b * dlogp_dtheta
+        dlogp_dtheta = theta.apply_fn(lambda x, out: ag.grad([out.sum()], [x])[0], p.log())
+        return dlogp_dtheta * f_b
 
 """
 REINFORCE with Importance Sampling Estimator
@@ -109,10 +124,10 @@ class RISEEstimator(GradientEstimator):
         p = self.p(h)
         p_i = self.p_i(b)
         f_b = self.f(h)
-        dp_dtheta = theta.apply_fn(lambda x, out: ag.grad([out], [x])[0], p)
+        dp_dtheta = theta.apply_fn(lambda x, out: ag.grad([out.sum()], [x])[0], p)
 
-        g_is = f_b * dp_dtheta / (p_i + 1E-8)
-        var_grad = pi.apply_fn(lambda x, out: ag.grad([out], [x])[0], g_is**2)
+        g_is = dp_dtheta * f_b / (p_i + 1E-8)
+        var_grad = pi.apply_fn(lambda x, out: ag.grad([out.sum()], [x], retain_graph=True)[0], g_is**2)
         return g_is, var_grad
 
 """
@@ -136,14 +151,16 @@ class RELAXEstimator(GradientEstimator):
         zt, v = self.z_tilde.draw(b)
         p = self.p(b)
         c_phi_zt = self.c(theta, v)
-        dlogp_dtheta = theta.apply_fn(lambda x, out: ag.grad([out], [x], retain_graph=True)[0], p.log())
+        dlogp_dtheta = theta.apply_fn(lambda x, out: ag.grad([out.sum()], [x], retain_graph=True)[0], p.log())
 
         c_phi_z = self.c(theta, u)
-        dc_phi_z = theta.apply_fn(lambda x, out: ag.grad([out], [x], retain_graph=True)[0], c_phi_z)
-        dc_phi_zt = theta.apply_fn(lambda x, out: ag.grad([out], [x], retain_graph=True)[0], c_phi_zt)
+        dc_phi_z = theta.apply_fn(lambda x: ag.grad([c_phi_z], [x], retain_graph=True)[0])
+        dc_phi_zt = theta.apply_fn(lambda x: ag.grad([c_phi_zt], [x], retain_graph=True)[0])
 
-        g_relax = (self.f(b) - c_phi_zt) * dlogp_dtheta + dc_phi_z - dc_phi_zt
-        phi_grad = phi.apply_fn(lambda x, out: ag.grad([out], [x])[0], g_relax**2)
+        g_relax = dlogp_dtheta * (self.f(b) - c_phi_zt) + dc_phi_z - dc_phi_zt
+        var_estimate = (g_relax**2)
+        phi_grad = phi.apply_fn(lambda x, y: ag.grad([y.sum()], [x], retain_graph=True)[0], var_estimate)
+        gc.collect()
         return g_relax, phi_grad
 
 class RICEEstimator(GradientEstimator):
@@ -166,7 +183,7 @@ class RICEEstimator(GradientEstimator):
         dp_dtheta = theta.apply_fn(lambda x, out: ag.grad([out], [x], retain_graph=True)[0], p)
 
         g_is = f_b * dp_dtheta / (p_i + 1E-8)
-        var_grad = pi.apply_fn(lambda x, out: ag.grad([out], [x])[0], g_is**2)
+        var_grad = Package(list(ag.grad((g_is**2).singleton, pi.reify())))
 
         z, u = self.z.draw()
         b = self.H(z)
@@ -180,5 +197,6 @@ class RICEEstimator(GradientEstimator):
         dc_phi_zt = theta.apply_fn(lambda x, out: ag.grad([out], [x], retain_graph=True)[0], c_phi_zt)
 
         g_rice = g_is - c_phi_zt * dlogp_dtheta + dc_phi_z - dc_phi_zt
-        phi_grad = phi.apply_fn(lambda x, out: ag.grad([out], [x])[0], g_rice**2)
-        return g_rice, var_grad, phi_grad
+        var_estimate = (g_rice**2).singleton
+        phi_grad = ag.grad([var_estimate], phi.reify())
+        return g_rice, var_grad, Package(list(phi_grad))
