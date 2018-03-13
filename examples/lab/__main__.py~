@@ -30,7 +30,7 @@ def default_parser(parser=None):
     parser.add_argument("--validation_set_size",type=int,default=1000)
     parser.add_argument("--holdout", action="store_true")
     parser.add_argument("--holdout_size", type=int, default=500)
-    parser.add_argument("--model_save_path",type=str, default= "../saved_models/") 
+    parser.add_argument("--model_save_path",type=str, default= "./saved_models/") 
     parser.add_argument("--resume_mode", type=str, choices=["none", "standard", "ensemble"], default= "none" )
     parser.add_argument("--res_file",type=str, default="recent_model") 
     parser.add_argument("--mode", type=str, choices=["test", "train"], default="train")
@@ -42,6 +42,7 @@ def default_parser(parser=None):
     parser.add_argument("--batch_size", type= int, default=32)
     parser.add_argument("--param_report", action="store_true")
     parser.add_argument("--mod_report",action="store_true")
+    parser.add_argument("--proxy_report",action="store_true")
     parser.add_argument("--param_difs", action="store_true" )
     parser.add_argument("--optimizer", type=str, choices=["sgd", "rmsprop", "adam"], default="sgd")
     parser.add_argument("--init_lr",type=float, default=0.1)
@@ -79,10 +80,20 @@ def default_parser(parser=None):
 
     parser.add_argument("--save_every_epoch", action="store_true")
 
-    
-    parser.add_argument("--data_par_enable", action="store_true")
+    parser.add_argument("--data_par_enable", action="store_true") #currently disabled
     parser.add_argument("--data_par_devices", type=int, nargs="+")
     
+    parser.add_argument("--enable_pruning",action="store_true") 
+    parser.add_argument("--prune_target",type=int, default=50000)
+    parser.add_argument("--prune_epoch_freq", type=int, default=1)
+    parser.add_argument("--prune_warmup_epochs", type=int, default=10)
+
+    parser.add_argument("--enable_l0reg",action = "store_true")
+    parser.add_argument("--l0reg_lambda", type=float, default =1.5 / 50000 )
+
+    parser.add_argument("--proxy_context_type", type=str, choices=["no_context","identity_context", "prune_context", "l0reg_context"], default="no_context")
+
+
 
     return parser
 
@@ -131,6 +142,9 @@ def main():
    if args.mod_report:
        show_submods()
        return
+   if args.proxy_report:
+       show_proxies()
+       return
    if args.output_level == "debug":
         logging.getLogger().setLevel(logging.DEBUG)
    basic_classify.run(args)
@@ -150,9 +164,21 @@ def show_params(input_size=(32,3,32,32)):
        if param.is_cuda:
         print("device:")
         print(param.get_device())
-   param_count = modules.count_trainable_params(context.model)
+   if args.proxy_context_type == "no_context": 
+        param_count = modules.count_trainable_params(context.model)
+   else:
+        param_count = modules.count_elem(context.model.proxy_ctx.list_model_params() ) 
    print("total trainable params:{}".format(param_count)) 
 
+def show_proxies():
+   logging.basicConfig(level=logging.DEBUG)
+   parser=default_parser()
+   parser=basic_classify.add_args(parser)
+   args=parser.parse_known_args()[0]
+   context=basic_classify.make_context(args)
+   for proxy in context.model.proxy_ctx.list_proxies():
+       print(proxy)
+  
     
 
 def show_submods():

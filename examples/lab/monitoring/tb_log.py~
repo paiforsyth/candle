@@ -11,12 +11,13 @@ import torch
 class TBWriter(object):
     def __init__(self, run_name_fmt="run_{}"):
         self.run_name = run_name_fmt.format(reporting.timestamp())
-        self.writer = SummaryWriter(os.path.join("../tb_logs/",reporting.daystamp(),self.run_name))
+        self.writer = SummaryWriter(os.path.join("./tb_logs/",reporting.daystamp(),self.run_name))
         self.train_idx = 0
         self.acc_idx = 0
         self.dps_index=0
         self.param_dif_idx=0
         self.lr_idx=0
+        self.upp_idx=0
 
     def write_hyperparams(self):
         #self.writer.add_text("hyperparams", " ".join(sys.argv))
@@ -58,5 +59,6 @@ class TBWriter(object):
             self.writer.add_scalar("prctchange/in_{}".format(param[0]), dif, self.param_dif_idx)
         self.param_dif_idx+=1
     
-    # def next(self):
-        # self.i += 1
+    def write_unpruned_params(self, upp):
+        self.writer.add_scalar("{}/lr".format(self.run_name), upp , self.upp_idx)
+        self.upp_idx+=1 

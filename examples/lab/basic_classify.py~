@@ -96,7 +96,11 @@ class Context:
 
 def make_context(args):
    holdout_loader =None
-
+   if args.enable_l0reg or args.proxy_context_type == "l0reg_context" :
+       assert  args.enable_l0reg and args.proxy_context_type == "l0reg_context" 
+   if args.enable_pruning or args.proxy_context_type == "prune_context" :
+       assert args.enable_pruning and  args.proxy_context_type == "prune_context" 
+  
    if args.dataset_for_classification == "simple":
         if args.save_prefix is None:
             args.save_prefix="simplification_classification"
@@ -167,13 +171,13 @@ def make_context(args):
        indexer= None
        if args.mode == "train":
             train_loader=data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle= True, collate_fn=basic_classification.make_var_wrap_collater(args))
-            val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True))
+            val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args))
        elif  args.mode == "test":
-            test_loader=data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True))
-            val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True)) #certain ensemble methods use the val dataset 
+            test_loader=data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args))
+            val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args)) #certain ensemble methods use the val dataset 
             assert(args.resume_mode == "standard" or args.resume_mode == "ensemble")
-            if args.holdout:
-                    holdout_loader=data.DataLoader(holdout_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True))
+            # if args.holdout:
+                    # holdout_loader=data.DataLoader(holdout_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True))
    else:
        raise Exception("Unknown data type.")
         
@@ -200,14 +204,19 @@ def make_context(args):
    elif args.coupled_ensemble != "off":
         raise Exception("Unknown coupled ensemble settting")
 
+   if args.proxy_context_type == "no_context":
+       model_parameters = model.parameters()
+   else:
+       model_parameters = model.proxy_ctx.list_model_params()
+        
 
    if args.optimizer == "sgd":
-        optimizer=optim.SGD(model.parameters(),lr=args.init_lr, momentum=args.sgd_momentum, weight_decay=args.sgd_weight_decay )
+        optimizer=optim.SGD(model_parameters,lr=args.init_lr, momentum=args.sgd_momentum, weight_decay=args.sgd_weight_decay )
        
    elif args.optimizer == "rmsprop":
-       optimizer = optim.RMSprop(model.parameters(), lr=args.init_lr)
+       optimizer = optim.RMSprop(model_parameters, lr=args.init_lr)
    elif args.optimizer == "adam":
-       optimizer = optim.Adam(model.parameters(), lr=args.init_lr)
+       optimizer = optim.Adam(model_parameters, lr=args.init_lr)
    else:
        raise Exception("Unknown optimizer.") 
 
@@ -340,6 +349,11 @@ def run(args, ensemble_test=False):
             elif args.classification_loss_type == "nll":
                 assert not args.born_again_enable
                 loss= F.nll_loss(scores,categories)
+
+            if args.enable_l0reg:
+                loss += context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 
+
+
             loss.backward()
 
 
@@ -352,7 +366,7 @@ def run(args, ensemble_test=False):
             if step % report_interval == 0:
                 reporting.report(epoch_start_time,step,len(context.train_loader), accumulated_loss / report_interval)
                 accumulated_loss = 0
-        #added tor try to clear computation graph after every eppoch
+             #added tor try to clear computation graph after every eppoch
         del loss
         del scores
 
@@ -365,11 +379,18 @@ def run(args, ensemble_test=False):
         eval_score=basic_classification.evaluate(context, context.val_loader)
         context.tb_writer.write_accuracy(eval_score)
         logging.info("Finished epoch number "+ str(epoch_count+1) +  " of " +str(args.num_epochs)+".  Accuracy is "+ str(eval_score) +".")
-
+        if args.report_unpruned:
+        if args.enable_pruning: 
+            n_unpruned = context.model.proxy_ctx.count_unpruned()
+            logging.info("Unpruned parameters: "+str(n_unpruned))
+            context.tb_writer.write_unpruned_params(n_unpruned)
+            if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> args.prune_target:
+                context.model.proxy_ctx.prune(1)
+       
         if args.save_every_epoch:
             context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_most_recent" )  )
             logging.info("saving most recent model")
-
+        
 
         if eval_score > best_eval_score:
             best_eval_score=eval_score

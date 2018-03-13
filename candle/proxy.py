@@ -155,7 +155,7 @@ class _ProxyConvNd(ProxyLayer):
         self.stride = stride
         self.padding = padding
         self.dilation = dilation
-        self.groups=groups
+        self.groups = groups
         self.conv_fn = conv_fn
         self._conv_kwargs = dict(dilation=dilation, padding=padding, stride=stride,groups=groups)
         if not self.bias:

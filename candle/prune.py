@@ -166,7 +166,7 @@ class WeightMask(ProxyDecorator):
         super().__init__(layer, child)
         def create_mask(size):
             return nn.Parameter(torch.ones(*size) * init_value)
-        self.masks = child.sizes.reify().apply_fn(create_mask)
+        self.masks = child.sizes.apply_fn(create_mask)
         self._flattened_masks = self.masks.reify(flat=True)
         self.stochastic = stochastic
 

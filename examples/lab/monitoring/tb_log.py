@@ -17,6 +17,7 @@ class TBWriter(object):
         self.dps_index=0
         self.param_dif_idx=0
         self.lr_idx=0
+        self.upp_idx=0
 
     def write_hyperparams(self):
         #self.writer.add_text("hyperparams", " ".join(sys.argv))
@@ -58,5 +59,6 @@ class TBWriter(object):
             self.writer.add_scalar("prctchange/in_{}".format(param[0]), dif, self.param_dif_idx)
         self.param_dif_idx+=1
     
-    # def next(self):
-        # self.i += 1
+    def write_unpruned_params(self, upp):
+        self.writer.add_scalar("{}/unpruned_params".format(self.run_name), upp , self.upp_idx)
+        self.upp_idx+=1 
