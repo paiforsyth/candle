@@ -159,7 +159,7 @@ class PruneContext(Context):
         return self.list_mask_params(inverse=True)
 
     def count_unpruned(self):
-        return sum(p.sum().cpu().data[0] for p in self.list_mask_params())
+        return sum(p.sum().cpu().item() for p in self.list_mask_params())
 
     def clip_all_masks(self):
         for p in self.list_mask_params():

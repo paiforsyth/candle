@@ -118,7 +118,7 @@ class Context(object):
         self.registry.register_proxy("fake", FakeProxy(layer.parameters()))
         return layer
 
-    def wrap_dict(self, layer_dict):
+    def wrap_dict(self, layer_dict,**kwargs):
         '''
             Idea is to wrap every wrapable layer in an OrderedDict of layers
         '''
@@ -127,7 +127,7 @@ class Context(object):
             if len(list(layer.parameters()))==0:
                 continue
             try:
-                wrapped = self.wrap(layer)
+                wrapped = self.wrap(layer,**kwargs)
             except ValueError:
                 wrapped = self.bypass(layer)
             wrapped_layer_dict[name] = wrapped 
