@@ -361,8 +361,8 @@ def run(args, ensemble_test=False):
                 torch.nn.utils.clip_grad.clip_grad_norm(context.model.parameters(), args.grad_norm_clip)
             context.optimizer.step()
             
-            accumulated_loss+=loss.item()
-            context.tb_writer.write_train_loss(loss.item())
+            accumulated_loss+=float(loss)
+            context.tb_writer.write_train_loss( float(loss)  )
             if step % report_interval == 0:
                 reporting.report(epoch_start_time,step,len(context.train_loader), accumulated_loss / report_interval)
                 accumulated_loss = 0

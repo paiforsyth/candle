@@ -361,8 +361,8 @@ def run(args, ensemble_test=False):
                 torch.nn.utils.clip_grad.clip_grad_norm(context.model.parameters(), args.grad_norm_clip)
             context.optimizer.step()
             
-            accumulated_loss+=loss.item()
-            context.tb_writer.write_train_loss(loss.item())
+            accumulated_loss+=float(loss)
+            context.tb_writer.write_train_loss( float(loss)  )
             if step % report_interval == 0:
                 reporting.report(epoch_start_time,step,len(context.train_loader), accumulated_loss / report_interval)
                 accumulated_loss = 0
@@ -380,11 +380,12 @@ def run(args, ensemble_test=False):
         context.tb_writer.write_accuracy(eval_score)
         logging.info("Finished epoch number "+ str(epoch_count+1) +  " of " +str(args.num_epochs)+".  Accuracy is "+ str(eval_score) +".")
         if args.report_unpruned:
-        if args.enable_pruning: 
             n_unpruned = context.model.proxy_ctx.count_unpruned()
             logging.info("Unpruned parameters: "+str(n_unpruned))
             context.tb_writer.write_unpruned_params(n_unpruned)
-            if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> args.prune_target:
+           
+        if args.enable_pruning: 
+             if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> args.prune_target:
                 context.model.proxy_ctx.prune(1)
        
         if args.save_every_epoch:
