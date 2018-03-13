@@ -14,8 +14,8 @@ def evaluate(context, loader):
    correct=0
    total=0
    context.model.eval()
-   with torch.no_grad():
-    for batch, *other in loader:
+ #  with torch.no_grad():
+   for batch, *other in loader:
         categories=other[0]
         if context.data_type==DataType.SEQUENCE:
             pad_mat = other[1]
@@ -131,11 +131,11 @@ def ensemble_predict(contexts, loader, meta_model=None):
             if context.data_type==DataType.SEQUENCE:
                 pad_mat = other[1]
 
-            with torch.no_grad():
-             scores= context.model(batch,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch)  #should have dimension batchsize by number of categories
-             scores=F.log_softmax(scores,dim=1)
-             scores=scores.unsqueeze(2)
-             score_list_2d[i].append(scores.data)
+            #with torch.no_grad():
+            scores= context.model(batch,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch)  #should have dimension batchsize by number of categories
+            scores=F.log_softmax(scores,dim=1)
+            scores=scores.unsqueeze(2)
+            score_list_2d[i].append(scores.data)
        context.model.train()
        context.stash_model()
     
