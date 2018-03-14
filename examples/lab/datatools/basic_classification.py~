@@ -25,7 +25,7 @@ def evaluate(context, loader):
         _,predictions=torch.max(scores,dim=1)
         if predictions.is_cuda:
             categories=categories.cuda(predictions.get_device())
-        correct+= torch.sum(predictions==categories).float().cpu().item()
+        correct+= float(torch.sum(predictions==categories).float().cpu())
    context.model.train()
    return correct / total 
 
