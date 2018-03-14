@@ -3,7 +3,7 @@
 #SBATCH --cpus-per-task=6  # Cores proportional to GPUs: 6 on Cedar, 16 on Graham.
 #SBATCH --mem=20000M       # Memory proportional to GPUs: 32000 Cedar, 64000 Graham.
 #SBATCH --time=0-24:00
-#SBATCH --output=%N-%jstd.out
+#SBATCH --output=%N-%jstdmedium.out
 module purge
 module load python/3.6.3
 source ~/env1/bin/activate
