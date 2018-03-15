@@ -53,7 +53,7 @@ class BinaryTanhHook(ProxyDecorator):
      def __init__(self, layer, child):
         super().__init__(layer, child)
 
-    def call(self, input):
+     def call(self, input):
         return binary_tanh(input)
 
 
