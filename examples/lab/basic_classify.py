@@ -359,7 +359,7 @@ def run(args, ensemble_test=False):
                     mutipliers[i,categories[i]]=1
                 multipliers = 2 * mutipliers - 1
                 
-                loss = torch.sum(torch.max(categories.new(1).fill_(0).float(), 1 - mutipliers * scores ) ** 2, dim = 1 )
+                loss = torch.sum(torch.max(categories.new(1).fill_(0).float(), 1 - mutipliers * scores ) ** 2)
 
             if args.enable_l0reg:
                 loss += context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 
