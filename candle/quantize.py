@@ -49,7 +49,7 @@ class RoundHook(ProxyDecorator):
         return input.apply_fn(lambda x, size: hard_round(x * np.prod(size, dtype=float)), input.size()) \
             if isinstance(input, Package) else hard_round(input * np.prod(input.size(), dtype=float))
 
-class BinaryTanhHook(ProxyDecorator)
+class BinaryTanhHook(ProxyDecorator):
      def __init__(self, layer, child):
         super().__init__(layer, child)
 
@@ -165,7 +165,7 @@ hard_round = HardRoundFunction.apply
 
 class BinaryTanh(nn.Module):
     def forward(self, x):
-        return binary_tanh(x)
+        return binary_anh(x)
 
 class BinaryContext(Context):
     def __init__(self, **kwargs):
