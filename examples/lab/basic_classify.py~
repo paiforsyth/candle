@@ -353,7 +353,7 @@ def run(args, ensemble_test=False):
                 assert not args.born_again_enable
                 mutipliers = Variable(categories.new(categories.shape[0],loss.shape[1]).fill_(0))
                 for i in range(categories.shape[0]):
-                    mutipliers(i,categories[i])=1
+                    mutipliers[i,categories[i]]=1
                 multipliers = 2 * mutipliers - 1
                 loss = torch.sum(torch.max(0, 1 - mutipliers * scores ) ** 2, dim = 1 )
 

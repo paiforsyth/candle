@@ -17,6 +17,7 @@ from candle.prune import PruneContext
 
 import candle.context
 import candle.prune
+import candle.quantize
    # Used ideas from
         # -pyramidnets by Han et al.
         # -resnext by Xie et al. (aggregated residual transformations) 
@@ -39,7 +40,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_sr",type=float, default=0.125)
     parser.add_argument("--squeezenet_out_dim",type=int)
 
-    parser.add_argument("--squeezenet_mode",type=str, choices=["binarynet", "resfire","wide_resfire","dense_fire","dense_fire_v2","next_fire","normal"], default="normal")
+    parser.add_argument("--squeezenet_mode",type=str, choices=["bnnfire", "resfire","wide_resfire","dense_fire","dense_fire_v2","next_fire","normal"], default="normal")
 
     parser.add_argument("--squeezenet_dropout_rate",type=float,default=0)
     parser.add_argument("--squeezenet_densenet_dropout_rate",type=float,default=0)
@@ -262,9 +263,16 @@ class WideResFire(serialmodule.SerializableModule):
         return out
 
 
-class BinaryFire(serialmodule.SerializableModule):
-    def __init__(self, binary_ctx):
-        self.conv1 = binary_ctx
+class BNNFire(serialmodule.SerializableModule):
+    def __init__(self, binarize_ctx, in_channels, out_channels):
+        self.conv = binarize_ctx.wrap(nn.Conv2d(in_channels, out_channels, kernel_size = 3, padding=1) )
+        self.bn = binarize_ctx.bypass(nn.BatchNorm2d(out_channels))
+        self.act = candle.quantize.BinaryTanh() 
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        s = self.act(x)
+        return x
 
 
 class FireSkipMode(Enum):
@@ -287,7 +295,6 @@ class ExcitationFire(serialmodule.SerializableModule):
         elif proxy_mode == "l0reg_context":
             self.compress= proxy_ctx.wrap(nn.Linear(in_channels, compressed_dim ))
             self.expand=proxy_ctx.wrap(nn.Linear(compressed_dim, out_channels))
-
         else:
             raise Exception("unknown ctx")
         
@@ -512,8 +519,11 @@ class SqueezeNet(serialmodule.SerializableModule):
             proxy_ctx = candle.prune.GroupPruneContext(stochastic=True) 
         elif config.proxy_context_type == "no_context":
             proxy_ctx = None
+        elif config.prox_context_type == "tanhbinarize_context":
+            prox_ctx = candle.quantize.TanhBinarizeContext() 
         else:
             raise Exception("unknown proxy_context_type")
+
         self.proxy_ctx=proxy_ctx
         num_fires=config.num_fires #8
         first_layer_num_convs=config.num_conv1_filters
@@ -570,7 +580,9 @@ class SqueezeNet(serialmodule.SerializableModule):
                     to_add = NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type )
                     if config.excitation_shake_shake:
                         to_add2= NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type )
-                   
+                elif config.mode == "bnnfire":
+                    name = "binaryfire{}".format(i+2)
+                    to_add = BNNFire(in_channels= self.channel_counts[i], out_channels = e) 
                 else:
                     name="fire{}".format(i+2)
                     to_add=Fire.from_configure(FireConfig(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand1=num_expand1, num_expand3=num_expand3, skip=skip_here ))
@@ -650,7 +662,6 @@ class SqueezeNet(serialmodule.SerializableModule):
             reutrns:
                 -oput is batchsize by config.outdim
         '''
-        #out=self.sequential(x)
         
 
 

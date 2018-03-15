@@ -49,6 +49,15 @@ class RoundHook(ProxyDecorator):
         return input.apply_fn(lambda x, size: hard_round(x * np.prod(size, dtype=float)), input.size()) \
             if isinstance(input, Package) else hard_round(input * np.prod(input.size(), dtype=float))
 
+class BinaryTanhHook(ProxyDecorator)
+     def __init__(self, layer, child):
+        super().__init__(layer, child)
+
+    def call(self, input):
+        return binary_tanh(input)
+
+
+
 class BinaryTanhFunction(ag.Function):
     @staticmethod
     def forward(ctx, input):
@@ -88,6 +97,7 @@ class HardDivideFunction(ag.Function):
     def backward(ctx, grad_output):
         x, y = ctx.saved_variables
         return grad_output / y, -grad_output * x / y**2
+
 
 class BinaryBatchNorm(nn.Module):
     def __init__(self, num_features, momentum=0.1, eps=1e-5, affine=True):
@@ -167,3 +177,17 @@ class BinaryContext(Context):
         if kwargs.get("round", True):
             layer.hook_output(RoundHook)
         return layer
+
+class TanhBinarizeContext(Context):
+    '''
+    Context to binarize weights using binary tanh
+    '''
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def compose(self, layer, **kwargs):
+        layer = super().compose(layer, **kwargs)
+        layer.hook_weight(BinaryTanhHook)
+        return layer
+
+

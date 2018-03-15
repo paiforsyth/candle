@@ -13,6 +13,7 @@ import torch.nn.functional as F
 import torch
 import torch.optim.lr_scheduler
 import numpy as np
+from torch.autograd import Variable
 
 
 from  .datatools import set_simp 

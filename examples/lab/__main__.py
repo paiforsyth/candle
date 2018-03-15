@@ -94,7 +94,7 @@ def default_parser(parser=None):
 
     parser.add_argument("--report_unpruned",action="store_true") 
     
-    parser.add_argument("--proxy_context_type", type=str, choices=["no_context","identity_context", "prune_context", "l0reg_context"], default="no_context")
+    parser.add_argument("--proxy_context_type", type=str, choices=["no_context","identity_context", "prune_context", "l0reg_context", "tanhbinarize_context" ], default="no_context")
 
 
 
