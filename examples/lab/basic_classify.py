@@ -354,11 +354,11 @@ def run(args, ensemble_test=False):
                 loss= F.nll_loss(scores,categories)
             elif args.classification_loss_type == "square_hinge": 
                 assert not args.born_again_enable
-                mutipliers = categories.new(categories.shape[0], context.num_categories).fill_(0)  
+                mutipliers = categories.new(categories.shape[0], context.num_categories).fill_(0).long() 
                 for i in range(categories.shape[0]):
                     mutipliers[i,categories[i]]=1
                 multipliers = 2 * mutipliers - 1
-                loss = torch.sum(torch.max(0, 1 - mutipliers * scores ) ** 2, dim = 1 )
+                loss = torch.sum(torch.max(categories.new(1).fill_(0), 1 - mutipliers * scores ) ** 2, dim = 1 )
 
             if args.enable_l0reg:
                 loss += context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 
