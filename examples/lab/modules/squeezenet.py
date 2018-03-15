@@ -519,8 +519,8 @@ class SqueezeNet(serialmodule.SerializableModule):
             proxy_ctx = candle.prune.GroupPruneContext(stochastic=True) 
         elif config.proxy_context_type == "no_context":
             proxy_ctx = None
-        elif config.prox_context_type == "tanhbinarize_context":
-            prox_ctx = candle.quantize.TanhBinarizeContext() 
+        elif config.proxy_context_type == "tanhbinarize_context":
+            proxy_ctx = candle.quantize.TanhBinarizeContext() 
         else:
             raise Exception("unknown proxy_context_type")
 
@@ -582,7 +582,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                         to_add2= NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type )
                 elif config.mode == "bnnfire":
                     name = "binaryfire{}".format(i+2)
-                    to_add = BNNFire(in_channels= self.channel_counts[i], out_channels = e) 
+                    to_add = BNNFire(binarize_ctx = proxy_ctx ,in_channels= self.channel_counts[i], out_channels = e) 
                 else:
                     name="fire{}".format(i+2)
                     to_add=Fire.from_configure(FireConfig(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand1=num_expand1, num_expand3=num_expand3, skip=skip_here ))
