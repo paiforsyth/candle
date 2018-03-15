@@ -50,7 +50,7 @@ def add_args(parser):
     parser.add_argument("--save_prefix", type=str,default=None)
     parser.add_argument("--model_type", type=str, choices=["maxpool_lstm_fc", "kimcnn", "squeezenet", "shufflenet"],default="maxpool_lstm_fc")
     parser.add_argument("--cifar_random_erase", action="store_true")
-    parser.add_argument("--classification_loss_type",type=str, choices=["cross_entropy", "nll"], default="cross_entropy")
+    parser.add_argument("--classification_loss_type",type=str, choices=["cross_entropy", "nll", "square_hinge"], default="cross_entropy")
     parser.add_argument("--coupled_ensemble",type=str, choices=["on", "off"], default="off")
     parser.add_argument("--coupled_ensemble_size", type=int, default=4)
     
@@ -329,7 +329,7 @@ def run(args, ensemble_test=False):
             #for image classification, batch_in will have dimension batchsize by imagesize and scores will have dimension batchsize by number of categories
             #For sequence-to-squence batch in will have dimension batchsize by the max sequence length in the batch. scores  will have dimension batchsize by max sqeunce_length by categoreis
 
-            scores= context.model(batch_in,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch_in)  #should have dimension batchsize
+            scores= context.model(batch_in,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch_in)  #should have dimension batchsize by number of classes
             
             if args.born_again_enable:
                 previous_incarnation_scores= previous_incarnation_context.model(batch_in,pad_mat) if previous_incarnation_context.data_type == DataType.SEQUENCE else previous_incarnation_context.model(batch_in)
@@ -349,6 +349,13 @@ def run(args, ensemble_test=False):
             elif args.classification_loss_type == "nll":
                 assert not args.born_again_enable
                 loss= F.nll_loss(scores,categories)
+            elif args.classification_loss_type == "square_hinge": 
+                assert not args.born_again_enable
+                mutipliers = Variable(categories.new(categories.shape[0],loss.shape[1]).fill_(0))
+                for i in range(categories.shape[0]):
+                    mutipliers(i,categories[i])=1
+                multipliers = 2 * mutipliers - 1
+                loss = torch.sum(torch.max(0, 1 - mutipliers * scores ) ** 2, dim = 1 )
 
             if args.enable_l0reg:
                 loss += context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 

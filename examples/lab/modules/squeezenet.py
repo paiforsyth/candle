@@ -39,7 +39,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_sr",type=float, default=0.125)
     parser.add_argument("--squeezenet_out_dim",type=int)
 
-    parser.add_argument("--squeezenet_mode",type=str, choices=["resfire","wide_resfire","dense_fire","dense_fire_v2","next_fire","normal"], default="normal")
+    parser.add_argument("--squeezenet_mode",type=str, choices=["binarynet", "resfire","wide_resfire","dense_fire","dense_fire_v2","next_fire","normal"], default="normal")
 
     parser.add_argument("--squeezenet_dropout_rate",type=float,default=0)
     parser.add_argument("--squeezenet_densenet_dropout_rate",type=float,default=0)
@@ -260,6 +260,11 @@ class WideResFire(serialmodule.SerializableModule):
         if self.skip:
             out=out+x
         return out
+
+
+class BinaryFire(serialmodule.SerializableModule):
+    def __init__(self, binary_ctx):
+        self.conv1 = binary_ctx
 
 
 class FireSkipMode(Enum):
