@@ -68,7 +68,7 @@ def add_args(parser):
 
 
 class Context:
-    def __init__(self, model, train_loader, val_loader, optimizer,indexer, category_names, tb_writer, train_size, data_type, scheduler, test_loader,cuda, holdout_loader):
+    def __init__(self, model, train_loader, val_loader, optimizer,indexer, category_names, tb_writer, train_size, data_type, scheduler, test_loader,cuda, holdout_loader, num_categories):
         self.model=model
         self.train_loader=train_loader
         self.val_loader=val_loader
@@ -81,6 +81,7 @@ class Context:
         self.scheduler=scheduler
         self.test_loader=test_loader
         self.cuda=cuda
+        self.num_categories=num_categories
         
         self.stashfile=None
 
@@ -125,6 +126,7 @@ def make_context(args):
         data_type = DataType.IMAGE 
         test_dataset=val_dataset #for testing
    elif args.dataset_for_classification == "cifar_challenge":
+        num_categories = 100
         data_type = DataType.IMAGE
         f=open("./local_data/cifar/train_data","rb")
         squashed_images=pickle.load(f)
@@ -251,7 +253,7 @@ def make_context(args):
        train_loader = None
 
 
-   return Context(model, train_loader, val_loader, optimizer, indexer, category_names=category_names, tb_writer=tb_log.TBWriter("{}_"+args.save_prefix), train_size=train_size, data_type=data_type, scheduler=scheduler, test_loader=test_loader, cuda=args.cuda, holdout_loader= holdout_loader)
+   return Context(model, train_loader, val_loader, optimizer, indexer, category_names=category_names, tb_writer=tb_log.TBWriter("{}_"+args.save_prefix), train_size=train_size, data_type=data_type, scheduler=scheduler, test_loader=test_loader, cuda=args.cuda, holdout_loader= holdout_loader, num_categories = num_categories)
 
 
 
@@ -352,7 +354,7 @@ def run(args, ensemble_test=False):
                 loss= F.nll_loss(scores,categories)
             elif args.classification_loss_type == "square_hinge": 
                 assert not args.born_again_enable
-                mutipliers = Variable(categories.new(categories.shape[0],loss.shape[1]).fill_(0))
+                mutipliers = Variable(categories.new(categories.shape[0], context_num_categories).fill_(0))
                 for i in range(categories.shape[0]):
                     mutipliers[i,categories[i]]=1
                 multipliers = 2 * mutipliers - 1
