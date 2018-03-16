@@ -54,7 +54,10 @@ class BinaryTanhHook(ProxyDecorator):
         super().__init__(layer, child)
 
      def call(self, input):
-        return binary_tanh(input)
+        return input.apply_fn(binary_tanh) if isinstance(input, Package) else binary_tanh(input)
+    
+    
+    
 
 
 
@@ -165,7 +168,7 @@ hard_round = HardRoundFunction.apply
 
 class BinaryTanh(nn.Module):
     def forward(self, x):
-        return binary_anh(x)
+        return binary_tanh(x)
 
 class BinaryContext(Context):
     def __init__(self, **kwargs):
@@ -189,5 +192,8 @@ class TanhBinarizeContext(Context):
         layer = super().compose(layer, **kwargs)
         layer.hook_weight(BinaryTanhHook)
         return layer
+
+    def list_model_params(self):
+        return super().list_params()
 
 

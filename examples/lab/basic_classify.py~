@@ -289,7 +289,6 @@ def run(args, ensemble_test=False):
        return
 
    context=make_context(args) 
-   import pdb; pdb.set_trace()
    if args.resume_mode == "standard":
        logging.info("loading saved model from file: "+args.res_file)
        context.model.load(os.path.join(args.model_save_path, args.res_file))
@@ -368,6 +367,7 @@ def run(args, ensemble_test=False):
                 assert not args.born_again_enable
                 loss= F.nll_loss(scores,categories)
             elif args.classification_loss_type == "square_hinge": 
+                import pdb; pdb.set_trace()
                 assert not args.born_again_enable
                 mult = categories.new(categories.shape[0], context.num_categories).fill_(0).float() 
                 for i in range(categories.shape[0]):
