@@ -6,11 +6,12 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import copy
-
+import pickle
 
 from . import basic_classify
 from .genutil import modules
 from .genutil import arguments
+from .datatools import basic_classification
 #general rule: all used modules should be able to created just by passing args
 #todo: 
 #implement an ensembling system that saved paramters and models in acompressed file together.  Better for organization
@@ -97,6 +98,14 @@ def default_parser(parser=None):
     parser.add_argument("--proxy_context_type", type=str, choices=["no_context","identity_context", "prune_context", "l0reg_context", "tanhbinarize_context" ], default="no_context")
 
 
+    #prune trained model
+    parser.add_argument("--prune_trained", action="store_true", help= "Prune a trained model, then resave it ")
+    parser.add_argument("--prune_trained_pct", type=int, help="pct of weights to prune")
+
+    parser.add_argument("--validate_fr", action="store_true",help="get accuracy of a result report using ground truth")
+    parser.add_argument("--validate_fr_reportfile",help="report file to validate")
+    parser.add_argument("--validate_fr_truthfile", help="Ground truth file for validations")
+    parser.add_argument("--validate_fr_truthfiletype",choices=["pickle"], default="pickle" )
 
     return parser
 
@@ -109,10 +118,17 @@ def get_args_from_files(filenames):
         args = arguments.parse_from_file(filename, parser)
         args_list.append(args)
    return args_list
-    
+
+
+
 
 
 def main():
+   
+
+
+
+
    logging.basicConfig(level=logging.INFO)
    iparser = initial_parser()
    [initial_args, remaining_vargs ] = iparser.parse_known_args()
@@ -120,6 +136,16 @@ def main():
     parser=default_parser()
     parser=basic_classify.add_args(parser)
     args = parser.parse_args(remaining_vargs)
+    if args.validate_fr: #dont build a model.  Just evaluate a report
+        if ars.validate_fr_truthfiletype =="pickle":
+         with open(args.validate_fr_truthfile, 'rb') as f: 
+              truth= pickle.load(f)
+
+
+
+        basic_classification.score_report(args.validate_fr_reportfile, truth)
+        print("ACCURACY ON GROUND TRUTH: ",truth ) 
+
     if args.resume_mode == "ensemble":
       if args.ensemble_autogen_args:
             args_list=[]
@@ -151,6 +177,8 @@ def main():
    if args.output_level == "debug":
         logging.getLogger().setLevel(logging.DEBUG)
    basic_classify.run(args)
+
+
 
 
 

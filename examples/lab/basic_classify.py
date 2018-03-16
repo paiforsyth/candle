@@ -40,7 +40,7 @@ import torchvision.datasets as tvds
 def add_args(parser):
     if parser is None:
         parser= argparse.ArgumentParser() 
-    parser.add_argument("--dataset_for_classification",type=str,choices=["simple","moviepol", "mnist", "cifar_challenge"],default="simple")
+    parser.add_argument("--dataset_for_classification",type=str,choices=["simple","moviepol", "mnist", "cifar_challenge", "cifar10"],default="simple")
 
     parser.add_argument("--ds_path", type=str,default=None)
     parser.add_argument("--fasttext_path", type=str,default="../data/fastText_word_vectors/" )
@@ -144,7 +144,7 @@ def make_context(args):
         if args.mode == "train":
             pass
         elif args.mode == "test":
-            f=open("../data/cifar/test_data","rb")
+            f=open("../local_data/cifar/test_data","rb")
             squashed_images=pickle.load(f)
             test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=[-1]*squashed_images.shape[0], transform=transforms.ToTensor())
             f.close()
@@ -157,6 +157,17 @@ def make_context(args):
                 # holdout_dataset, val_dataset = val_dataset.split(args.holdout_size)
 
         category_names= { k:v for k,v in enumerate(set_cifar_challenge.CIFAR100_LABELS_LIST)}
+   elif args.dataset_for_classification == "cifar10":
+        num_categories = 10
+        data_type = DataType.IMAGE
+        tr = transforms.Compose([transforms.RandomCrop(size=32 ,padding= 4), transforms.RandomHorizontalFlip(), transforms.ToTensor() ])
+        if args.cifar_random_erase:
+            tr=transforms.Compose([tr, img_tools.RandomErase()])
+       
+        train_dataset = tvds.CIFAR10("./local_data/cifar10/", train=True, download= True, transform=tr ) 
+        val_dataset = tvds.CIFAR10("./local_data/cifar10/", train=False, download= True, transform=transforms.ToTensor() ) 
+        category_names = {0:"airplane", 1:"automobile", 2:"bird", 3:"cat", 4:"deer", 5:"dog", 6:"frog", 7:"horse", 8: "ship", 9: "truck" }
+
 
    else:
         raise Exception("Unknown dataset.")
@@ -301,7 +312,7 @@ def run(args, ensemble_test=False):
    if args.lr_scheduler == "epoch_anneal":
         epoch_anneal_cur_cycle=0
         
-
+   
    context.tb_writer.write_hyperparams()
    timestamp=reporting.timestamp()
    
@@ -310,6 +321,12 @@ def run(args, ensemble_test=False):
    param_count=genutil_modules.count_trainable_params(context.model)
    logging.info("Number of parameters: "+ str(param_count))
    context.tb_writer.write_num_trainable_params(param_count)
+
+
+   if args.prune_trained:
+       contest.model.proxy_ctx.prune(args.prune_trained_pct)
+       context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_prune_"+str(args.prune_trained_pct) )  )
+       return
 
 
 

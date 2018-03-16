@@ -171,6 +171,16 @@ def make_ensemble_prediction_report(contexts, loader, filename, meta_model=None)
         f.write(str(index)+","+str(prediction) + "\n")
     f.close()
 
+def score_report(filename,ground_truth):
+    f = open(filename,"r")
+    index = 0
+    correct = 0
+    for line in file:
+        if line.strip().split(",")[1]  == ground_truth[index]:
+            correct += 1 
+    f.close()  
+    return correct / (index+1) 
+
 def make_var_wrap_collater(args ):
     def collater(batch_in):
        batch_in, categories, *rest=torch.utils.data.dataloader.default_collate(batch_in)
