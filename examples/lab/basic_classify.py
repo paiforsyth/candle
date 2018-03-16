@@ -289,7 +289,6 @@ def run(args, ensemble_test=False):
        return
 
    context=make_context(args) 
-   import pdb; pdb.set_trace()
    if args.resume_mode == "standard":
        logging.info("loading saved model from file: "+args.res_file)
        context.model.load(os.path.join(args.model_save_path, args.res_file))

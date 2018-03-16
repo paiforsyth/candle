@@ -100,8 +100,6 @@ def make_context(args):
    holdout_loader =None
    if args.enable_l0reg or args.proxy_context_type == "l0reg_context" :
        assert  args.enable_l0reg and args.proxy_context_type == "l0reg_context" 
-   if args.enable_pruning or args.proxy_context_type == "prune_context" :
-       assert args.enable_pruning and  args.proxy_context_type == "prune_context" 
   
    if args.dataset_for_classification == "simple":
         if args.save_prefix is None:
