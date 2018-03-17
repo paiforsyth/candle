@@ -420,7 +420,7 @@ class ShuffleFire(serialmodule.SerializableModule):
         out = self.activation(out)
         out = self.gconv1(out)
 
-        out = out.view(shape[0],self.groups1,self.groups2,shape[2],shape[3])
+        out = out.view(shape[0],self.groups1,-1,shape[2],shape[3])
         out = out.transpose(2, 1)
         out = out.contiguous().view(shape[0],self.groups2*self.groups1,shape[2],shape[3])
 
@@ -676,7 +676,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                         bnn_pool_here=True
                     to_add = BNNFire(binarize_ctx = proxy_ctx ,in_channels= self.channel_counts[i], out_channels = e, pool= bnn_pool_here, use_prelu = config.bnn_prelu) 
                 elif config.mode == "shuffle_fire":
-                    to_add = ShuffleFire(ShuffleFireSettings(in_chan = self.channel_counts[i], out_chan = e, groups1 = config.shuffle_fire_g1, groups2=config.shuffle_fire_g2, bottle_chan=int(config.shuffle_fire_g1_ratio*config.shuffle_fire_g2_ratio*e*self.channel_counts[i]),activation = F.leaky_relu ), proxy_ctx )  
+                    to_add = ShuffleFire(ShuffleFireSettings(in_chan = self.channel_counts[i], out_chan = e, groups1 = config.shuffle_fire_g1, groups2=config.shuffle_fire_g2, bottle_chan =num_squeeze   ,activation = F.leaky_relu ), proxy_ctx )  
                 else:
                     name="fire{}".format(i+2)
                     to_add=Fire.from_configure(FireConfig(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand1=num_expand1, num_expand3=num_expand3, skip=skip_here ))

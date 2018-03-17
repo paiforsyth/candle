@@ -420,9 +420,9 @@ class ShuffleFire(serialmodule.SerializableModule):
         out = self.activation(out)
         out = self.gconv1(out)
 
-        out = out.view(shape[0],self.groups1,self.groups2,shape[2],shape[3])
+        out = out.view(shape[0],self.groups1,-1,shape[2],shape[3])
         out = out.transpose(2, 1)
-        out = out.contiguous().view(shape[0],self.groups2*self.groups1,shape[2],shape[3])
+        out = out.contiguous().view(shape[0],-1,shape[2],shape[3])
 
         out = self.bn2(out)
         out = self.activation(out)
