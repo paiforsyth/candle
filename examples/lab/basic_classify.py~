@@ -389,7 +389,7 @@ def run(args, ensemble_test=False):
             
             if args.clamp_all_params:
                 for param in context.model_parameters:
-                    param.clamp_(args.)
+                    param.clamp_(args.clamp_all_min,args.clamp_all_max)
 
 
             accumulated_loss+=float(loss)
