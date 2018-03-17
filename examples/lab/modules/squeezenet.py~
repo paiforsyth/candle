@@ -88,8 +88,8 @@ def add_args(parser):
     parser.add_argument("--squeezenet_final_act_mode", choices=["enable", "disable"], default="enable", help="should there be an activation with the final conv")
     parser.add_argument("--squeezenet_scale_layer",action="store_true")
 
-    parser.add_argument("--squeezenet_shuffle_fire_g1_ratio",default=0.25)
-    parser.add_argument("--squeezenet_shuffle_fire_g2_ratio",default=0.25)
+    parser.add_argument("--squeezenet_shuffle_fire_g1",default= 8)
+    parser.add_argument("--squeezenet_shuffle_fire_g2",default= 8)
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
 class Fire(serialmodule.SerializableModule):
@@ -388,13 +388,15 @@ class ScaleLayer(serialmodule.SerializableModule):
     def forward(self, x):
         return self.scalar*x
 
-
+#observation: if groups are of size h in both first and final pointwise convolutions, then an output channel depends on h^2 input channels
 ShuffleFireSettings = collections.namedtuple("ShuffleFireSettings","in_chan, bottle_chan, out_chan, groups1, groups2,activation")
 class ShuffleFire(serialmodule.SerializableModule):
+
     def __init__(self, settings, ctx = None):
         super().__init__()
         assert(settings.in_chan % settings.groups1 == 0)
-        assert(settings.bottle_chan == settings.groups1*settings.groups2 )
+        assert(settings.bottle_chan % settings.groups1 == 0 )
+        assert(settings.bottle_chan % settings.groups2 == 0 )
         assert(settings.out_chan % settings.groups2 == 0)
         wrap = ctx.wrap if ctx is not None else lambda w: w
         bypass = ctx.bypass if ctx is not None else lambda w: w
@@ -506,7 +508,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1_ratio, shuffle_fire_g2_ratio")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -581,8 +583,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                 final_act_mode =args.squeezenet_final_act_mode,
                 scale_layer = args.squeezenet_scale_layer,
                 bnn_prelu = args.squeezenet_bnn_prelu,
-                shuffle_fire_g1_ratio = args.squeezenet_shuffle_fire_g1_ratio,
-                shuffle_fire_g2_ratio = args.squeezenet_shuffle_fire_g2_ratio
+                shuffle_fire_g1 = args.squeezenet_shuffle_fire_g1,
+                shuffle_fire_g2 = args.squeezenet_shuffle_fire_g2
                 )
         return SqueezeNet(config)
 
@@ -674,7 +676,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                         bnn_pool_here=True
                     to_add = BNNFire(binarize_ctx = proxy_ctx ,in_channels= self.channel_counts[i], out_channels = e, pool= bnn_pool_here, use_prelu = config.bnn_prelu) 
                 elif config.mode == "shuffle_fire":
-                    to_add = ShuffleFire(ShuffleFireSettings(in_chan = self.channel_counts[i], out_chan = e, groups1 = int(config.shuffle_fire_g1_ratio*self.channel_counts[i]), groups2=int(config.shuffle_fire_g2_ratio*e), bottle_chan=int(config.shuffle_fire_g1_ratio*config.shuffle_fire_g2_ratio*e*self.channel_counts[i])), proxy_ctx )  
+                    to_add = ShuffleFire(ShuffleFireSettings(in_chan = self.channel_counts[i], out_chan = e, groups1 = config.shuffle_fire_g1, groups2=config.shuffle_fire_g2, bottle_chan=int(config.shuffle_fire_g1_ratio*config.shuffle_fire_g2_ratio*e*self.channel_counts[i]),activation = F.leaky_relu ), proxy_ctx )  
                 else:
                     name="fire{}".format(i+2)
                     to_add=Fire.from_configure(FireConfig(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand1=num_expand1, num_expand3=num_expand3, skip=skip_here ))
