@@ -64,11 +64,15 @@ class BinaryTanhHook(ProxyDecorator):
 class BinaryTanhFunction(ag.Function):
     @staticmethod
     def forward(ctx, input):
+        ctx.save_for_backward(input) 
         return 2 * input.clamp(0, 1).ceil() - 1
 
     @staticmethod
     def backward(ctx, grad_output):
-        return grad_output
+        input, = ctx.saved_tensors
+        output = grad_output
+        output[torch.abs(input)>1]=0
+        return output
 
 class HardRoundFunction(ag.Function):
     @staticmethod

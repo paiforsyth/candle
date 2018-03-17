@@ -68,7 +68,7 @@ def add_args(parser):
 
 
 class Context:
-    def __init__(self, model, train_loader, val_loader, optimizer,indexer, category_names, tb_writer, train_size, data_type, scheduler, test_loader,cuda, holdout_loader, num_categories):
+    def __init__(self, model, train_loader, val_loader, optimizer,indexer, category_names, tb_writer, train_size, data_type, scheduler, test_loader,cuda, holdout_loader, num_categories, model_parameters):
         self.model=model
         self.train_loader=train_loader
         self.val_loader=val_loader
@@ -82,6 +82,7 @@ class Context:
         self.test_loader=test_loader
         self.cuda=cuda
         self.num_categories=num_categories
+        self.model_parameters = model_parameters
         
         self.stashfile=None
 
@@ -262,7 +263,7 @@ def make_context(args):
        train_loader = None
 
 
-   return Context(model, train_loader, val_loader, optimizer, indexer, category_names=category_names, tb_writer=tb_log.TBWriter("{}_"+args.save_prefix), train_size=train_size, data_type=data_type, scheduler=scheduler, test_loader=test_loader, cuda=args.cuda, holdout_loader= holdout_loader, num_categories = num_categories)
+   return Context(model, train_loader, val_loader, optimizer, indexer, category_names=category_names, tb_writer=tb_log.TBWriter("{}_"+args.save_prefix), train_size=train_size, data_type=data_type, scheduler=scheduler, test_loader=test_loader, cuda=args.cuda, holdout_loader= holdout_loader, num_categories = num_categories, model_parameters=model_parameters)
 
 
 
@@ -386,6 +387,11 @@ def run(args, ensemble_test=False):
                 torch.nn.utils.clip_grad.clip_grad_norm(context.model.parameters(), args.grad_norm_clip)
             context.optimizer.step()
             
+            if args.clamp_all_params:
+                for param in context.model_parameters:
+                    param.clamp_(args.clamp_all_min,args.clamp_all_max)
+
+
             accumulated_loss+=float(loss)
             context.tb_writer.write_train_loss( float(loss)  )
             if step % report_interval == 0:
