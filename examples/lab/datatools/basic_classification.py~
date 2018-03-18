@@ -181,7 +181,7 @@ def score_report(filename,ground_truth):
             correct += 1 
         
     f.close()  
-    return correct / (index+1) 
+    return correct / (index) #there are index+1 lines in the file.  However, line 0 is a header
 
 def make_var_wrap_collater(args ):
     def collater(batch_in):

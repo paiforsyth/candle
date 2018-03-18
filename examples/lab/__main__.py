@@ -148,8 +148,8 @@ def main():
 
 
 
-        basic_classification.score_report(args.validate_fr_reportfile, truth)
-        print("ACCURACY ON GROUND TRUTH: ",truth ) 
+         acc = basic_classification.score_report(args.validate_fr_reportfile, truth)
+        print("ACCURACY ON GROUND TRUTH: ",acc ) 
         return
 
     if args.resume_mode == "ensemble":
