@@ -61,7 +61,7 @@ def add_args(parser):
     
     parser.add_argument("--use_custom_test_data_file",action="store_true")
     parser.add_argument("--custom_test_data_file")
-    parser.add_argument("--num_custom_test_file_points", type=int, defualt=1000)
+    parser.add_argument("--num_custom_test_file_points", type=int, default=1000)
 
     kim_cnn.add_args(parser)
     squeezenet.add_args(parser)
