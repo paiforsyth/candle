@@ -177,7 +177,7 @@ def score_report(filename,ground_truth):
     for index,line in enumerate(f):
         if index == 0: #first line is header
             continue
-        if int(line.strip().split(",")[1])  == ground_truth[index]:
+        if int(line.strip().split(",")[1])  == ground_truth[index-1]: #count of report is 1 ahead of ground truth, since report has a header
             correct += 1 
         
     f.close()  
