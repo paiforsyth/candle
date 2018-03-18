@@ -143,6 +143,7 @@ def main():
     if args.validate_fr: #dont build a model.  Just evaluate a report
         if args.validate_fr_truthfiletype =="pickle":
          with open(args.validate_fr_truthfile, 'rb') as f: 
+              dummy =pickle.load(f)
               truth= pickle.load(f)
 
 
