@@ -758,7 +758,7 @@ class SqueezeNet(serialmodule.SerializableModule):
          
         #self.sequential=nn.Sequential(layer_dict)
         if config.proxy_context_type == "prune_context":
-            assert len(proxy_ctx.list_proxies("weight_provider")) == len(proxy_ctx_type.list_proxies("weight_hook"))
+            assert len(proxy_ctx.list_proxies("weight_provider")) == len(proxy_ctx.list_proxies("weight_hook"))
 
     def forward(self, x):
         '''

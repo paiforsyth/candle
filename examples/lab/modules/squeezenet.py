@@ -603,7 +603,7 @@ class SqueezeNet(serialmodule.SerializableModule):
         if config.proxy_context_type == "identity_context":
             proxy_ctx = candle.context.Context()
         elif config.proxy_context_type ==  "prune_context":
-            proxy_ctx = candle.prune.PruneContext({"active":True }) 
+            proxy_ctx = candle.prune.PruneContext(config=None, active=True ) 
         elif config.proxy_context_type == "l0reg_context":
             proxy_ctx = candle.prune.GroupPruneContext(stochastic=True) 
         elif config.proxy_context_type == "no_context":
