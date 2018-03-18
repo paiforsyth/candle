@@ -145,7 +145,7 @@ def make_context(args):
             pass
         elif args.mode == "test":
             if args.use_custom_test_data_file:
-                f=open(args.use_custom_test_data_file)
+                f=open(args.use_custom_test_data_file,"rb")
             else:
                 f=open("./local_data/cifar/test_data","rb")
             squashed_images=pickle.load(f)

@@ -146,7 +146,8 @@ def make_context(args):
         elif args.mode == "test":
             if args.use_custom_test_data_file:
                 f=open(args.use_custom_test_data_file)
-            f=open("./local_data/cifar/test_data","rb")
+            else:
+                f=open("./local_data/cifar/test_data","rb")
             squashed_images=pickle.load(f)
             test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=[-1]*squashed_images.shape[0], transform=transforms.ToTensor())
             f.close()
