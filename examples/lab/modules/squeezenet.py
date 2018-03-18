@@ -603,7 +603,7 @@ class SqueezeNet(serialmodule.SerializableModule):
         if config.proxy_context_type == "identity_context":
             proxy_ctx = candle.context.Context()
         elif config.proxy_context_type ==  "prune_context":
-            proxy_ctx = candle.prune.PruneContext() 
+            proxy_ctx = candle.prune.PruneContext({"active":True }) 
         elif config.proxy_context_type == "l0reg_context":
             proxy_ctx = candle.prune.GroupPruneContext(stochastic=True) 
         elif config.proxy_context_type == "no_context":
@@ -757,7 +757,8 @@ class SqueezeNet(serialmodule.SerializableModule):
         self.layer_chunk_list.append(layer_chunk)
          
         #self.sequential=nn.Sequential(layer_dict)
-
+        if config.proxy_context_type == "prune_context":
+            assert len(proxy_ctx.list_proxies("weight_provider")) == len(proxy_ctx_type.list_proxies("weight_hook"))
 
     def forward(self, x):
         '''
