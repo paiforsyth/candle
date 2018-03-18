@@ -265,8 +265,8 @@ def _group_rank_l2(context, proxies):
     return _group_rank_norm(context, proxies, p=2)
 
 def _single_rank_magnitude(context, proxies):
-    providers = context.list_providers()
-    ranks = [provider.package.abs() for provider in providers]
+    #providers = context.list_providers()
+    ranks = [provider.package.abs() for provider in proxies]
     return ranks
 
 _single_rank_methods = dict(magnitude=_single_rank_magnitude)
