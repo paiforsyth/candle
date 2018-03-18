@@ -59,7 +59,8 @@ def add_args(parser):
 
     parser.add_argument("--cifar_shuffle_val_set",action="store_true")
     
-
+    parser.add_argument("--use_custom_test_data_file",action="store_true")
+    parser.add_argument("--custom_test_data_file")
 
     kim_cnn.add_args(parser)
     squeezenet.add_args(parser)
@@ -143,7 +144,10 @@ def make_context(args):
         if args.mode == "train":
             pass
         elif args.mode == "test":
-            f=open("../local_data/cifar/test_data","rb")
+            if args.use_custom_test_data_file:
+                f=open(args.use_custom_test_data_file)
+            else:
+                f=open("./local_data/cifar/test_data","rb")
             squashed_images=pickle.load(f)
             test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=[-1]*squashed_images.shape[0], transform=transforms.ToTensor())
             f.close()
