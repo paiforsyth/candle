@@ -61,7 +61,7 @@ def add_args(parser):
     
     parser.add_argument("--use_custom_test_data_file",action="store_true")
     parser.add_argument("--custom_test_data_file")
-    parser.add_argument("--num_custom_test_file_points", type=int, defualt=1000)
+    parser.add_argument("--num_custom_test_file_points", type=int, default=1000)
 
     kim_cnn.add_args(parser)
     squeezenet.add_args(parser)
@@ -327,7 +327,9 @@ def run(args, ensemble_test=False):
 
 
    if args.prune_trained:
-       contest.model.proxy_ctx.prune(args.prune_trained_pct)
+       context.model.proxy_ctx.prune(args.prune_trained_pct)
+       n_unpruned = context.model.proxy_ctx.count_unpruned()
+       logging.info("Unpruned parameters: "+str(n_unpruned))
        context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_prune_"+str(args.prune_trained_pct) )  )
        return
 

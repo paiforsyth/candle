@@ -327,7 +327,9 @@ def run(args, ensemble_test=False):
 
 
    if args.prune_trained:
-       contest.model.proxy_ctx.prune(args.prune_trained_pct)
+       context.model.proxy_ctx.prune(args.prune_trained_pct)
+       n_unpruned = context.model.proxy_ctx.count_unpruned()
+       logging.info("Unpruned parameters: "+str(n_unpruned))
        context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_prune_"+str(args.prune_trained_pct) )  )
        return
 
