@@ -175,11 +175,13 @@ def score_report(filename,ground_truth):
     f = open(filename,"r")
     correct = 0
     for index,line in enumerate(f):
+        if index == 0: #first line is header
+            continue
         if int(line.strip().split(",")[1])  == ground_truth[index]:
             correct += 1 
         
     f.close()  
-    return correct / (index+1) 
+    return correct / (index) #there are index+1 lines in the file.  However, line 0 is a header
 
 def make_var_wrap_collater(args ):
     def collater(batch_in):
