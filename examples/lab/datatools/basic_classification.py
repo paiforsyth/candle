@@ -173,11 +173,11 @@ def make_ensemble_prediction_report(contexts, loader, filename, meta_model=None)
 
 def score_report(filename,ground_truth):
     f = open(filename,"r")
-    index = 0
     correct = 0
-    for line in file:
-        if line.strip().split(",")[1]  == ground_truth[index]:
+    for index,line in enumerate(f):
+        if int(line.strip().split(",")[1])  == ground_truth[index]:
             correct += 1 
+        
     f.close()  
     return correct / (index+1) 
 
