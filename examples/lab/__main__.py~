@@ -107,6 +107,10 @@ def default_parser(parser=None):
     parser.add_argument("--validate_fr_truthfile", help="Ground truth file for validations")
     parser.add_argument("--validate_fr_truthfiletype",choices=["pickle"], default="pickle" )
 
+    parser.add_argument("--clamp_all_params",action="store_true")
+    parser.add_argument("--clamp_all_min",type=int)
+    parser.add_argument("--clamp_all_max",type=int)
+
     return parser
 
 
