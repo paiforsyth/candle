@@ -61,6 +61,7 @@ def add_args(parser):
     
     parser.add_argument("--use_custom_test_data_file",action="store_true")
     parser.add_argument("--custom_test_data_file")
+    parser.add_argument("--num_custom_test_file_points", type=int)
 
     kim_cnn.add_args(parser)
     squeezenet.add_args(parser)
@@ -145,10 +146,10 @@ def make_context(args):
             pass
         elif args.mode == "test":
             if args.use_custom_test_data_file:
-                f=open(args.use_custom_test_data_file)
+                f=open(args.custom_test_data_file,"rb")
             else:
                 f=open("./local_data/cifar/test_data","rb")
-            squashed_images=pickle.load(f)
+            squashed_images=pickle.load(f)[:args.num_custom_test_file_points]
             test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=[-1]*squashed_images.shape[0], transform=transforms.ToTensor())
             f.close()
             # if args.holdout:
