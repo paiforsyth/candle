@@ -149,6 +149,7 @@ def main():
 
         basic_classification.score_report(args.validate_fr_reportfile, truth)
         print("ACCURACY ON GROUND TRUTH: ",truth ) 
+        return
 
     if args.resume_mode == "ensemble":
       if args.ensemble_autogen_args:
