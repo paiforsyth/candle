@@ -71,7 +71,7 @@ class BinaryTanhFunction(ag.Function):
     def backward(ctx, grad_output):
         input, = ctx.saved_tensors
         output = grad_output
-        if  len( torch.abs(input)> 0)>0: #version issue
+        if  len( torch.abs(input)> 0)>0 and len(output)>0: #version issue
             output[torch.abs(input)>1]=0
         
         return output
