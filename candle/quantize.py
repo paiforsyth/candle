@@ -71,11 +71,8 @@ class BinaryTanhFunction(ag.Function):
     def backward(ctx, grad_output):
         input, = ctx.saved_tensors
         output = grad_output
-        if  len( torch.abs(input)> 0)>0 and len(output)>0: #version issue
-            try:
-                output[torch.abs(input)>1]=0
-            except:
-                import pdb; pdb.set_trace()
+        out_of_bounds=torch.abs(input)>1
+        output[out_of_bounds]=0
         
         return output
 
