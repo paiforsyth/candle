@@ -381,7 +381,7 @@ def run(args, ensemble_test=False):
                 loss= F.nll_loss(scores,categories)
             elif args.classification_loss_type == "square_hinge": 
                 assert not args.born_again_enable
-                mult = categories.new(categories.shape[0], context.num_categories).fill_(0).float() 
+                mult = Variable(categories.data.new(categories.shape[0], context.num_categories).fill_(0).float()) 
                 for i in range(categories.shape[0]):
                     mult[i,categories[i]]=1
                 mult = 2 * mult - 1
