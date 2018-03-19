@@ -34,7 +34,7 @@ from  .genutil import modules as genutil_modules
 from  .genutil import optimutil
 from . import __main__ as mainfuncs
 from  .modules import saveable_data_par 
-
+from .genutil import modules
 from torchvision import transforms
 import torchvision.datasets as tvds
 def add_args(parser):
