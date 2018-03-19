@@ -72,7 +72,10 @@ class BinaryTanhFunction(ag.Function):
         input, = ctx.saved_tensors
         output = grad_output
         if  len( torch.abs(input)> 0)>0 and len(output)>0: #version issue
-            output[torch.abs(input)>1]=0
+            try:
+                output[torch.abs(input)>1]=0
+            except:
+                import pdb; pdb.set_trace()
         
         return output
 
