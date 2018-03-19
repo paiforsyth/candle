@@ -386,7 +386,7 @@ def run(args, ensemble_test=False):
                     mult[i,categories[i]]=1
                 mult = 2 * mult - 1
                 
-                loss = torch.mean(torch.max( Variable(categories.data..new(1).fill_(0).float()), 1 - mult * scores ) ** 2)
+                loss = torch.mean(torch.max( Variable(categories.data.new(1).fill_(0).float()), 1 - mult * scores ) ** 2)
 
             if args.enable_l0reg:
                 loss += context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 

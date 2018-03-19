@@ -1,4 +1,5 @@
 from enum import Enum
+from contextlib import suppress
 from tqdm import tqdm
 import logging
 import torch.nn.functional as F
@@ -10,22 +11,24 @@ class DataType(Enum):
     SEQUENCE=1
     IMAGE=2
 
-def evaluate(context, loader): 
+def evaluate(context, loader, no_grad =False): 
    correct=0
    total=0
    context.model.eval()
+   context_manager = torch.no_grad() if no_grad else  suppress()
  #  with torch.no_grad():
-   for batch, *other in loader:
-        categories=other[0]
-        if context.data_type==DataType.SEQUENCE:
-            pad_mat = other[1]
-        total+=batch.shape[0]
-        scores= context.model(batch,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch)  #should have dimension batchsize
-        scores=F.softmax(scores,dim=1)
-        _,predictions=torch.max(scores,dim=1)
-        if predictions.is_cuda:
+   with context_manager:
+    for batch, *other in loader:
+         categories=other[0]
+         if context.data_type==DataType.SEQUENCE:
+             pad_mat = other[1]
+         total+=batch.shape[0]
+         scores= context.model(batch,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch)  #should have dimension batchsize
+         scores=F.softmax(scores,dim=1)
+         _,predictions=torch.max(scores,dim=1)
+         if predictions.is_cuda:
             categories=categories.cuda(predictions.get_device())
-        correct+= float(torch.sum(predictions==categories).float().cpu())
+         correct+= float(torch.sum(predictions==categories).float().cpu())
    context.model.train()
    return correct / total 
 

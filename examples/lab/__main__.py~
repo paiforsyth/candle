@@ -98,6 +98,7 @@ def default_parser(parser=None):
     
     parser.add_argument("--proxy_context_type", type=str, choices=["no_context","identity_context", "prune_context", "l0reg_context", "tanhbinarize_context" ], default="no_context")
 
+    parser.add_argument("--use_nograd",action="store_true") #use nograd instead of volatile 
 
     #prune trained model
     parser.add_argument("--prune_trained", action="store_true", help= "Prune a trained model, then resave it ")
@@ -204,7 +205,7 @@ def show_params(input_size=(32,3,32,32)):
          if param.is_cuda:
           print("device:")
           print(param.get_device())
-        param_count = modules.count_trainable_params(context.model)
+       param_count = modules.count_trainable_params(context.model)
    else:
         param_count = modules.count_elem(context.model.proxy_ctx.list_model_params() ) 
    print("total trainable params:{}".format(param_count)) 

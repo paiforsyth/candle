@@ -98,6 +98,7 @@ def default_parser(parser=None):
     
     parser.add_argument("--proxy_context_type", type=str, choices=["no_context","identity_context", "prune_context", "l0reg_context", "tanhbinarize_context" ], default="no_context")
 
+    parser.add_argument("--use_nograd",action="store_true") #use nograd instead of volatile 
 
     #prune trained model
     parser.add_argument("--prune_trained", action="store_true", help= "Prune a trained model, then resave it ")
@@ -111,6 +112,10 @@ def default_parser(parser=None):
     parser.add_argument("--clamp_all_params",action="store_true")
     parser.add_argument("--clamp_all_min",type=int)
     parser.add_argument("--clamp_all_max",type=int)
+
+
+
+    parser.add_argument("--use_no_grad",action="store_true")
 
     return parser
 

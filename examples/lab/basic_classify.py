@@ -419,7 +419,7 @@ def run(args, ensemble_test=False):
             new_param_tensors=genutil_modules.get_named_trainable_param_tensors(context.model)
             context.tb_writer.write_param_change(new_param_tensors, param_tensors)
             param_tensors=new_param_tensors
-        eval_score=basic_classification.evaluate(context, context.val_loader)
+        eval_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_no_grad)
         context.tb_writer.write_accuracy(eval_score)
         logging.info("Finished epoch number "+ str(epoch_count+1) +  " of " +str(args.num_epochs)+".  Accuracy is "+ str(eval_score) +".")
         if args.report_unpruned:
