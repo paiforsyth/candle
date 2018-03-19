@@ -183,10 +183,10 @@ def score_report(filename,ground_truth):
     f.close()  
     return float(correct) / float(index) #there are index+1 lines in the file.  However, line 0 is a header
 
-def make_var_wrap_collater(args ):
+def make_var_wrap_collater(args, volatile= False ):
     def collater(batch_in):
        batch_in, categories, *rest=torch.utils.data.dataloader.default_collate(batch_in)
-       batch_in = Variable(batch_in)
+       batch_in = Variable(batch_in, volatile=volatile)
        categories =Variable(categories)
        if args.cuda:
            batch_in = batch_in.cuda()
