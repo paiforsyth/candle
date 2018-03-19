@@ -71,7 +71,9 @@ class BinaryTanhFunction(ag.Function):
     def backward(ctx, grad_output):
         input, = ctx.saved_tensors
         output = grad_output
-        output[torch.abs(input)>1]=0
+        if any( torch.abs(input)> 0)
+            output[torch.abs(input)>1]=0
+        
         return output
 
 class HardRoundFunction(ag.Function):
