@@ -73,7 +73,8 @@ class BinaryTanhFunction(ag.Function):
         output = grad_output
         out_of_bounds=torch.abs(input)>1
         try:
-            output[out_of_bounds] = 0
+            if out_of_bounds.any():
+                output[out_of_bounds] = 0
         except:
             import pdb; pdb.set_trace()
         return output
