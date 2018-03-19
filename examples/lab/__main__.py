@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 import time
 import torch.utils.data as data
 import torch.nn as nn
@@ -132,8 +133,9 @@ def main():
 
 
 
-
    logging.basicConfig(level=logging.INFO)
+   logging.info("command line options:"  )
+   logging.info(" ".join(sys.argv))
    iparser = initial_parser()
    [initial_args, remaining_vargs ] = iparser.parse_known_args()
    if initial_args.paradigm == "classification":
@@ -194,15 +196,15 @@ def show_params(input_size=(32,3,32,32)):
    parser=basic_classify.add_args(parser)
    args=parser.parse_known_args()[0]
    context=basic_classify.make_context(args)
-   for name, param in context.model.named_parameters():
-       print(name)
-       print(param.shape)
-       print(param.requires_grad)
-       if param.is_cuda:
-        print("device:")
-        print(param.get_device())
    if args.proxy_context_type == "no_context": 
-        param_count = modules.count_trainable_params(context.model)
+       for name, param in context.model.named_parameters():
+         print(name)
+         print(param.shape)
+         print(param.requires_grad)
+         if param.is_cuda:
+          print("device:")
+          print(param.get_device())
+       param_count = modules.count_trainable_params(context.model)
    else:
         param_count = modules.count_elem(context.model.proxy_ctx.list_model_params() ) 
    print("total trainable params:{}".format(param_count)) 
