@@ -330,7 +330,7 @@ def run(args, ensemble_test=False):
        context.model.proxy_ctx.prune(args.prune_trained_pct)
        n_unpruned = context.model.proxy_ctx.count_unpruned()
        logging.info("Unpruned parameters: "+str(n_unpruned))
-       context.model.save(os.path.join( arg_instance.model_save_path, arg_instance.res_file,"_prune_",str(args.prune_trained_pct) )  )
+       context.model.save(os.path.join( args.model_save_path, args.res_file,"_prune_",str(args.prune_trained_pct) )  )
        return
 
 
