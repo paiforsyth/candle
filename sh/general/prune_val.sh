@@ -1,5 +1,5 @@
 ARGFILE=./sh/argfiles/medium_resnext
-RESUME_FILENAME=17_March_2018_Saturday_07_14_11anneal-medium_endofcycle_checkpoint_1 
+RESUME_FILENAME=18_March_2018_Sunday_16_46_25anneal-medium_endofcycle_checkpoint_0 
 SAVE_PREFIX=anneal_medium
 PRUNE_PCT=10
 REPORT_FILENAME=./reports/medium_resnext_prune_$PRUNE_PCT
