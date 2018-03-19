@@ -72,8 +72,10 @@ class BinaryTanhFunction(ag.Function):
         input, = ctx.saved_tensors
         output = grad_output
         out_of_bounds=torch.abs(input)>1
-        output[out_of_bounds]=0
-        
+        try:
+            output[out_of_bounds] = 0
+        except:
+            import pdb; pdb.set_trace()
         return output
 
 class HardRoundFunction(ag.Function):
