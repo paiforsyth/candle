@@ -322,6 +322,11 @@ def run(args, ensemble_test=False):
    report_interval=max(len(context.train_loader) //  args.reports_per_epoch ,1)
    accumulated_loss=0 
    param_count=genutil_modules.count_trainable_params(context.model)
+   if args.proxy_context_type == "no_context": 
+        param_count = modules.count_trainable_params(context.model)
+   else:
+        param_count = modules.count_elem(context.model.proxy_ctx.list_model_params() ) 
+
    logging.info("Number of parameters: "+ str(param_count))
    context.tb_writer.write_num_trainable_params(param_count)
 
