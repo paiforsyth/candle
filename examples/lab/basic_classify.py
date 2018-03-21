@@ -310,7 +310,7 @@ def run(args, ensemble_test=False):
        for param in previous_incarnation_context.model.parameters():
             param.requires_grad = False
    if args.mode == "test":
-        basic_classification.make_prediction_report(context, context.test_loader,args.test_report_filename, no_grad=args.use_nograd) ) 
+        basic_classification.make_prediction_report(context, context.test_loader,args.test_report_filename, no_grad=args.use_nograd)  
         return
    
    if args.lr_scheduler == "epoch_anneal":
