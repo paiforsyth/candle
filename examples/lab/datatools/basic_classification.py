@@ -35,21 +35,23 @@ def evaluate(context, loader, no_grad =False):
 
 
 
-def predict(context, loader): 
+def predict(context, loader, no_grad=False): 
    '''
    '''
+   context_manager = torch.no_grad() if no_grad else  suppress()
    context.model.eval()
-   overall_predictions=[]
-   logging.info("Predicting.")
-   for batch, *other in loader:
-        categories=other[0]
-        if context.data_type==DataType.SEQUENCE:
-            pad_mat = other[1]
-        scores= context.model(batch,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch)  #should have dimension batchsize by number of categories
-        scores=F.softmax(scores,dim=1)
-        _,predictions_this_batch=torch.max(scores,dim=1)
-        overall_predictions.extend(predictions_this_batch.data.tolist())
-   context.model.train()
+   with context_manager:
+    overall_predictions=[]
+    logging.info("Predicting.")
+    for batch, *other in loader:
+         categories=other[0]
+         if context.data_type==DataType.SEQUENCE:
+             pad_mat = other[1]
+         scores= context.model(batch,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch)  #should have dimension batchsize by number of categories
+         scores=F.softmax(scores,dim=1)
+         _,predictions_this_batch=torch.max(scores,dim=1)
+         overall_predictions.extend(predictions_this_batch.data.tolist())
+    context.model.train()
    return overall_predictions 
 
 
@@ -157,10 +159,10 @@ def ensemble_predict(contexts, loader, meta_model=None):
    return predictions.tolist() 
 
 
-def make_prediction_report(context, loader, filename):
+def make_prediction_report(context, loader, filename,no_grad):
     f=open(filename,"w")
     f.write("ids,labels\n")
-    predictions = predict(context, loader)
+    predictions = predict(context, loader, no_grad)
     index=0
     for index, prediction in enumerate(predictions):
         f.write(str(index)+","+str(prediction) + "\n")
