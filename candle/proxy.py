@@ -233,10 +233,10 @@ class ProxyLinear(ProxyLayer):
 
 
     def multiplies(self, effective_input_dim): 
-    '''
-    '''
-    effective_out = self.effective_output_dim()
-    return effective_out*effective_input_dim, effective_out
+        '''
+        '''
+        effective_out = self.effective_output_dim()
+        return effective_out*effective_input_dim, effective_out
 
 
 class ProxyRNNBase(nn.modules.rnn.RNNBase):
