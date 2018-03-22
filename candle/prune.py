@@ -216,6 +216,8 @@ class LinearRowMask(WeightMaskGroup):
         expand_bias = mask
         return Package([expand_weight, expand_bias])
 
+
+
 class LinearColMask(WeightMaskGroup):
     def __init__(self, layer, child, **kwargs):
         super().__init__(layer, child, **kwargs)

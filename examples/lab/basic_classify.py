@@ -29,6 +29,7 @@ from  .modules import maxpool_lstm
 from  .modules import squeezenet
 from  .modules import kim_cnn
 from  .modules import coupled_ensemble
+from .modules umport countmult
 from .monitoring import reporting
 from .monitoring import tb_log
 from  .genutil import modules as genutil_modules
@@ -339,7 +340,9 @@ def run(args, ensemble_test=False):
        context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
        return
 
-
+    if args.count_multiplies:
+        print("Approximate number of multiplies: ", countmult.count_approx_multiplies(context.model))    
+        return
 
    
    best_eval_score=-float("inf")

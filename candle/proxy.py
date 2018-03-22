@@ -34,6 +34,7 @@ class Proxy(object):
     def print_info(self):
         pass
 
+
     @property
     def sizes(self):
         raise NotImplementedError
@@ -181,13 +182,31 @@ class _ProxyConvNd(ProxyLayer):
         weights = self.weight_provider().reify()
         return self.conv_fn(x, *weights, **self._conv_kwargs)
 
+    #added by Peter 
+    def effective_output_channels(self):
+        if isinstance(self.weight_provider,IdentityProxy):
+            return self.weight_provider().sizes().reify()[0][0]
+        elif isinstance(self.weight_provider, Channel2DMask) and weight_provider.stochastic == False:
+            channel_norms = weight_provider.split().norm(1,0)
+            num_zeros = long((channel_norms==0).sum())
+            return self.weight_provider().sizes().reify()[0][0] -num_zeros
+        else:
+            raise Exception("unknown weight provider type")
+
+
 class ProxyConv3d(_ProxyConvNd):
     def __init__(self, weight_provider, **kwargs):
         super().__init__(weight_provider, F.conv3d, **kwargs)
 
 class ProxyConv2d(_ProxyConvNd):
-    def __init__(self, weight_provider, **kwargs):
+    def __init__(self, weight_provider, **kwargs, effective_input_channels):
         super().__init__(weight_provider, F.conv2d, **kwargs)
+
+    def multiplies(self,img_h,img_w):
+        assert(self.groups == 1) #groups not implemented yet
+        w_dim = self.weight_provider.sizes().reify()[0]
+        effective_out = self.effective_output_channels() 
+        return img_h*img_w* effective_out * effective_input_channels  *w_dim[2]*w_dim[3], effective_out 
 
 class ProxyConv1d(_ProxyConvNd):
     def __init__(self, weight_provider, **kwargs):
@@ -200,6 +219,25 @@ class ProxyLinear(ProxyLayer):
     def on_forward(self, x):
         weights = self.weight_provider().reify()
         return F.linear(x, *weights)
+
+    def effective_output_dim(self):
+        if isinstance(self.weight_provider,IdentityProxy):
+            return self.weight_provider().sizes().reify()[0][0]
+        elif isinstance(self.weight_provider, LinearRowMask) and weight_provider.stochastic == False:
+            channel_norms = weight_provider.split().norm(1,0)
+            num_zeros = long((channel_norms==0).sum())
+            return self.weight_provider().sizes().reify()[0][0] -num_zeros
+        else:
+            raise Exception("unknown weight provider type")
+
+
+
+    def multiplies(self, effective_input_dim) 
+    '''
+    '''
+    effective_out = self.effective_output_dim()
+    return effective_out*effective_input_dim, effective_out
+
 
 class ProxyRNNBase(nn.modules.rnn.RNNBase):
     def __init__(self, mode, input_size, hidden_size,

@@ -10,6 +10,7 @@ import torch
 import torch.cuda
 from . import serialmodule
 from . import shakedrop_func 
+from .countmult import count_approx_multiplies
 from . import shake_shake
 from torch.autograd import Variable
 
@@ -239,6 +240,12 @@ class NextFire(serialmodule.SerializableModule):
 
         return out
 
+    def multiplies(img_h, img_w, effective_input_channels):
+        assert not self.shake_shake and not self.shake_drop and not self.stochastic_depth
+        mults, _,_,_ =  count_approx_multiplies(layer=self.seq, img_h=img_h, img_w=img_w)        
+        return mults, effective_input_channels,img_h ,img_w #residual branch restores effective_input_channels
+        
+
 class WideResFire(serialmodule.SerializableModule):
     '''
     Like above, but the squeeze layer has 3 by 3 convs
@@ -322,7 +329,7 @@ class ExcitationFire(serialmodule.SerializableModule):
         elif proxy_mode == "l0reg_context":
             self.compress= proxy_ctx.wrap(nn.Linear(in_channels, compressed_dim ))
             self.expand=proxy_ctx.wrap(nn.Linear(compressed_dim, out_channels))
-        elif proxy_mode == "group_prune_context"
+        elif proxy_mode == "group_prune_context":
             self.compress = proxy_ctx.wrap(nn.Linear(in_channels, compressed_dim ))
             self.expand = proxy_ctx.wrap(nn.Linear(compressed_dim, out_channels)) 
         else:
@@ -387,6 +394,15 @@ class ExcitationFire(serialmodule.SerializableModule):
                 raise Exception("Unknown FireSkipMode")
             
         return result
+
+    def multiplies(img_h, img_w, effective_input_channels):
+        assert not self.shake_shake
+        compress_mults, compress_out_dim = count_effective_mults(self.compress,  effective_input_dim = effective_input_channels )
+        expand_mults, _ = count_effective_mults(self.expand,  effective_input_dim = compress_out_dim )
+        wrapped_mults, _,out_h, out_w = count_effective_mults(self.wrapped,img_h=img_h, img_w=img_w, effective_input_channels=effective_input_channels)
+        return compress_mults + wrapped_mults + expand_mults, effective_input_channels
+
+
 class ScaleLayer(serialmodule.SerializableModule):
     def __init__(self,init_val=0.001):
         super().__init__()
@@ -807,6 +823,8 @@ class SqueezeNet(serialmodule.SerializableModule):
     def init_params(self):
         init_p(self)
 
+    def multiplies(self, img_h, img_w, input_channels ):
+
 
 def init_p(mod):
         '''
@@ -821,3 +839,5 @@ def init_p(mod):
                 m.bias.data.zero_()
             elif isinstance(m,nn.Linear):
                 m.reset_parameters()
+
+

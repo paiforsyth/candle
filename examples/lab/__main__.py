@@ -117,6 +117,9 @@ def default_parser(parser=None):
 
     parser.add_argument("--use_no_grad",action="store_true")
 
+
+    parser.add_argument("--count_multiplies", action="store_true")
+
     return parser
 
 
