@@ -43,7 +43,7 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
         sublayer_h=img_h
         sublayer_w=img_w
         for sublayer in layer:
-            sublayer_mult, sublayer_channels, sublayer_h, sublayer_w = count_approx_multipliies(sublayer, img_h = sublayer_h,img_w = sublayer_w,input_channels=  sublayer_channels):
+            sublayer_mult, sublayer_channels, sublayer_h, sublayer_w = count_approx_multipliies(sublayer, img_h = sublayer_h,img_w = sublayer_w,input_channels=  sublayer_channels)
             total += sublayer_mult
         return total, sublayer_channels, sublayer_h, sublayer_w
     except: TypeError:
