@@ -199,14 +199,14 @@ class ProxyConv3d(_ProxyConvNd):
         super().__init__(weight_provider, F.conv3d, **kwargs)
 
 class ProxyConv2d(_ProxyConvNd):
-    def __init__(self, weight_provider, **kwargs, effective_input_channels):
+    def __init__(self, weight_provider, **kwargs):
         super().__init__(weight_provider, F.conv2d, **kwargs)
 
-    def multiplies(self,img_h,img_w):
+    def multiplies(self,img_h, img_w, input_channels):
         assert(self.groups == 1) #groups not implemented yet
         w_dim = self.weight_provider.sizes().reify()[0]
         effective_out = self.effective_output_channels() 
-        return img_h*img_w* effective_out * effective_input_channels  *w_dim[2]*w_dim[3], effective_out, img_h, img_w
+        return img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3], effective_out, img_h, img_w
 
 class ProxyConv1d(_ProxyConvNd):
     def __init__(self, weight_provider, **kwargs):
