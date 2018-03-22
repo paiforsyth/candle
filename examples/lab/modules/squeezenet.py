@@ -13,7 +13,7 @@ from . import shakedrop_func
 from . import shake_shake
 from torch.autograd import Variable
 
-from candle.prune import PruneContext
+from candle.prune import PruneContext, GroupPruneContext
 
 import candle.context
 import candle.prune
@@ -169,7 +169,11 @@ class NextFire(serialmodule.SerializableModule):
             layer_dict["final_bn"]=nn.BatchNorm2d(num_expand)
         if proxy_mode == "prune_context" :
             logging.info("wrapping layers using a proxy context for standard pruning")
-            layer_dict = proxy_ctx.wrap_dict(layer_dict,active=True)
+            layer_dict = proxy_ctx.wrap_dict(layer_dict)
+        if proxy_mode == "group_prune_context":
+            logging.info("wrapping layers for channel-wise pruning")
+            assert(groups==1) #convolutional groupwise pruning not implemented yet
+            layer_dict = proxy_ctx.wrap_dict(layer_dict)
         elif proxy_mode == "l0reg_context":
             logging.info("wrapping layers using a proxy context for l0 regularization  pruning")
             layer_dict = proxy_ctx.wrap_dict(layer_dict) 
@@ -313,11 +317,14 @@ class ExcitationFire(serialmodule.SerializableModule):
             self.compress=nn.Linear(in_channels, compressed_dim  )
             self.expand=nn.Linear(compressed_dim, out_channels)
         elif proxy_mode == "prune_context":
-            self.compress= proxy_ctx.wrap(nn.Linear(in_channels, compressed_dim ),active=True)
-            self.expand=proxy_ctx.wrap(nn.Linear(compressed_dim, out_channels),active=True)
+            self.compress= proxy_ctx.wrap(nn.Linear(in_channels, compressed_dim ))
+            self.expand=proxy_ctx.wrap(nn.Linear(compressed_dim, out_channels))
         elif proxy_mode == "l0reg_context":
             self.compress= proxy_ctx.wrap(nn.Linear(in_channels, compressed_dim ))
             self.expand=proxy_ctx.wrap(nn.Linear(compressed_dim, out_channels))
+        elif proxy_mode == "group_prune_context":
+            self.compress = proxy_ctx.wrap(nn.Linear(in_channels, compressed_dim ))
+            self.expand = proxy_ctx.wrap(nn.Linear(compressed_dim, out_channels)) 
         else:
             raise Exception("unknown ctx")
         
@@ -604,6 +611,8 @@ class SqueezeNet(serialmodule.SerializableModule):
             proxy_ctx = candle.context.Context()
         elif config.proxy_context_type ==  "prune_context":
             proxy_ctx = candle.prune.PruneContext(config=None, active=True ) 
+        elif config.proxy_context_type == "group_prune_context":
+            proxy_ctx = candle.prune.GroupPruneContext(stochastic=False)
         elif config.proxy_context_type == "l0reg_context":
             proxy_ctx = candle.prune.GroupPruneContext(stochastic=True) 
         elif config.proxy_context_type == "no_context":
