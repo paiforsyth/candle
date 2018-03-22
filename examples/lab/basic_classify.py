@@ -340,8 +340,8 @@ def run(args, ensemble_test=False):
        context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
        return
 
-    if args.count_multiplies:
-        print("Approximate number of multiplies: ", countmult.count_approx_multiplies(context.model))    
+   if args.count_multiplies:
+        print("Approx number of multiplies: ", countmult.count_approx_multiplies(context.model))    
         return
 
    

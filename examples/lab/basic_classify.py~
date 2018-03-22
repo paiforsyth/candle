@@ -29,7 +29,7 @@ from  .modules import maxpool_lstm
 from  .modules import squeezenet
 from  .modules import kim_cnn
 from  .modules import coupled_ensemble
-from .modules umport countmult
+from .modules import countmult
 from .monitoring import reporting
 from .monitoring import tb_log
 from  .genutil import modules as genutil_modules
