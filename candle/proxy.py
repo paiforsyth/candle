@@ -232,7 +232,7 @@ class ProxyLinear(ProxyLayer):
 
 
 
-    def multiplies(self, effective_input_dim) 
+    def multiplies(self, effective_input_dim): 
     '''
     '''
     effective_out = self.effective_output_dim()
