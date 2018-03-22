@@ -1,3 +1,4 @@
+import logging
 import torch.nn as nn 
 def count_approx_multiplies(layer,img_h,img_w, input_channels):
     '''
