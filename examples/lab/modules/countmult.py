@@ -33,6 +33,7 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
 
     #see if layer implements a multiplies method
     try:
+        import pdb; pdb.set_trace()
         return layer.multiplies(img_h=img_h, img_w=img_w, input_channels = input_channels)
     except AttributeError:
         pass

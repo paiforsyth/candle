@@ -185,11 +185,11 @@ class _ProxyConvNd(ProxyLayer):
     #added by Peter 
     def effective_output_channels(self):
         if isinstance(self.weight_provider,IdentityProxy):
-            return self.weight_provider().sizes().reify()[0][0]
+            return self.weight_provider().sizes.reify()[0][0]
         elif isinstance(self.weight_provider, Channel2DMask) and weight_provider.stochastic == False:
             channel_norms = weight_provider.split().norm(1,0)
             num_zeros = long((channel_norms==0).sum())
-            return self.weight_provider().sizes().reify()[0][0] -num_zeros
+            return self.weight_provider().sizes.reify()[0][0] -num_zeros
         else:
             raise Exception("unknown weight provider type")
 
@@ -204,7 +204,7 @@ class ProxyConv2d(_ProxyConvNd):
 
     def multiplies(self,img_h, img_w, input_channels):
         assert(self.groups == 1) #groups not implemented yet
-        w_dim = self.weight_provider.sizes().reify()[0]
+        w_dim = self.weight_provider.sizes.reify()[0]
         effective_out = self.effective_output_channels() 
         return img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3], effective_out, img_h, img_w
 
@@ -222,11 +222,11 @@ class ProxyLinear(ProxyLayer):
 
     def effective_output_dim(self):
         if isinstance(self.weight_provider,IdentityProxy):
-            return self.weight_provider().sizes().reify()[0][0]
+            return self.weight_provider().sizes.reify()[0][0]
         elif isinstance(self.weight_provider, LinearRowMask) and weight_provider.stochastic == False:
             channel_norms = weight_provider.split().norm(1,0)
             num_zeros = long((channel_norms==0).sum())
-            return self.weight_provider().sizes().reify()[0][0] -num_zeros
+            return self.weight_provider().sizes.reify()[0][0] -num_zeros
         else:
             raise Exception("unknown weight provider type")
 
