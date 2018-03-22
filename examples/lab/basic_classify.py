@@ -345,8 +345,8 @@ def run(args, ensemble_test=False):
            img_h=32
            img_w=32
            channels=3
-        print("Approx number of multiplies: ", countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels))    
-        return
+       print("Approx number of multiplies: ", countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels))    
+       return
 
    
    best_eval_score=-float("inf")
