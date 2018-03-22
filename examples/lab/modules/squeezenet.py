@@ -824,7 +824,9 @@ class SqueezeNet(serialmodule.SerializableModule):
         init_p(self)
 
     def multiplies(self, img_h, img_w, input_channels ):
-
+         mults,_,_,_= count_approx_multiplies(self.layer_chunk_list,img_h=img_h, img_w=img_w,input_channels=input_channels ) 
+         return mults
+            
 
 def init_p(mod):
         '''

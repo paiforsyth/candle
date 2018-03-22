@@ -400,7 +400,7 @@ class ExcitationFire(serialmodule.SerializableModule):
         compress_mults, compress_out_dim = count_effective_mults(self.compress,  effective_input_dim = effective_input_channels )
         expand_mults, _ = count_effective_mults(self.expand,  effective_input_dim = compress_out_dim )
         wrapped_mults, _,out_h, out_w = count_effective_mults(self.wrapped,img_h=img_h, img_w=img_w, effective_input_channels=effective_input_channels)
-        return compress_mults + wrapped_mults + expand_mults, effective_input_channels, out_h, out_w
+        return compress_mults + wrapped_mults + expand_mults, effective_input_channels
 
 
 class ScaleLayer(serialmodule.SerializableModule):
@@ -824,7 +824,8 @@ class SqueezeNet(serialmodule.SerializableModule):
         init_p(self)
 
     def multiplies(self, img_h, img_w, input_channels ):
-
+         mults,_,_,_= count_approx_multiplies(self.layer_chunk_list,img_h=img_h, img_w=img_w,input_channels=input_channels ) 
+            
 
 def init_p(mod):
         '''

@@ -341,7 +341,11 @@ def run(args, ensemble_test=False):
        return
 
    if args.count_multiplies:
-        print("Approx number of multiplies: ", countmult.count_approx_multiplies(context.model))    
+       if args.dataset_for_classification == "cifar_challenge":
+           img_h=32
+           img_w=32
+           channels=3
+        print("Approx number of multiplies: ", countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels))    
         return
 
    
