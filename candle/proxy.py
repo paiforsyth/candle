@@ -5,7 +5,6 @@ import torch.nn.functional as F
 import numpy as np
 
 from .nested import Package
-from . import prune
 
 class SerializableModule(nn.Module):
     def __init__(self):
@@ -185,6 +184,7 @@ class _ProxyConvNd(ProxyLayer):
 
     #added by Peter 
     def effective_output_channels(self):
+        from . import prune
         if isinstance(self.weight_provider,IdentityProxy):
             return self.weight_provider().sizes.reify()[0][0]
         elif isinstance(self.weight_provider, prune.Channel2DMask) and weight_provider.stochastic == False:
