@@ -46,6 +46,6 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
             sublayer_mult, sublayer_channels, sublayer_h, sublayer_w = count_approx_multipliies(sublayer, img_h = sublayer_h,img_w = sublayer_w,input_channels=  sublayer_channels)
             total += sublayer_mult
         return total, sublayer_channels, sublayer_h, sublayer_w
-    except: TypeError:
+    except TypeError:
         pass
     raise TypeError("Unable to compute multiplies for layer of type " + layer.__class__.__name__)
