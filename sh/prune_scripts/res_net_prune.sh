@@ -10,6 +10,5 @@ python -m examples.lab $(cat $ARGFILE) --save_prefix=$SAVE_PREFIX --mode=test --
 
 python -m examples.lab --validate_fr  --validate_fr_reportfile=$REPORT_FILENAME  --validate_fr_truthfile=local_data/cifar/train_data
 
-python -m examples.lab $(cat $ARGFILE) --resume_mode=standard  --res_file=${RESUME_FILENAME}_prune_$PRUNE_PCT --count_multiplies   --cuda
 
 
