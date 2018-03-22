@@ -10,11 +10,13 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
     -3. height of output image
     -4 width of output image
     '''
+    logging.debug("count_approx_multiplies called on "+layer.__class__.__name__ +"  with img_h:"+str(img_h)+" img_w"+str(img_w)+" input_channels:"+str(input_channels)   )
     if isinstance(layer, nn.BatchNorm2d):
         return 0, input_channels, img_h, img_w
     if isinstance(layer, nn.ReLU) or isinstance(layer, nn.LeakyReLU):
         return 0, input_channels, img_h, img_w
     if isinstance(layer, nn.MaxPool2d):
+        logging.
         padding = layer.padding
         if isinstance(padding,int):
             padding= (padding, padding)

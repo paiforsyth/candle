@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 
 from .nested import Package
+from .prune import Channel2DMask
 
 class SerializableModule(nn.Module):
     def __init__(self):
