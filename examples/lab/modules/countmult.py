@@ -16,7 +16,6 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
     if isinstance(layer, nn.ReLU) or isinstance(layer, nn.LeakyReLU):
         return 0, input_channels, img_h, img_w
     if isinstance(layer, nn.MaxPool2d):
-        logging.
         padding = layer.padding
         if isinstance(padding,int):
             padding= (padding, padding)
