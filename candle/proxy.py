@@ -186,7 +186,7 @@ class _ProxyConvNd(ProxyLayer):
     #added by Peter 
     def effective_output_channels(self):
         from . import prune
-        base_output_channels=self.weight_provider().sizes.reify()[0][0]
+        base_output_channels=self.weight_provider.sizes.reify()[0][0]
         logging.debug("base output channels is "+str(base_output_channels))
         if isinstance(self.weight_provider,IdentityProxy):
             logging.debug("found no weight mask. using base output_channels. ")
