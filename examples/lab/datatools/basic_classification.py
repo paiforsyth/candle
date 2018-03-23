@@ -30,7 +30,7 @@ def evaluate(context, loader, no_grad =False):
          if predictions.is_cuda:
             categories=categories.cuda(predictions.get_device())
          correct+= float(torch.sum(predictions==categories).float().cpu())
-   context.model.train()
+ #  context.model.train()
    return correct / total 
 
 
@@ -51,7 +51,7 @@ def predict(context, loader, no_grad=False):
          scores=F.softmax(scores,dim=1)
          _,predictions_this_batch=torch.max(scores,dim=1)
          overall_predictions.extend(predictions_this_batch.data.tolist())
-    context.model.train()
+    #context.model.train()
    return overall_predictions 
 
 
@@ -73,7 +73,7 @@ def optimize_ensemble_on_val(contexts,val_loader):
             scores=F.log_softmax(scores,dim=1)
             scores=scores.unsqueeze(2)
             score_list_2d[i].append(scores.data)
-       context.model.train()
+    #   context.model.train()
        context.stash_model()
 
    category_list=[]
@@ -142,7 +142,7 @@ def ensemble_predict(contexts, loader, meta_model=None):
             scores=F.log_softmax(scores,dim=1)
             scores=scores.unsqueeze(2)
             score_list_2d[i].append(scores.data)
-       context.model.train()
+    #   context.model.train()
        context.stash_model()
     
    batch_mean_scores=[]

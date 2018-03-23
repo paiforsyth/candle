@@ -7,6 +7,7 @@ class SerializableModule(nn.Module):
         super().__init__()
 
     def save(self, filename):
+        ##self.eval()#purpose of this is to allow saving 
         torch.save(self.state_dict(), filename)
 
     def load(self, filename):

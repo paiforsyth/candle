@@ -356,6 +356,7 @@ def run(args, ensemble_test=False):
    
    best_eval_score=-float("inf")
    for epoch_count in range(args.num_epochs):
+        context.model.train()
         logging.info("Starting epoch "+str(epoch_count) +".")
         if args.param_difs:
            param_tensors=genutil_modules.get_named_trainable_param_tensors(context.model)
