@@ -120,6 +120,9 @@ def default_parser(parser=None):
 
     parser.add_argument("--count_multiplies", action="store_true")
 
+
+    parser.add_argument("--use_all_params",action="store_true") #ie optimize over mask params
+
     return parser
 
 

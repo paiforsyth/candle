@@ -227,7 +227,12 @@ def make_context(args):
    if args.proxy_context_type == "no_context":
        model_parameters = model.parameters()
    else:
-       model_parameters = model.proxy_ctx.list_model_params()
+       if args.enable_l0reg:
+           assert args.use_all_params.
+       if args.use_all_params:
+           model_parameters = model.proxy_ctx.list_params()
+       else: 
+            model_parameters = model.proxy_ctx.list_model_params()
         
 
    if args.optimizer == "sgd":

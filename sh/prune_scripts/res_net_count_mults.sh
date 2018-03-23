@@ -5,4 +5,4 @@ PRUNE_PCT=10
 REPORT_FILENAME=./reports/medium_res_net_prune_$PRUNE_PCT
 
 
-python -m examples.lab --save_prefix=$SAVE_PREFIX $(cat $ARGFILE) --resume_mode=standard  --res_file=${RESUME_FILENAME} --count_multiplies   --cuda --output_level=debug
+python -m examples.lab --save_prefix=$SAVE_PREFIX $(cat $ARGFILE) --resume_mode=standard  --res_file=${RESUME_FILENAME} --count_multiplies    --output_level=debug
