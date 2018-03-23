@@ -88,7 +88,12 @@ class WeightMaskGroup(ProxyDecorator):
     @property
     def mask_unpruned(self):
         if self.stochastic:
-            return (self.sample_concrete() != 0).long().sum().data[0].reify()
+             int_package =(self.sample_concrete() != 0).long().sum().data[0]
+        else:
+          int_package = (self.masks  != 0).long().sum().data[0]
+        if not isinstance(int_package.reify()[0], int): #compatibility
+            int_package =int_package.item() 
+        return int_package.reify()
 
     def freeze(self, refresh=True):
         if not self.stochastic or self.frozen:

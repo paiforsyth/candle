@@ -192,10 +192,11 @@ class _ProxyConvNd(ProxyLayer):
             logging.debug("found no weight mask. using base output_channels. ")
             return base_output_channels 
         elif isinstance(self.weight_provider, prune.Channel2DMask) and self.weight_provider.stochastic == False:
-            channel_norms = self.weight_provider.split(self.weight_provider.root).norm(1,0)
-            num_zeros = int((channel_norms.reify()[0]==0).long().sum())
-            effective_out= base_output_channels -num_zeros
-            logging.debug("found a weight mask with "+str(num_zeros)+" zero channels.  Thus effective output channels is "+str(effective_out))
+            #channel_norms = self.weight_provider.split(self.weight_provider.root).norm(1,0)
+            #num_zeros = int((channel_norms.reify()[0]==0).long().sum())
+            effective_out = self.weight_provider.mask_unpruned[0] 
+            #effective_out= base_output_channels -num_zeros
+            logging.debug(" effective output channels is "+str(effective_out))
             return effective_out
         else:
             raise Exception("unknown weight provider type")
@@ -234,9 +235,8 @@ class ProxyLinear(ProxyLayer):
         if isinstance(self.weight_provider,IdentityProxy):
             return self.weight_provider.sizes.reify()[0][0]
         elif isinstance(self.weight_provider, prune.LinearRowMask) and self.weight_provider.stochastic == False:
-            channel_norms = self.weight_provider.split(self.weight_provider.root).norm(1,0)
-            num_zeros = int((channel_norms.reify()[0]==0).long().sum())
-            return self.weight_provider.sizes.reify()[0][0] -num_zeros
+            effective_out = self.weight_provider.mask_unpruned[0] 
+            return effective_out 
         else:
             raise Exception("unknown weight provider type")
 
