@@ -228,7 +228,7 @@ def make_context(args):
        model_parameters = model.parameters()
    else:
        if args.enable_l0reg:
-           assert args.use_all_params.
+           assert args.use_all_params
        if args.use_all_params:
            model_parameters = model.proxy_ctx.list_params()
        else: 
