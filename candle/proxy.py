@@ -230,12 +230,13 @@ class ProxyLinear(ProxyLayer):
         return F.linear(x, *weights)
 
     def effective_output_dim(self):
+        from . import prune
         if isinstance(self.weight_provider,IdentityProxy):
-            return self.weight_provider().sizes.reify()[0][0]
-        elif isinstance(self.weight_provider, LinearRowMask) and weight_provider.stochastic == False:
-            channel_norms = weight_provider.split().norm(1,0)
-            num_zeros = long((channel_norms==0).sum())
-            return self.weight_provider().sizes.reify()[0][0] -num_zeros
+            return self.weight_provider.sizes.reify()[0][0]
+        elif isinstance(self.weight_provider, prune.LinearRowMask) and self.weight_provider.stochastic == False:
+            channel_norms = self.weight_provider.split(self.weight_provider.root).norm(1,0)
+            num_zeros = int((channel_norms.reify()[0]==0).long().sum())
+            return self.weight_provider.sizes.reify()[0][0] -num_zeros
         else:
             raise Exception("unknown weight provider type")
 

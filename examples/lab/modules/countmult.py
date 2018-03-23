@@ -1,5 +1,6 @@
 import logging
 import torch.nn as nn 
+import math
 def count_approx_multiplies(layer,img_h,img_w, input_channels):
     '''
     img_h: height of image
@@ -13,11 +14,14 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
     '''
     logging.debug("count_approx_multiplies called on "+layer.__class__.__name__ +"  with img_h:"+str(img_h)+" img_w"+str(img_w)+" input_channels:"+str(input_channels)   )
     if isinstance(layer, nn.BatchNorm2d):
-        info.debug("returning 0 multiplies")
+        logging.debug("returning 0 multiplies")
         return 0, input_channels, img_h, img_w
     if isinstance(layer, nn.ReLU) or isinstance(layer, nn.LeakyReLU):
-        info.debug("returning 0 multiplies")
+        logging.debug("returning 0 multiplies")
         return 0, input_channels, img_h, img_w
+    if isinstance(layer, nn.Dropout):
+        logging.debug("returning 0 multiplies")
+        return 0,input_channels, img_h,img_w
     if isinstance(layer, nn.MaxPool2d):
         padding = layer.padding
         if isinstance(padding,int):
@@ -33,7 +37,7 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
             dilation = (dilation, dilation)
         out_h = math.floor((img_h +2*padding[0] -dilation[0]*(kernel_size[0] - 1  ) - 1)/stride[0]  )
         out_w = math.floor((img_w +2*padding[1] -dilation[1]*(kernel_size[1] - 1  ) - 1)/stride[1]  )
-        info.debug("returning 0 multiplies.  Changing image dimension to "+str(out_h)+" by "+str(out_w))
+        logging.debug("returning 0 multiplies.  Changing image dimension to "+str(out_h)+" by "+str(out_w))
         return 0, input_channels, out_h, out_w 
 
     #see if layer implements a multiplies method
