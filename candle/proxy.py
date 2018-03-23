@@ -215,7 +215,7 @@ class ProxyConv2d(_ProxyConvNd):
         w_dim = self.weight_provider.sizes.reify()[0]
         effective_out = self.effective_output_channels() 
         mults= img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3]
-        logging.debug("number of mults is {}*{}*{}*{}*{}*{} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3])  )
+        logging.debug("number of mults is {}*{}*{}*{}*{}*{} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],mults)  )
         return mults, effective_out, img_h, img_w
 
 class ProxyConv1d(_ProxyConvNd):
