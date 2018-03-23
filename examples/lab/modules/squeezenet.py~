@@ -396,7 +396,6 @@ class ExcitationFire(serialmodule.SerializableModule):
         return result
 
     def multiplies(self, img_h, img_w, input_channels):
-        import pdb; pdb.set_trace()
         assert not self.shake_shake_enable
         compress_mults, compress_out_dim = self.compress.multiplies(  effective_input_dim = input_channels )
         expand_mults, _ = self.expand.multiplies(effective_input_dim = compress_out_dim)
@@ -819,6 +818,15 @@ class SqueezeNet(serialmodule.SerializableModule):
         if self.final_fc:
             self.final_fc_weights.cuda(self.layer_chunk_devices[-1])
         return self
+    def eval(self):
+        super().eval()
+        if instanceof(self.proxy_ctx, candle.prune.GroupPruneContext) and self.proxy_ctx.stochastic:
+            self.proxy_ctx.freeze()
+
+    def train(self):
+        super().train()
+        if instanceof(self.proxy_ctx, candle.prune.GroupPruneContext) and self.proxy_ctx.stochastic:
+            self.proxy_ctx.unfreeze()
     
 
     def init_params(self):

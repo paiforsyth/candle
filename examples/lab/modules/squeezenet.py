@@ -818,6 +818,16 @@ class SqueezeNet(serialmodule.SerializableModule):
         if self.final_fc:
             self.final_fc_weights.cuda(self.layer_chunk_devices[-1])
         return self
+
+    def eval(self):
+        super().eval()
+        if instanceof(self.proxy_ctx, candle.prune.GroupPruneContext) and self.proxy_ctx.stochastic:
+            self.proxy_ctx.freeze()
+
+    def train(self):
+        super().train()
+        if instanceof(self.proxy_ctx, candle.prune.GroupPruneContext) and self.proxy_ctx.stochastic:
+            self.proxy_ctx.unfreeze()
     
 
     def init_params(self):
