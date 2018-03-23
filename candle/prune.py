@@ -182,6 +182,37 @@ class RNNMask(WeightMaskGroup):
         mask_package = Package([[m] * 4 for m in mask.reify()])
         expand_weight = self.child.sizes.apply_fn(expand_mask, mask_package, self._expand_size)
         return expand_weight
+class ConvGroupChannel2DMask(WeightMaskGroup): #for zeroing entire groups. e.g. in resnext 
+     def __init__(self, layer, child, conv_group_size, **kwargs):
+        super().__init__(layer, child, **kwargs)
+        self.conv_group_size = conv_group_size
+
+     def build_masks(self, init_value) 
+        assert self.child.sizes.reify()[0][0] % self.conv_group_size == 0
+        return self._build_masks(init_value, self.child.sizes.reify()[0][0]/self.conv_group_size )
+
+     def split(self, root):
+        param = root.parameters()[0]
+        split_root = param.view(param.size(0), -1).permute(1, 0)
+        return Package([split_root])
+
+     def expand_masks(self):
+        if self.stochastic:
+            mask = self.sample_concrete().singleton()
+        else:
+            mask = self._flattened_masks[0]
+        sizes = self.child.sizes.reify()[0]
+        stretched_mask = Variable(mask.data.new(sizes[0]))
+        for i in range(mask.size[0]):
+            stretched_mask[ self.conv_group_size*i:self.conv_group_size*(i+1)] = mask[i] 
+
+        expand_weight = stretched_mask.expand(sizes[3], sizes[2], sizes[1], -1).permute(3, 2, 1, 0)
+        expand_bias = stretched_mask
+        return Package([expand_weight, expand_bias])
+
+
+
+
 
 class Channel2DMask(WeightMaskGroup):
     def __init__(self, layer, child, **kwargs):
