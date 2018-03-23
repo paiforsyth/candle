@@ -824,8 +824,8 @@ class SqueezeNet(serialmodule.SerializableModule):
         if instanceof(self.proxy_ctx, candle.prune.GroupPruneContext) and self.proxy_ctx.stochastic:
             self.proxy_ctx.freeze()
 
-    def train(self):
-        super().train()
+    def train(self, *args):
+        super().train(*args)
         if instanceof(self.proxy_ctx, candle.prune.GroupPruneContext) and self.proxy_ctx.stochastic:
             self.proxy_ctx.unfreeze()
     
