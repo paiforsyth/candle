@@ -192,7 +192,7 @@ class _ProxyConvNd(ProxyLayer):
             logging.debug("found no weight mask. using base output_channels. ")
             return base_output_channels 
         elif isinstance(self.weight_provider, prune.Channel2DMask) and self.weight_provider.stochastic == False:
-            channel_norms = self.weight_provider.split().norm(1,0)
+            channel_norms = self.weight_provider.split(self.root).norm(1,0)
             num_zeros = long((channel_norms==0).sum())
             effective_out= base_output_channels -num_zeros
             logging.debug("found a weight mask with "+str(num_zeros)+" zero channels.  Thus effective output channels is "+str(effective_out))
