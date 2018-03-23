@@ -395,7 +395,7 @@ class ExcitationFire(serialmodule.SerializableModule):
             
         return result
 
-    def multiplies(img_h, img_w, effective_input_channels):
+    def multiplies(self, img_h, img_w, effective_input_channels):
         assert not self.shake_shake
         compress_mults, compress_out_dim = count_effective_mults(self.compress,  effective_input_dim = effective_input_channels )
         expand_mults, _ = count_effective_mults(self.expand,  effective_input_dim = compress_out_dim )
