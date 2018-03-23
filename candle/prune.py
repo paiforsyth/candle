@@ -187,7 +187,7 @@ class ConvGroupChannel2DMask(WeightMaskGroup): #for zeroing entire groups. e.g. 
         super().__init__(layer, child, **kwargs)
         self.conv_group_size = conv_group_size
 
-     def build_masks(self, init_value) 
+     def build_masks(self, init_value):
         assert self.child.sizes.reify()[0][0] % self.conv_group_size == 0
         return self._build_masks(init_value, self.child.sizes.reify()[0][0]/self.conv_group_size )
 
