@@ -191,11 +191,8 @@ class _ProxyConvNd(ProxyLayer):
         if isinstance(self.weight_provider,IdentityProxy):
             logging.debug("found no weight mask. using base output_channels. ")
             return base_output_channels 
-        elif isinstance(self.weight_provider, prune.Channel2DMask) and self.weight_provider.stochastic == False:
-            #channel_norms = self.weight_provider.split(self.weight_provider.root).norm(1,0)
-            #num_zeros = int((channel_norms.reify()[0]==0).long().sum())
+        elif isinstance(self.weight_provider, prune.Channel2DMask):
             effective_out = self.weight_provider.mask_unpruned[0] 
-            #effective_out= base_output_channels -num_zeros
             logging.debug(" effective output channels is "+str(effective_out))
             return effective_out
         elif isinstance(self.weight_provider, prune.ConvGroupChannel2DMask):
@@ -204,7 +201,6 @@ class _ProxyConvNd(ProxyLayer):
             logging.debug(" effective output channels is {}*{}={}".format(unpruned_masks,self.weight_provider.conv_group_size,effective_out) )
             return effective_out
         else:
-            import pdb; pdb.set_trace()
             raise Exception("unknown weight provider type")
 
 
