@@ -96,7 +96,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_bypass_first_last",action="store_true") #do not wrap first and last convolution in squeezenet`
     parser.add_argument("--squeezenet_next_fire_bypass_first_last",action="store_true") #do not wrap first and last convolution in nextfile with proxy contextg`
 
-    parser.add_argument("squeezenet_freeze_hard_concrete_for_testing",action="store_true")
+    parser.add_argument("--squeezenet_freeze_hard_concrete_for_testing",action="store_true")
 
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
