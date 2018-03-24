@@ -203,7 +203,7 @@ class ConvGroupChannel2DMask(WeightMaskGroup): #for zeroing entire groups. e.g. 
             mask = self._flattened_masks[0]
         sizes = self.child.sizes.reify()[0]
         stretched_mask = Variable(mask.data.new(sizes[0]))
-        for i in range(mask.size[0]):
+        for i in range(mask.size()[0]):
             stretched_mask[ self.conv_group_size*i:self.conv_group_size*(i+1)] = mask[i] 
 
         expand_weight = stretched_mask.expand(sizes[3], sizes[2], sizes[1], -1).permute(3, 2, 1, 0)
