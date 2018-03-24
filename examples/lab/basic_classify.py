@@ -502,6 +502,15 @@ def run(args, ensemble_test=False):
             else:
                 raise Exception("Unknown Scheduler")
 
+            if args.count_multipliesi_every_cycle:
+                if args.dataset_for_classification == "cifar_challenge":
+                    img_h=32
+                    img_w=32
+                    channels=3
+                    print("Approx number of multiplies: ", countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels))    
+                else:
+                    raise Exception("dataset not supported for count_multiplies")
+
          # logging.info("Loading best model")
    #context.model.load(os.path.join( args.model_save_path,timestamp+ args.save_prefix +"_best_model"))
    #if context.data_type == DataType.SEQUENCE:
