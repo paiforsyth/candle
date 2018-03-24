@@ -92,6 +92,11 @@ def add_args(parser):
     parser.add_argument("--squeezenet_shuffle_fire_g1",default= 8)
     parser.add_argument("--squeezenet_shuffle_fire_g2",default= 8)
 
+
+    parser.add_argument("--squeezenet_bypass_first_last",action="store_true") #do not wrap first and last convolution in squeezenet`
+    parser.add_argument("--squeezenet_next_fire_bypass_first_last",action="store_true") #do not wrap first and last convolution in nextfile with proxy contextg`
+
+
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
 class Fire(serialmodule.SerializableModule):
     @staticmethod 
@@ -153,32 +158,34 @@ class ResFire(serialmodule.SerializableModule):
 
 class NextFire(serialmodule.SerializableModule):
 
-    def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None,proxy_mode = None):
+    def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None,proxy_mode = None, bypass_first_last=True):
         super().__init__()
+        if proxy_mode is not None:
+            bn_wrapper = proxy_ctx.bypass
+            if bypass_first_last:
+                first_last_wrapper = proxy_ctx.bypass
+            else:
+                first_last_wrapper = proxy_ctx.wrap
+            group_wrapper = proxy_ctx.wrap
+        else:
+            bn_wrapper =first_last_wrapper =group_wrapper = lambda x:x
+
         layer_dict = collections.OrderedDict()
-        layer_dict["bn1"] = nn.BatchNorm2d(in_channels)
+        layer_dict["bn1"] = bn_wrapper(nn.BatchNorm2d(in_channels))
         layer_dict["leaky_reu1" ] = nn.LeakyReLU(inplace=True)
-        layer_dict["squeeze_conv"] = nn.Conv2d(in_channels, num_squeeze, (1,1))
-        layer_dict["bn2"] = nn.BatchNorm2d(num_squeeze)
+        layer_dict["squeeze_conv"] = first_last_wrapper(nn.Conv2d(in_channels, num_squeeze, (1,1)))
+        layer_dict["bn2"] = bn_wrapper(nn.BatchNorm2d(num_squeeze))
         layer_dict["leaky_relu2"] = nn.LeakyReLU(inplace=True)
-        layer_dict["group_conv"] = nn.Conv2d(num_squeeze, num_squeeze, kernel_size=3, padding=1, groups=groups)
-        layer_dict["bn3"] = nn.BatchNorm2d(num_squeeze)
+        layer_dict["group_conv"] = group_wrapper(nn.Conv2d(num_squeeze, num_squeeze, kernel_size=3, padding=1, groups=groups))
+        layer_dict["bn3"] = bn_wrapper(nn.BatchNorm2d(num_squeeze))
         layer_dict["leaky_relu3"] = nn.LeakyReLU(inplace=True)
-        layer_dict["expand_conv"] =  nn.Conv2d(num_squeeze, num_expand, kernel_size=1)
+        layer_dict["expand_conv"] =  first_last_wrapper(nn.Conv2d(num_squeeze, num_expand, kernel_size=1))
         if final_bn:
             logging.info("Making NextFire layer with a final batchnorm")
-            layer_dict["final_bn"]=nn.BatchNorm2d(num_expand)
-        if proxy_mode == "prune_context" :
-            logging.info("wrapping layers using a proxy context for standard pruning")
-            layer_dict = proxy_ctx.wrap_dict(layer_dict)
-        if proxy_mode == "group_prune_context":
-            logging.info("wrapping layers for channel-wise pruning")
-            layer_dict = proxy_ctx.wrap_dict(layer_dict)
-        elif proxy_mode == "l0reg_context":
-            logging.info("wrapping layers using a proxy context for l0 regularization  pruning")
-            layer_dict = proxy_ctx.wrap_dict(layer_dict) 
-        elif proxy_ctx is not None:
-            raise Exception("unknown proxy_mode")
+            layer_dict["final_bn"]=bn_wrapper(nn.BatchNorm2d(num_expand))
+
+             
+
         self.seq= nn.Sequential(layer_dict)
         self.skip=skip
         self.skipmode=skipmode
@@ -195,6 +202,7 @@ class NextFire(serialmodule.SerializableModule):
         if self.shakedrop:
             logging.info("Making NextFire Layer with Shakedrop")
         if self.shake_shake:
+            assert proxy_mode is None
             assert not self.shakedrop
             logging.info("Making a NextFire with Shake Shake")
             self.shake_shake_mode=shake_shake_mode
@@ -400,7 +408,7 @@ class ExcitationFire(serialmodule.SerializableModule):
         expand_mults, _ = self.expand.multiplies(effective_input_dim = compress_out_dim)
         wrapped_mults, _,out_h, out_w = count_approx_multiplies(self.wrapped,img_h=img_h, img_w=img_w, input_channels=input_channels)
         return compress_mults + wrapped_mults + expand_mults, self.output_channels,img_h, img_w
-    #existance ofresidual branch implies we get full complement of output channels
+    #existance of residual branch implies we get full complement of output channels
 
 
 class ScaleLayer(serialmodule.SerializableModule):
@@ -607,7 +615,9 @@ class SqueezeNet(serialmodule.SerializableModule):
                 scale_layer = args.squeezenet_scale_layer,
                 bnn_prelu = args.squeezenet_bnn_prelu,
                 shuffle_fire_g1 = args.squeezenet_shuffle_fire_g1,
-                shuffle_fire_g2 = args.squeezenet_shuffle_fire_g2
+                shuffle_fire_g2 = args.squeezenet_shuffle_fire_g2,
+                bypass_first_last = args.squeezenet_bypass_first_last,
+                next_fire_bypass_first_last=args.squeezenet_next_fire_bypass_first_last
                 )
         return SqueezeNet(config)
 
@@ -650,16 +660,20 @@ class SqueezeNet(serialmodule.SerializableModule):
             layer_dict=collections.OrderedDict()
             if config.proxy_context_type == "no_context":
                 layer_dict["conv1"] = nn.Conv2d(config.in_channels, first_layer_num_convs, first_layer_conv_width, padding=first_layer_padding, stride=config.conv1_stride)
+            elif config.bypass_first_last:
+                layer_dict["conv1"] =proxy_ctx.bypass( nn.Conv2d(config.in_channels, first_layer_num_convs, first_layer_conv_width, padding=first_layer_padding, stride=config.conv1_stride))
             else:
                 layer_dict["conv1"] =proxy_ctx.wrap( nn.Conv2d(config.in_channels, first_layer_num_convs, first_layer_conv_width, padding=first_layer_padding, stride=config.conv1_stride))
 
              
         else:
+            #old/bugged
             layer_dict=collections.OrderedDict([
             ("conv1", nn.Conv2d(config.in_channels, first_layer_num_convs, first_layer_conv_width, padding=first_layer_padding, stride=config.conv1_stride)),
             ("conv1relu", nn.LeakyReLU()),
             ("maxpool1", nn.MaxPool2d(kernel_size=3,stride=2,padding=1))
             ]) 
+
         num_pool_so_far =0 #for debugging
         self.channel_counts=[ first_layer_num_convs]#initial number of channels entering ith fire layer (labeled i+2 to match paper)
         for i in range(num_fires):
@@ -691,7 +705,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 elif config.mode == "next_fire":
                     name = "next_fire{}".format(i+2)
                     survival_prob = 1-0.5*i/num_fires 
-                    to_add = NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type )
+                    to_add = NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type, bypass_first_last = config.next_fire_bypass_first_last )
                     if config.excitation_shake_shake:
                         to_add2= NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type )
                 elif config.mode == "bnnfire":
@@ -746,6 +760,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                     layer_dict["final_convrelu"]=nn.LeakyReLU()
                 if config.proxy_context_type == "no_context":
                     layer_dict["final_conv"]=nn.Conv2d(self.channel_counts[-1], config.out_dim, kernel_size=1) 
+                elif config.bypass_first_last:
+                    layer_dict["final_conv"]=proxy_ctx.bypass(nn.Conv2d(self.channel_counts[-1], config.out_dim, kernel_size=1)) 
                 else:
                     layer_dict["final_conv"]=proxy_ctx.wrap(nn.Conv2d(self.channel_counts[-1], config.out_dim, kernel_size=1)) 
             else: 
