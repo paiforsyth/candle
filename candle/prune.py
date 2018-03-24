@@ -28,7 +28,7 @@ class WeightMaskGroup(ProxyDecorator):
         self._frozen_samples = self.concrete_fn().clamp(0, 1).detach().data.reify(flat=True)
 
     def _build_masks(self, init_value, sizes, randomized_eval=False):
-        log_alpha_mean=2 #added by Peter
+        log_alpha_mean=0.5 #added by Peter
         if self.stochastic:
             self.concrete_fn = HardConcreteFunction.build(self.layer, sizes,log_alpha_mean, randomized_eval=randomized_eval)
             return self.concrete_fn.parameters()
