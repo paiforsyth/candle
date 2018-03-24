@@ -134,7 +134,7 @@ class HardConcreteFunction(Function):
         self.randomized_eval = randomized_eval
 
     def __call__(self):
-        self.beta.data.clamp_(1E-8, 1E8)
+        #self.beta.data.clamp_(1E-8, 1E8)
         self.alpha.data.clamp_(1E-8, 1E8)
         if self.context.training or self.randomized_eval:
             u = self.alpha.apply_fn(lambda x: x.clone().uniform_()) #note alpha only used to get the right size here.  The draws are from uniform [0,1]
@@ -156,7 +156,7 @@ class HardConcreteFunction(Function):
         if not isinstance(sizes, Package):
             sizes = Package([sizes])
         alpha = sizes.apply_fn(lambda x: nn.Parameter(torch.Tensor(x).normal_(log_alpha_mean, 0.01).exp()))
-        beta = sizes.apply_fn(lambda x: nn.Parameter(torch.Tensor(x).fill_(2 / 3)))
+        beta =2/3 #sizes.apply_fn(lambda x: nn.Parameter(torch.Tensor(x).fill_(2 / 3)))
         return cls(context, alpha, beta, **kwargs)
 
 class RNNMask(WeightMaskGroup):
