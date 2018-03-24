@@ -28,8 +28,9 @@ class WeightMaskGroup(ProxyDecorator):
         self._frozen_samples = self.concrete_fn().clamp(0, 1).detach().data.reify(flat=True)
 
     def _build_masks(self, init_value, sizes, randomized_eval=False):
+        log_alpha_mean=2 #added by Peter
         if self.stochastic:
-            self.concrete_fn = HardConcreteFunction.build(self.layer, sizes, randomized_eval=randomized_eval)
+            self.concrete_fn = HardConcreteFunction.build(self.layer, sizes,log_alpha_mean randomized_eval=randomized_eval)
             return self.concrete_fn.parameters()
         else:
             return Package([nn.Parameter(init_value * torch.ones(sizes))])
@@ -136,24 +137,24 @@ class HardConcreteFunction(Function):
         self.beta.data.clamp_(1E-8, 1E8)
         self.alpha.data.clamp_(1E-8, 1E8)
         if self.context.training or self.randomized_eval:
-            u = self.alpha.apply_fn(lambda x: x.clone().uniform_())
+            u = self.alpha.apply_fn(lambda x: x.clone().uniform_()) #note alpha only used to get the right size here.  The draws are from uniform [0,1]
             s = (u.log() - (1 - u).log() + self.alpha.log()) / (self.beta + 1E-6)
             mask = s.sigmoid() * (self.zeta - self.gamma) + self.gamma
         else:
             mask = self.alpha.log().sigmoid() * (self.zeta - self.gamma) + self.gamma
         return mask
 
-    def cdf_gt0(self):
+    def cdf_gt0(self): #greater than 0
         return (self.alpha.log() - self.beta * np.log(-self.gamma / self.zeta)).sigmoid()
 
     def parameters(self):
         return Package([self.alpha, self.beta])
 
     @classmethod
-    def build(cls, context, sizes, **kwargs):
+    def build(cls, context, sizes,log_alpha_mean **kwargs):
         if not isinstance(sizes, Package):
             sizes = Package([sizes])
-        alpha = sizes.apply_fn(lambda x: nn.Parameter(torch.Tensor(x).normal_(0, 0.01).exp()))
+        alpha = sizes.apply_fn(lambda x: nn.Parameter(torch.Tensor(x).normal_(log_alpha_mean, 0.01).exp()))
         beta = sizes.apply_fn(lambda x: nn.Parameter(torch.Tensor(x).fill_(2 / 3)))
         return cls(context, alpha, beta, **kwargs)
 
@@ -165,7 +166,7 @@ class RNNMask(WeightMaskGroup):
     def build_masks(self, init_value): # TODO: bidirectional support
         sizes = self.child.sizes.reify()
         self._expand_size = Package([[size[1][0] // size[1][1]] * 4 for size in sizes])
-        mask_sizes = [size[1][1] for size in sizes]
+         mask_sizes = [size[1][1] for size in sizes]
         return self._build_masks(init_value, mask_sizes, randomized_eval=True)
 
     def expand_masks(self):
