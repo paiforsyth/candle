@@ -846,7 +846,7 @@ class SqueezeNet(serialmodule.SerializableModule):
 
     def train(self, mode=True):
         super().train(mode)
-        if isinstance(self.proxy_ctx, candle.prune.GroupPruneContext) and self.proxy_ctx.stochastic:
+        if isinstance(self.proxy_ctx, candle.prune.GroupPruneContext) and self.proxy_ctx.stochastic and self.freeze_hard_concrete_for_testing:
             if mode == True:
                 self.proxy_ctx.unfreeze()
             else:
