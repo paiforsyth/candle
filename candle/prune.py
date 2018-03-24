@@ -30,7 +30,7 @@ class WeightMaskGroup(ProxyDecorator):
     def _build_masks(self, init_value, sizes, randomized_eval=False):
         log_alpha_mean=2 #added by Peter
         if self.stochastic:
-            self.concrete_fn = HardConcreteFunction.build(self.layer, sizes,log_alpha_mean randomized_eval=randomized_eval)
+            self.concrete_fn = HardConcreteFunction.build(self.layer, sizes,log_alpha_mean, randomized_eval=randomized_eval)
             return self.concrete_fn.parameters()
         else:
             return Package([nn.Parameter(init_value * torch.ones(sizes))])
