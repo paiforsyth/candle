@@ -43,7 +43,7 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
         dim=layer.weight.data.shape
         mults=dim[0]*dim[1]*dim[2]*dim[3]*img_h*img_w
         logging.debug("found bypassed conv layer.  Reporting "+str(mults)+ " mults")
-        return mults, layer.weight[0], img_h, img_w
+        return mults, dim[0], img_h, img_w
 
         
 
