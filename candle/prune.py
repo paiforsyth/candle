@@ -361,7 +361,10 @@ class GroupPruneContext(PruneContext):
         layer = super().compose(layer, **kwargs)
         if isinstance(layer, ProxyConv2d):
             assert layer.weight_provider.sizes.reify()[0][0] % layer.groups == 0
-            conv_group_size = layer.weight_provider.sizes.reify()[0][0] / layer.groups
+            if layer.groups == 1:
+                conv_group_size = 1
+            else:
+                conv_group_size = layer.weight_provider.sizes.reify()[0][0] / layer.groups
         else:
             conv_group_size = -1
         layer.hook_weight(self.find_mask_type(type(layer), kwargs.get("prune", "out"), conv_group_size = conv_group_size) , stochastic=self.stochastic)
