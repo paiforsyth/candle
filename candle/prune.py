@@ -185,6 +185,7 @@ class RNNMask(WeightMaskGroup):
         mask_package = Package([[m] * 4 for m in mask.reify()])
         expand_weight = self.child.sizes.apply_fn(expand_mask, mask_package, self._expand_size)
         return expand_weight
+
 class ConvGroupChannel2DMask(WeightMaskGroup): #for zeroing entire groups. e.g. in resnext 
      def __init__(self, layer, child,conv_group_size, **kwargs):
         self.conv_group_size = int(conv_group_size)

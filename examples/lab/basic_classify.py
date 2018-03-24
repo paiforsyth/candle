@@ -341,7 +341,7 @@ def run(args, ensemble_test=False):
    if args.prune_trained:
        context.model.proxy_ctx.prune(args.prune_trained_pct)
        n_unpruned = context.model.proxy_ctx.count_unpruned()
-       logging.info("Unpruned parameters: "+str(n_unpruned))
+       logging.info("Unpruned masks: "+str(n_unpruned))
        context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
        return
 
@@ -438,7 +438,7 @@ def run(args, ensemble_test=False):
         logging.info("Finished epoch number "+ str(epoch_count+1) +  " of " +str(args.num_epochs)+".  Accuracy is "+ str(eval_score) +".")
         if args.report_unpruned:
             n_unpruned = context.model.proxy_ctx.count_unpruned()
-            logging.info("Unpruned parameters: "+str(n_unpruned))
+            logging.info("Unpruned masks: "+str(n_unpruned))
             context.tb_writer.write_unpruned_params(n_unpruned)
            
         if args.enable_pruning: 
