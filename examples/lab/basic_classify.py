@@ -426,7 +426,7 @@ def run(args, ensemble_test=False):
              #added tor try to clear computation graph after every eppoch
         del loss
         del scores
-
+        model.eval()
         epoch_duration = time.time() - epoch_start_time
         context.tb_writer.write_data_per_second( context.train_size/epoch_duration)
         if args.param_difs:

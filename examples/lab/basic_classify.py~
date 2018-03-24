@@ -502,7 +502,7 @@ def run(args, ensemble_test=False):
             else:
                 raise Exception("Unknown Scheduler")
 
-            if args.count_multipliesi_every_cycle:
+            if args.count_multiplies_every_cycle:
                 if args.dataset_for_classification == "cifar_challenge":
                     img_h=32
                     img_w=32
