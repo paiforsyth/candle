@@ -198,6 +198,11 @@ class _ProxyConvNd(ProxyLayer):
             #effective_out= base_output_channels -num_zeros
             logging.debug(" effective output channels is "+str(effective_out))
             return effective_out
+        elif isinstance(self.weight_provider, prune.ConvGroupChannel2DMask):
+            unpruned_masks = self.weight_provider.mask_unpruned[0] 
+            effective_out = unpruned_masks * self.weight_provider.conv_group_size
+            logging.debug(" effective output channels is {}*{}={}".format(unpruned_masks,self.weight_provider.conv_group_size,effective_out) )
+            return effective_out
         else:
             raise Exception("unknown weight provider type")
 
@@ -211,11 +216,13 @@ class ProxyConv2d(_ProxyConvNd):
         super().__init__(weight_provider, F.conv2d, **kwargs)
 
     def multiplies(self,img_h, img_w, input_channels):
-        assert(self.groups == 1) #groups not implemented yet
         w_dim = self.weight_provider.sizes.reify()[0]
         effective_out = self.effective_output_channels() 
-        mults= img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3]
-        logging.debug("number of mults is {}*{}*{}*{}*{}*{} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],mults)  )
+        mults= img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3]/self.groups
+        logging.debug("number of mults is {}*{}*{}*{}*{}*{} / {} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],self.groups,mults)  )
+        if effective_out == 16:
+            pass
+            #import pdb; pdb.set_trace()
         return mults, effective_out, img_h, img_w
 
 class ProxyConv1d(_ProxyConvNd):

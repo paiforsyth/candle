@@ -140,7 +140,9 @@ class Context(object):
                 continue
             try:
                 wrapped = self.wrap(layer,**kwargs)
-            except ValueError:
+            except ValueError as e:
+                if(str(e) != "Unsupported!" ):
+                    raise e
                 wrapped = self.bypass(layer)
             wrapped_layer_dict[name] = wrapped 
         return wrapped_layer_dict

@@ -41,10 +41,8 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
         return 0, input_channels, out_h, out_w 
 
     #see if layer implements a multiplies method
-    try:
+    if getattr(layer,"multiplies",None) is not None:
         return layer.multiplies(img_h=img_h, img_w=img_w, input_channels = input_channels)
-    except AttributeError:
-        pass
     #see if layer is iterable
     total=0
     sublayer_channels = input_channels

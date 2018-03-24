@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-
+import functools
 from .context import *
 from .estimator import Function
 from .nested import *
@@ -183,13 +183,13 @@ class RNNMask(WeightMaskGroup):
         expand_weight = self.child.sizes.apply_fn(expand_mask, mask_package, self._expand_size)
         return expand_weight
 class ConvGroupChannel2DMask(WeightMaskGroup): #for zeroing entire groups. e.g. in resnext 
-     def __init__(self, layer, child, conv_group_size, **kwargs):
+     def __init__(self, layer, child,conv_group_size, **kwargs):
+        self.conv_group_size = int(conv_group_size)
         super().__init__(layer, child, **kwargs)
-        self.conv_group_size = conv_group_size
 
      def build_masks(self, init_value):
         assert self.child.sizes.reify()[0][0] % self.conv_group_size == 0
-        return self._build_masks(init_value, self.child.sizes.reify()[0][0]/self.conv_group_size )
+        return self._build_masks(init_value, self.child.sizes.reify()[0][0]//self.conv_group_size )
 
      def split(self, root):
         param = root.parameters()[0]
@@ -359,7 +359,12 @@ class GroupPruneContext(PruneContext):
 
     def compose(self, layer, **kwargs):
         layer = super().compose(layer, **kwargs)
-        layer.hook_weight(self.find_mask_type(type(layer), kwargs.get("prune", "out")), stochastic=self.stochastic)
+        if isinstance(layer, ProxyConv2d):
+            assert layer.weight_provider.sizes.reify()[0][0] % layer.groups == 0
+            conv_group_size = layer.weight_provider.sizes.reify()[0][0] / layer.groups
+        else:
+            conv_group_size = -1
+        layer.hook_weight(self.find_mask_type(type(layer), kwargs.get("prune", "out"), conv_group_size = conv_group_size) , stochastic=self.stochastic)
         return layer
 
     def l0_loss(self, lambd):
@@ -379,13 +384,19 @@ class GroupPruneContext(PruneContext):
         for mask in group_masks:
             mask.unfreeze()
 
-    def find_mask_type(self, layer_type, prune="out"):
+    def find_mask_type(self, layer_type, prune="out", conv_group_size=-1 ):
+        #import pdb; pdb.set_trace()
         if layer_type == ProxyLinear and prune == "out":
             return LinearRowMask
         elif layer_type == ProxyLinear and prune == "in":
             return LinearColMask
-        elif layer_type == ProxyConv2d  and prune == "out":
+        elif layer_type == ProxyConv2d  and prune == "out" and conv_group_size ==-1:
             return Channel2DMask
+        elif layer_type == ProxyConv2d  and prune == "out" and conv_group_size >= 1:
+            logging.info("creating ConvGroupMask with conv_group_size="+str(conv_group_size))
+            #import pdb; pdb.set_trace()
+            construct= functools.partial( ConvGroupChannel2DMask, conv_group_size =  conv_group_size )
+            return construct
         elif layer_type == ProxyRNN:
             return RNNMask
         else:

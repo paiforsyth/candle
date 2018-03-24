@@ -173,7 +173,6 @@ class NextFire(serialmodule.SerializableModule):
             layer_dict = proxy_ctx.wrap_dict(layer_dict)
         if proxy_mode == "group_prune_context":
             logging.info("wrapping layers for channel-wise pruning")
-            assert(groups==1) #convolutional groupwise pruning not implemented yet
             layer_dict = proxy_ctx.wrap_dict(layer_dict)
         elif proxy_mode == "l0reg_context":
             logging.info("wrapping layers using a proxy context for l0 regularization  pruning")
@@ -243,7 +242,7 @@ class NextFire(serialmodule.SerializableModule):
     def multiplies(self,img_h, img_w, input_channels):
         assert not self.shake_shake and not self.shakedrop and not self.stochastic_depth
         mults, _,_,_ =  count_approx_multiplies(layer=self.seq, img_h=img_h, img_w=img_w,input_channels=input_channels)        
-        return mults, input_channels,img_h ,img_w #residual branch restores effective_input_channels
+        return mults, self.out_channels,img_h ,img_w #residual branch means that we get the full number of out_channels even if we pruned some
         
 
 class WideResFire(serialmodule.SerializableModule):
@@ -400,7 +399,8 @@ class ExcitationFire(serialmodule.SerializableModule):
         compress_mults, compress_out_dim = self.compress.multiplies(  effective_input_dim = input_channels )
         expand_mults, _ = self.expand.multiplies(effective_input_dim = compress_out_dim)
         wrapped_mults, _,out_h, out_w = count_approx_multiplies(self.wrapped,img_h=img_h, img_w=img_w, input_channels=input_channels)
-        return compress_mults + wrapped_mults + expand_mults, input_channels,img_h, img_w
+        return compress_mults + wrapped_mults + expand_mults, self.output_channels,img_h, img_w
+    #existance of residual branch implies we get full complement of output channels
 
 
 class ScaleLayer(serialmodule.SerializableModule):
