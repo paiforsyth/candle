@@ -166,7 +166,7 @@ class RNNMask(WeightMaskGroup):
     def build_masks(self, init_value): # TODO: bidirectional support
         sizes = self.child.sizes.reify()
         self._expand_size = Package([[size[1][0] // size[1][1]] * 4 for size in sizes])
-         mask_sizes = [size[1][1] for size in sizes]
+        mask_sizes = [size[1][1] for size in sizes]
         return self._build_masks(init_value, mask_sizes, randomized_eval=True)
 
     def expand_masks(self):
