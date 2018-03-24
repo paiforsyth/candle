@@ -362,7 +362,7 @@ class GroupPruneContext(PruneContext):
         if isinstance(layer, ProxyConv2d):
             assert layer.weight_provider.sizes.reify()[0][0] % layer.groups == 0
             if layer.groups == 1:
-                conv_group_size = 1
+                conv_group_size =-1
             else:
                 conv_group_size = layer.weight_provider.sizes.reify()[0][0] / layer.groups
         else:
