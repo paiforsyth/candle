@@ -151,7 +151,7 @@ class HardConcreteFunction(Function):
         return Package([self.alpha, self.beta])
 
     @classmethod
-    def build(cls, context, sizes,log_alpha_mean **kwargs):
+    def build(cls, context, sizes,log_alpha_mean, **kwargs):
         if not isinstance(sizes, Package):
             sizes = Package([sizes])
         alpha = sizes.apply_fn(lambda x: nn.Parameter(torch.Tensor(x).normal_(log_alpha_mean, 0.01).exp()))
