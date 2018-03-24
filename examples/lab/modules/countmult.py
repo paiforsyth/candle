@@ -40,7 +40,8 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
         logging.debug("returning 0 multiplies.  Changing image dimension to "+str(out_h)+" by "+str(out_w))
         return 0, input_channels, out_h, out_w 
     if isinstance(layer, nn.Conv2d):
-        mults=layer.weight[0]*layer.weight[1]*layer.weight[2]*layer.weight[3]*img_h*img_w
+        dim=layer.weight.data.shape
+        mults=dim[0]*dim[1]*dim[2]*dim[3]*img_h*img_w
         logging.debug("found bypassed conv layer.  Reporting "+str(mults)+ " mults")
         return mults, layer.weight[0], img_h, img_w
 
