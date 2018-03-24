@@ -148,7 +148,8 @@ class HardConcreteFunction(Function):
         return (self.alpha.log() - self.beta * np.log(-self.gamma / self.zeta)).sigmoid()
 
     def parameters(self):
-        return Package([self.alpha, self.beta])
+        return Package([self.alpha]) 
+        #return Package([self.alpha, self.beta])
 
     @classmethod
     def build(cls, context, sizes,log_alpha_mean, **kwargs):
