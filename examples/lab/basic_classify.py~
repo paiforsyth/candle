@@ -355,7 +355,7 @@ def run(args, ensemble_test=False):
        if args.factorize_trained_method == "svd":
             logging.info("svd factorizing model")
             context.model.proxy_ctx.save_samples_all()
-
+            with torch.no_grad():
                 for i,(batch_in, *other) in enumerate(context.train_loader): 
                     if i>=1000:
                         break
