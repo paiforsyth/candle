@@ -40,7 +40,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
             weights = self.weight_provider().reify()
             y= self.conv_fn(x, *weights, **self._conv_kwargs)
             if self.save_samples:
-                self.saved_samples_list.append(y)
+                self.saved_samples_list.extend(y.split(1))
             return y
 
     def multiplies(self,img_h, img_w, input_channels):
