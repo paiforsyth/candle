@@ -1,4 +1,4 @@
-ARGFILE=./sh/argfiles/small_res_net
+ARGFILE=./sh/argfiles/ultrasmall
 RESUME_FILENAME=21_March_2018_Wednesday_23_40_27anneal-medium_endofcycle_checkpoint_3
 SAVE_PREFIX=res_net_smallm
 PRUNE_PCT=10
