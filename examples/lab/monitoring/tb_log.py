@@ -65,5 +65,5 @@ class TBWriter(object):
         self.upp_idx+=1 
 
     def write_multiplies(self, mults):
-        self.writer.add_scalar("{}/approx_multiplies".format(self.run_name), mult , self.mult_idx)
+        self.writer.add_scalar("{}/approx_multiplies".format(self.run_name), mults , self.mult_idx)
         self.mult_idx+=1 
