@@ -357,7 +357,7 @@ def run(args, ensemble_test=False):
              logging.info("svd factorizing model")
              context.model.proxy_ctx.save_samples_all()
              for i,(batch_in, *other) in enumerate(context.train_loader): 
-                    if i>=1000:
+                    if i>=20:
                         break
                     context.model(batch_in)
              context.model.proxy_ctx.factorize_all(strategy="svd",rank_prop=args.factorize_svd_rank_prop) 

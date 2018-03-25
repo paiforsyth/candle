@@ -346,6 +346,7 @@ def run(args, ensemble_test=False):
        return
 
    if args.factorize_trained:
+       context.model.eval()
        if args.dataset_for_classification == "cifar_challenge":
            img_h=32
            img_w=32
