@@ -67,7 +67,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         twod_dim = (w_dim[0], w_dim[1]*w_dim[2]*w_dim[3])
 
         self.factorize=True
-        weight_list = self.weight.provider.reify()
+        weight_list = self.weight_provider.reify()
         w_mat = weight_list[0].view(w_dim[0],-1)
         w_bias = weight_list[1]
 
