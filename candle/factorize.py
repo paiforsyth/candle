@@ -64,7 +64,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         assert not self.training
         self.factorize_mode="svd"
         w_dim = self.weight_provider.sizes.reify()[0]
-        twod_dim = (w_dim[0], w_dim[1]*w_dim[2]*wdim[3])
+        twod_dim = (w_dim[0], w_dim[1]*w_dim[2]*w_dim[3])
 
         self.factorize=True
         weight_list = self.weight.provider.reify()
@@ -76,12 +76,14 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
             target_rank = kwargs["target_rank"]
         elif "rank_prop" in kwargs.keys:
             target_rank =math.ceil( kwargs["rank_prop"] * w_dim[0])
+        else:
+            raise Exception("No target rank information")
 
        
 
         if sample_y is None:
-           assert saved_samples_list 
-           sample_y = nested.Package(saved_samples_list) 
+           assert self.saved_samples_list 
+           sample_y = nested.Package(self.saved_samples_list) 
         y_vec = sample_y.view(twod_dim[1],1)
         Y_unnormalized = torch.cat(y_vec.reify())
         y_mean = Y_unnormalized.mean(1) 
@@ -91,6 +93,8 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         self.W_prime_weights = (U.transpose(1,0)*w_mat).view(target_rank,w_dim[1], w_dim[2], w_dim[3])
         self.P_weights = U.view(w_dim[0], target_rank, 1, 1) 
         self.factorized_bias = U*U.transpose(1,0)*w_bias + (y_mean-U*U.tranpose(1,0)*y_mean) 
+
+        self.saved_samples_list= []
 
 
 class StdFactorizeContext(context.Context):
