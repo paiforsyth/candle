@@ -96,7 +96,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_bypass_first_last",action="store_true") #do not wrap first and last convolution in squeezenet`
     parser.add_argument("--squeezenet_next_fire_bypass_first_last",action="store_true") #do not wrap first and last convolution in nextfile with proxy contextg`
 
-    parser.add_argument("squeezenet_freeze_hard_concrete_for_testing",action="store_true")
+    parser.add_argument("--squeezenet_freeze_hard_concrete_for_testing",action="store_true")
 
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
@@ -626,6 +626,7 @@ class SqueezeNet(serialmodule.SerializableModule):
 
     def __init__(self, config):
         super().__init__()
+        from . import factorize
         self.freeze_hard_concrete_for_testing = config.freeze_hard_concrete_for_testing
         self.chunk_across_devices=config.chunk_across_devices
         if config.chunk_across_devices:
@@ -649,6 +650,8 @@ class SqueezeNet(serialmodule.SerializableModule):
             proxy_ctx = None
         elif config.proxy_context_type == "tanhbinarize_context":
             proxy_ctx = candle.quantize.TanhBinarizeContext() 
+        elif config.proxy_context_type == "stdfactorize_context":
+            proxy_ctx = candle.factorize.StdFactorizeContext()
         else:
             raise Exception("unknown proxy_context_type")
 

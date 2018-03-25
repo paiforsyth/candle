@@ -19,6 +19,7 @@ from candle.prune import PruneContext, GroupPruneContext
 import candle.context
 import candle.prune
 import candle.quantize
+import candle.factorize
    # Used ideas from
         # -pyramidnets by Han et al.
         # -resnext by Xie et al. (aggregated residual transformations) 
@@ -649,6 +650,8 @@ class SqueezeNet(serialmodule.SerializableModule):
             proxy_ctx = None
         elif config.proxy_context_type == "tanhbinarize_context":
             proxy_ctx = candle.quantize.TanhBinarizeContext() 
+        elif config.proxy_context_type == "stdfactorize_context":
+            proxy_ctx = candle.factorize.StdFactorizeContext()
         else:
             raise Exception("unknown proxy_context_type")
 

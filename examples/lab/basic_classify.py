@@ -345,6 +345,28 @@ def run(args, ensemble_test=False):
        context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
        return
 
+   if args.factorize_trained:
+       if args.dataset_for_classification == "cifar_challenge":
+           img_h=32
+           img_w=32
+           channels=3
+       logging.info("multiplies before factorization: "+ str(countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)))    
+       
+       if args.factorize_trained_method == "svd":
+            logging.info("svd factorizing model")
+            context.model.proxy_ctx.save_samples_all()
+            for i,(batch_in, *other) in enumerate(context.train_loader): 
+                if i>=1000:
+                    break
+                context.model(batch_in)
+            context.model.proxy_ctx.factorize_all(strategy="svd",rank_prop=args.factorize_svd_rank_prop) 
+            context.model.proxy_ctx.clear_samples_all()
+            logging.info("multiplies after factorization: "+ str(countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)))    
+            context.model.save(os.path.join( args.model_save_path, args.res_file+"_svd_factorize_" + str(args.factorize_svd_rank_prop) )  )
+       else:
+            raise Exception("Unknown factorization method")
+       return
+
    if args.count_multiplies:
        if args.dataset_for_classification == "cifar_challenge":
            img_h=32

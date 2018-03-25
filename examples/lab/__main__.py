@@ -96,7 +96,7 @@ def default_parser(parser=None):
 
     parser.add_argument("--report_unpruned",action="store_true") 
     
-    parser.add_argument("--proxy_context_type", type=str, choices=["no_context","identity_context", "prune_context", "group_prune_context", "l0reg_context", "tanhbinarize_context" ], default="no_context")
+    parser.add_argument("--proxy_context_type", type=str, choices=["no_context","identity_context", "prune_context", "group_prune_context", "l0reg_context", "tanhbinarize_context", "stdfactorize_context" ], default="no_context")
 
     parser.add_argument("--use_nograd",action="store_true") #use nograd instead of volatile 
 
@@ -123,6 +123,10 @@ def default_parser(parser=None):
 
 
     parser.add_argument("--use_all_params",action="store_true") #ie optimize over mask params
+    
+    parser.add_argument("--factorize_trained", action="store_true", help="factorize a trained model, then resave it")
+    parser.add_argument("--factorize_trained_method", choices=["svd"], default="svd")
+    parser.add_argument("--factorize_svd_rank_prop",type=float, default=0.5)
 
     return parser
 

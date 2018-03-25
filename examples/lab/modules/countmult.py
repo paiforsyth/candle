@@ -55,6 +55,7 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
     sublayer_channels = input_channels
     sublayer_h=img_h
     sublayer_w=img_w
+    # import pdb; pdb.set_trace()
     for sublayer in layer:
             sublayer_mult, sublayer_channels, sublayer_h, sublayer_w = count_approx_multiplies(sublayer, img_h = sublayer_h,img_w = sublayer_w,input_channels=  sublayer_channels)
             try:

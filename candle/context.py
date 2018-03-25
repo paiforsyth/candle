@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 
 from .proxy import *
-
 def read_cli_config():
     parser = argparse.ArgumentParser()
     return parser.parse_known_args()[0]
@@ -86,6 +85,7 @@ class Context(object):
         return list(itertools.chain.from_iterable(p.buffers() for p in filter(filter_fn, all_proxies)))
 
     def compose(self, layer, **cfg):
+        from . import factorize
         if isinstance(layer, ProxyLayer):
             return layer
 
@@ -101,6 +101,8 @@ class Context(object):
             if isinstance(layer, nn.Conv3d):
                 return ProxyConv3d(provider, **kwargs)
             elif isinstance(layer, nn.Conv2d):
+                if cfg.get("factorize_method", None) == "std":
+                    return factorize.StdFactorizeConv2d(provider,**kwargs) 
                 return ProxyConv2d(provider, **kwargs)
             elif isinstance(layer, nn.Conv1d):
                 return ProxyConv1d(provider, **kwargs)
