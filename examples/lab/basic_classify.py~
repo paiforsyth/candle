@@ -509,7 +509,7 @@ def run(args, ensemble_test=False):
                     channels=3
                     mults = countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)
                     print("Approx number of multiplies: ",mults )    
-                    context.tb_writer.write()
+                    context.tb_writer.write_multiplies(mults)
                 else:
                     raise Exception("dataset not supported for count_multiplies")
 
