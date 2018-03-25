@@ -74,7 +74,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
 
         if "target_rank" in kwargs.keys():
             target_rank = kwargs["target_rank"]
-        elif "rank_prop" in kwargs.keys:
+        elif "rank_prop" in kwargs.keys():
             target_rank =math.ceil( kwargs["rank_prop"] * w_dim[0])
         else:
             raise Exception("No target rank information")
