@@ -18,6 +18,7 @@ class TBWriter(object):
         self.param_dif_idx=0
         self.lr_idx=0
         self.upp_idx=0
+        self.mult_idx=0
 
     def write_hyperparams(self):
         #self.writer.add_text("hyperparams", " ".join(sys.argv))
@@ -60,5 +61,9 @@ class TBWriter(object):
         self.param_dif_idx+=1
     
     def write_unpruned_params(self, upp):
-        self.writer.add_scalar("{}/unpruned_params".format(self.run_name), upp , self.upp_idx)
+        self.writer.add_scalar("{}/unpruned_masks".format(self.run_name), upp , self.upp_idx)
         self.upp_idx+=1 
+
+def write_multiplies(self, mults):
+        self.writer.add_scalar("{}/approx_multiplies".format(self.run_name), mult , self.mult_idx)
+        self.mult_idx+=1 
