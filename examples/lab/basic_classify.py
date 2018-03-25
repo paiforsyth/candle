@@ -355,10 +355,11 @@ def run(args, ensemble_test=False):
        if args.factorize_trained_method == "svd":
             logging.info("svd factorizing model")
             context.model.proxy_ctx.save_samples_all()
-            for i,(batch_in, *other) in enumerate(context.train_loader): 
-                if i>=1000:
-                    break
-                context.model(batch_in)
+            with torch.no_grad():
+                for i,(batch_in, *other) in enumerate(context.train_loader): 
+                    if i>=1000:
+                        break
+                    context.model(batch_in)
             context.model.proxy_ctx.factorize_all(strategy="svd",rank_prop=args.factorize_svd_rank_prop) 
             context.model.proxy_ctx.clear_samples_all()
             logging.info("multiplies after factorization: "+ str(countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)))    
