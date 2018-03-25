@@ -63,7 +63,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         '''
         assert not self.training
         self.factorize_mode="svd"
-        w_dim = weight_provider.sizes.reify()[0]
+        w_dim = self.weight_provider.sizes.reify()[0]
         twod_dim = (w_dim[0], w_dim[1]*w_dim[2]*wdim[3])
 
         self.factorize=True
