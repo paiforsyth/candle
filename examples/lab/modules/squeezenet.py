@@ -163,7 +163,7 @@ class NextFire(serialmodule.SerializableModule):
 
     def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None,proxy_mode = None, bypass_first_last=True):
         super().__init__()
-        if proxy_mode is not None:
+        if proxy_mode is not None and proxy_mode!="no_context":
             bn_wrapper = proxy_ctx.bypass
             if bypass_first_last:
                 first_last_wrapper = proxy_ctx.bypass

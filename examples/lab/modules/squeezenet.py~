@@ -19,6 +19,7 @@ from candle.prune import PruneContext, GroupPruneContext
 import candle.context
 import candle.prune
 import candle.quantize
+import candle.factorize
    # Used ideas from
         # -pyramidnets by Han et al.
         # -resnext by Xie et al. (aggregated residual transformations) 
@@ -626,7 +627,6 @@ class SqueezeNet(serialmodule.SerializableModule):
 
     def __init__(self, config):
         super().__init__()
-        from . import factorize
         self.freeze_hard_concrete_for_testing = config.freeze_hard_concrete_for_testing
         self.chunk_across_devices=config.chunk_across_devices
         if config.chunk_across_devices:
