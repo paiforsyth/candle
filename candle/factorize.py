@@ -80,12 +80,12 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
             raise Exception("No target rank information")
 
        
+        import pdb; pdb.set_trace()
         if sample_y is None:
            assert self.saved_samples_list 
            images =  nested.Package(self.saved_samples_list)  
             #todo: Need to convert each position in the image into a different y vector
            sample_y=images.split(0)
-        import pdb; pdb.set_trace()
         y_vec = sample_y.view(twod_dim[1],1)
         Y_unnormalized = torch.cat(y_vec.reify(flat=True))
         y_mean = Y_unnormalized.mean(1) 
