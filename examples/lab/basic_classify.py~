@@ -346,6 +346,7 @@ def run(args, ensemble_test=False):
        return
 
    if args.factorize_trained:
+       context.model.eval()
        if args.dataset_for_classification == "cifar_challenge":
            img_h=32
            img_w=32
@@ -399,9 +400,8 @@ def run(args, ensemble_test=False):
             scores= context.model(batch_in,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch_in)  #should have dimension batchsize by number of classes
             
             if args.born_again_enable:
-                previous_incarnation_scores= previous_incarnation_context.model(batch_in,pad_mat) if previous_incarnation_context.data_type == DataType.SEQUENCE else previous_incarnation_context.model(batch_in)
-                #smooth scores
-                #previous_incarnation_scores=0.5*previous_incarnation_scores +0.5*torch.mean(previous_incarnation_scores)
+                with torch.no_grad():
+                    previous_incarnation_scores= previous_incarnation_context.model(batch_in,pad_mat) if previous_incarnation_context.data_type == DataType.SEQUENCE else previous_incarnation_context.model(batch_in)
 
 
             #move categories to same device as scores
