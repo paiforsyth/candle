@@ -126,7 +126,7 @@ def default_parser(parser=None):
     
     parser.add_argument("--factorize_trained", action="store_true", help="factorize a trained model, then resave it")
     parser.add_argument("--factorize_trained_method", choices=["svd"], default="svd")
-    parser.add_argument("--factorize_svd_rank_prop",type=float, default=0.5)
+    parser.add_argument("--factorize_svd_rank_prop",type=float, default=0.25)
 
     return parser
 

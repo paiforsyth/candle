@@ -31,6 +31,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         #save samples from forward pass for use in factorization
         self.save_samples=False
         self.saved_samples_list=[]
+
     def on_forward(self, x):
         if self.factorize:
            
@@ -40,9 +41,13 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
             weights = self.weight_provider().reify()
             y= self.conv_fn(x, *weights, **self._conv_kwargs)
             if self.save_samples:
+                k=weights[0].shape[2]
+                #import pdb; pdb.set_trace()
+                assert(k == weights[0].shape[3]) #looking for square kernels
                 batchsplit_y = y.split(1)
+                #import pdb; pdb.set_trace()
                 for img in batchsplit_y:
-                    self.saved_samples_list.extend(img.split(1,dim=1))
+                    self.saved_samples_list.extend(extract_kbyk_list(img.squeeze(0),k=k))
             return y
 
     def multiplies(self,img_h, img_w, input_channels):
@@ -82,19 +87,18 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
             raise Exception("No target rank information")
 
        
-        import pdb; pdb.set_trace()
         if sample_y is None:
            assert self.saved_samples_list 
            sample_y = nested.Package(self.saved_samples_list)
         y_vec = sample_y.view(twod_dim[1],1)
-        Y_unnormalized = torch.cat(y_vec.reify(flat=True))
-        y_mean = Y_unnormalized.mean(1) 
+        Y_unnormalized = torch.cat(y_vec.reify(flat=True),1)
+        y_mean = Y_unnormalized.mean(dim = 1) 
         Y = Y_unnormalized - y_mean
         U,_,_ = torch.svd(Y)
         U=U[:,:target_rank] #truncate
-        self.W_prime_weights = (U.transpose(1,0)*w_mat).view(target_rank,w_dim[1], w_dim[2], w_dim[3])
+        self.W_prime_weights = (U.transpose(1,0).mm(w_mat)).view(target_rank,w_dim[1], w_dim[2], w_dim[3])
         self.P_weights = U.view(w_dim[0], target_rank, 1, 1) 
-        self.factorized_bias = U*U.transpose(1,0)*w_bias + (y_mean-U*U.tranpose(1,0)*y_mean) 
+        self.factorized_bias = U.mm( U.transpose(1,0)).mm(w_bias) + (y_mean-U.mm(U.transpose(1,0)).mm(y_mean)) 
 
         self.saved_samples_list= []
 
@@ -124,3 +128,29 @@ class StdFactorizeContext(context.Context):
         for proxy_layer in self.proxy_layers:
             proxy_layer.save_samples=False
             prox_layer.saved_samples_list=[]
+
+
+def extract_kbyk_list(img,k):
+   '''
+   Given a channels by k by k img
+   return a list consisting of vectors, each of which
+   is reshaped from a k by k spatial section of the image
+   '''
+
+   vectorlist=[]
+   channels = img.shape[0]
+   img_h = img.shape[1]
+   img_w = img.shape[2]
+   padding_size = max(math.floor(k/2),1)
+   kernel_extent = math.floor(k/2)
+   assert kernel_extent < k/2 #assume odd k
+   padding_h = img.new(channels, padding_size, img_w).fill_(0)
+   padding_w = img.new(channels,2*padding_size+ img_h, padding_size).fill_(0)
+
+   padded_img = torch.cat([padding_h, img, padding_h  ], dim=1 )
+   padded_img = torch.cat([padding_w, padded_img, padding_w  ], dim=2  )
+   for i in range(padding_size, padding_size+img_h):
+       for j in range(padding_size, padding_size+img_w):
+           vectorlist.append( (padded_img[:,i-kernel_extent:i+kernel_extent+1, j-kernel_extent:j+kernel_extent+1  ]).contiguous().view(-1,1)  ) #+1 neccesary since python does not include the endpoints of slices
+   return vectorlist
+
