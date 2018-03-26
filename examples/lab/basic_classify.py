@@ -13,6 +13,7 @@ import torch.nn.functional as F
 import torch
 import torch.optim.lr_scheduler
 import numpy as np
+from contextlib import suppress
 from torch.autograd import Variable
 
 
@@ -400,8 +401,11 @@ def run(args, ensemble_test=False):
             scores= context.model(batch_in,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch_in)  #should have dimension batchsize by number of classes
             
             if args.born_again_enable:
-                with torch.no_grad():
-                    previous_incarnation_scores = previous_incarnation_context.model(batch_in,pad_mat) if previous_incarnation_context.data_type == DataType.SEQUENCE else previous_incarnation_context.model(batch_in)
+                context = torch.no_grad() if args.use_no_grad else suppress 
+                batch_in_v=batch_in.clone()
+                batch_in_v.volatile=True
+                with context:
+                    previous_incarnation_scores = previous_incarnation_context.model(batch_in_v,pad_mat) if previous_incarnation_context.data_type == DataType.SEQUENCE else previous_incarnation_context.model(batch_in_v)
 
 
             #move categories to same device as scores
