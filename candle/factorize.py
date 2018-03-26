@@ -40,7 +40,9 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
             weights = self.weight_provider().reify()
             y= self.conv_fn(x, *weights, **self._conv_kwargs)
             if self.save_samples:
-                self.saved_samples_list.extend(y.split(1))
+                batchsplit_y = y.split(1)
+                for img in batchsplit_y:
+                    self.saved_samples_list.extend(img.split(1,dim=1))
             return y
 
     def multiplies(self,img_h, img_w, input_channels):
@@ -59,7 +61,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
 
     def do_svd_factorize(self,  sample_y=None, **kwargs ):
         '''
-        Sample y should be a package of output images produced by this layer.  If it is None, will try use the saved_samples_list
+        Sample y should be a package of 1 by 1 sections of the output produced by this layer.  If it is None, will try use the saved_samples_list
         '''
         assert not self.training
         self.factorize_mode="svd"
@@ -83,9 +85,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         import pdb; pdb.set_trace()
         if sample_y is None:
            assert self.saved_samples_list 
-           images =  nested.Package(self.saved_samples_list)  
-            #todo: Need to convert each position in the image into a different y vector
-           sample_y=images.split(1, dim=1)
+           sample_y = nested.Package(self.saved_samples_list)
         y_vec = sample_y.view(twod_dim[1],1)
         Y_unnormalized = torch.cat(y_vec.reify(flat=True))
         y_mean = Y_unnormalized.mean(1) 
