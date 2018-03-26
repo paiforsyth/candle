@@ -85,7 +85,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
            assert self.saved_samples_list 
            images =  nested.Package(self.saved_samples_list)  
             #todo: Need to convert each position in the image into a different y vector
-           sample_y=images.split(0)
+           sample_y=images.split(1, dim=1)
         y_vec = sample_y.view(twod_dim[1],1)
         Y_unnormalized = torch.cat(y_vec.reify(flat=True))
         y_mean = Y_unnormalized.mean(1) 
