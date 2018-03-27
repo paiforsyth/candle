@@ -87,7 +87,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         assert(sample_y.shape[0] < sample_y.shape[1])
         import pdb; pdb.set_trace()
         y_mean = sample_y.mean(dim = 1) 
-        Y = sample_y - y_mean
+        Y = sample_y - y_mean.view(-1,1)
         U,_,_ = torch.svd(Y)
         U=U[:,:target_rank] #truncate
         self.W_prime_weights = (U.transpose(1,0).mm(w_mat)).view(target_rank,w_dim[1], w_dim[2], w_dim[3])
