@@ -46,7 +46,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
             if self.save_samples:
                 self.saved_samples_mat=torch.cat([self.saved_samples_mat, 
                     y.transpose(1,0).contiguous().view(y.shape[1],-1).data 
-                    ])
+                    ],dim=1)
             return y
 
     def multiplies(self,img_h, img_w, input_channels):
