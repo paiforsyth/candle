@@ -362,6 +362,7 @@ class ExcitationFire(serialmodule.SerializableModule):
             self.expand2=nn.Linear(compressed_dim, out_channels)
             init_p(self)
         self.skipmode = skipmode
+
     def forward(self, x):
         z=torch.mean(x,3)
         z=torch.mean(z,2)
@@ -410,7 +411,7 @@ class ExcitationFire(serialmodule.SerializableModule):
         compress_mults, compress_out_dim = self.compress.multiplies(  effective_input_dim = input_channels )
         expand_mults, _ = self.expand.multiplies(effective_input_dim = compress_out_dim)
         wrapped_mults, _,out_h, out_w = count_approx_multiplies(self.wrapped,img_h=img_h, img_w=img_w, input_channels=input_channels)
-        return compress_mults + wrapped_mults + expand_mults, self.output_channels,img_h, img_w
+        return compress_mults + wrapped_mults + expand_mults, self.out_channels,img_h, img_w
     #existance of residual branch implies we get full complement of output channels
 
 
@@ -471,6 +472,12 @@ class ShuffleFire(serialmodule.SerializableModule):
             padding = Variable(out.data.new(out.data.shape[0],self.out_chan-self.in_chan,out.data.shape[2],out.data.shape[3]).fill_(0)) 
             out =out + torch.cat([x, padding], dim=1)
         return out
+
+
+    def multiplies(self, img_h, img_w, input_channels ):
+        return count_approx_multiplies([self.gconv1, self.sepconv, self.gconv2 ], img_h=img_h, img_w=img_w, input_channels=input_channels)
+         
+     
 
 
 

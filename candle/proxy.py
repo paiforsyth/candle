@@ -201,6 +201,7 @@ class _ProxyConvNd(ProxyLayer):
             logging.debug(" effective output channels is {}*{}={}".format(unpruned_masks,self.weight_provider.conv_group_size,effective_out) )
             return effective_out
         else:
+            import pdb; pdb.set_trace()
             raise Exception("unknown weight provider type")
 
 
