@@ -54,7 +54,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         if not self.factorize:
            mults = img_h*img_w*w_dim[2]*w_dim[3] * input_channels *effective_out
         elif self.factorize_mode == "svd":
-           rank = P_weights.shape[1]
+           rank = self.P_weights.shape[1]
            mults =  img_h*img_w*rank*effective_out + img_h*img_w*rank*w_dim[2]*w_dim[3]*input_channels
        
         return mults, effective_out, img_h, img_w 
