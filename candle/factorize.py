@@ -30,10 +30,8 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
 
         #save samples from forward pass for use in factorization
         self.save_samples=False
-        self.saved_samples_mat = torch.Tensor(sizes[0][0],1)
-    def cuda(self ):
-        super().cuda()
-        self.saved_samples_mat=self.saved_samples_mat.cuda()
+        self.saved_samples_mat = None
+
 
 
     def on_forward(self, x):
@@ -44,10 +42,8 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
             weights = self.weight_provider().reify()
             y= self.conv_fn(x, *weights, **self._conv_kwargs)
             if self.save_samples:
-                import pdb; pdb.set_trace()
-                self.saved_samples_mat=torch.cat([self.saved_samples_mat, 
-                    y.transpose(1,0).contiguous().view(y.shape[1],-1).data 
-                    ],dim=1)
+                y_reshaped = y.transpose(1,0).contiguous().view(y.shape[1],-1).data 
+                 self.saved_samples_mat = y_reshaped if self.saved_samples_mat is None else torch.cat([self.saved_samples_mat,y_reshaped],dim=1)
             return y
 
     def multiplies(self,img_h, img_w, input_channels):
