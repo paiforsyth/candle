@@ -88,7 +88,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         import pdb; pdb.set_trace()
         y_mean = sample_y.mean(dim = 1) 
         Y = sample_y - y_mean.view(-1,1)
-        U,_,_ = torch.svd(Y)
+        U,_,_ = torch.svd(Y.mm(Y.transpose(1,0)))
         U=U[:,:target_rank] #truncate
         self.W_prime_weights = (U.transpose(1,0).mm(w_mat)).view(target_rank,w_dim[1], w_dim[2], w_dim[3])
         self.P_weights = Varaible(U.view(w_dim[0], target_rank, 1, 1) )
