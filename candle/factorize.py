@@ -122,7 +122,7 @@ class StdFactorizeContext(context.Context):
     def clear_samples_all(self):
         for proxy_layer in self.proxy_layers:
             proxy_layer.save_samples=False
-            prox_layer.saved_samples_list=[]
+            proxy_layer.saved_samples_mat=None
 
 
 
