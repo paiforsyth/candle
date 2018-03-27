@@ -1,6 +1,7 @@
 import math
 import torch
 import torch.nn.functional as F
+from torch.autograd import Variable
 
 from . import proxy
 from . import context
@@ -85,14 +86,13 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         if sample_y is None:
            sample_y = self.saved_samples_mat
         assert(sample_y.shape[0] < sample_y.shape[1])
-        import pdb; pdb.set_trace()
         y_mean = sample_y.mean(dim = 1) 
         Y = sample_y - y_mean.view(-1,1)
         U,_,_ = torch.svd(Y.mm(Y.transpose(1,0)))
         U=U[:,:target_rank] #truncate
-        self.W_prime_weights = (U.transpose(1,0).mm(w_mat)).view(target_rank,w_dim[1], w_dim[2], w_dim[3])
-        self.P_weights = Varaible(U.view(w_dim[0], target_rank, 1, 1) )
-        self.factorized_bias = U.mm( U.transpose(1,0)).mm(w_bias) + (y_mean-U.mm(U.transpose(1,0)).mm(y_mean)) 
+        self.W_prime_weights = Variable((U.transpose(1,0).mm(w_mat)).view(target_rank,w_dim[1], w_dim[2], w_dim[3]))
+        self.P_weights = Variable(U.view(w_dim[0], target_rank, 1, 1) )
+        self.factorized_bias = Variable(U.mm( U.transpose(1,0)).mm(w_bias) + (y_mean-U.mm(U.transpose(1,0)).mm(y_mean))) 
 
         self.saved_samples_mat = self.saved_samples_mat.new(self.saves_samples_mat.shape[0],1) 
 
