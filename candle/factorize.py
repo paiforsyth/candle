@@ -30,26 +30,23 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
 
         #save samples from forward pass for use in factorization
         self.save_samples=False
-        self.saved_samples_list=[]
+        self.saved_samples_mat = torch.Tensor(sizes[0][0],1)
+    def cuda(self ):
+        super().cuda()
+        self.saved_samples_mat=self.saved_samples_mat.cuda()
+
 
     def on_forward(self, x):
-        if self.factorize:
-           
+        if self.factorize: 
            assert not self.training 
            return F.conv2d(F.conv2d(x, self.W_prime_weights,bias=None,**self.__conv__kwargs), self.P_weights, bias=self.factorized_bias )
         else:
             weights = self.weight_provider().reify()
             y= self.conv_fn(x, *weights, **self._conv_kwargs)
             if self.save_samples:
-                k=weights[0].shape[2]
-                #import pdb; pdb.set_trace()
-                assert(k == weights[0].shape[3]) #looking for square kernels
-                batchsplit_y = y.split(1)
-                #import pdb; pdb.set_trace()
-                for img in y.split(1,dim=0):
-                    for h_section in img.split(1,dim=2):
-                        for hw_section in h_section.split(1,dim=3):
-                            self.saved_samples_list.append(hw_section)
+                self.saved_samples_mat=torch.cat([self.saved_samples_mat, 
+                    y.transpose(1,0).contiguous().view(y.shape[1],-1).data 
+                    ])
             return y
 
     def multiplies(self,img_h, img_w, input_channels):
@@ -68,7 +65,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
 
     def do_svd_factorize(self,  sample_y=None, **kwargs ):
         '''
-        Sample y should be a package of 1 by 1 sections of the output produced by this layer.  If it is None, will try use the saved_samples_list
+        Sample y should be a package of 1 by 1 sections of the output produced by this layer.  If it is None, will try use the saved_samples
         '''
         assert not self.training
         self.factorize_mode="svd"
@@ -76,8 +73,8 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
 
         self.factorize=True
         weight_list = self.weight_provider().reify()
-        w_mat = weight_list[0].view(w_dim[0],-1)
-        w_bias = weight_list[1]
+        w_mat = weight_list[0].view(w_dim[0],-1).data
+        w_bias = weight_list[1].data
 
 
         if "target_rank" in kwargs.keys():
@@ -89,20 +86,17 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
 
        
         if sample_y is None:
-           assert self.saved_samples_list 
-           sample_y = nested.Package(self.saved_samples_list)
+           sample_y = self.saved_samples_mat
         import pdb; pdb.set_trace()
-        y_vec = sample_y.view(w_dim[0],1)
-        Y_unnormalized = torch.cat(y_vec.reify(flat=True),1)
-        y_mean = Y_unnormalized.mean(dim = 1) 
-        Y = Y_unnormalized - y_mean
+        y_mean = samples_y.mean(dim = 1) 
+        Y = sample_y - y_mean
         U,_,_ = torch.svd(Y)
         U=U[:,:target_rank] #truncate
         self.W_prime_weights = (U.transpose(1,0).mm(w_mat)).view(target_rank,w_dim[1], w_dim[2], w_dim[3])
-        self.P_weights = U.view(w_dim[0], target_rank, 1, 1) 
+        self.P_weights = Varaible(U.view(w_dim[0], target_rank, 1, 1) )
         self.factorized_bias = U.mm( U.transpose(1,0)).mm(w_bias) + (y_mean-U.mm(U.transpose(1,0)).mm(y_mean)) 
 
-        self.saved_samples_list= []
+        self.saved_samples_mat = self.saved_samples_mat.new(self.saves_samples_mat.shape[0],1) 
 
 
 class StdFactorizeContext(context.Context):
