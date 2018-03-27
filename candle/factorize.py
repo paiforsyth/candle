@@ -92,7 +92,6 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         U=U[:,:target_rank] #truncate
         self.W_prime_weights = Variable((U.transpose(1,0).mm(w_mat)).view(target_rank,w_dim[1], w_dim[2], w_dim[3]))
         self.P_weights = Variable(U.view(w_dim[0], target_rank, 1, 1) )
-        import pdb; pdb.set_trace()
         M=U.mm(U.transpose(1,0))
         self.factorized_bias = Variable(M.mv(w_bias) + y_mean - M.mv(y_mean)  ) 
 
