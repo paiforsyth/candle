@@ -48,7 +48,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
                 #import pdb; pdb.set_trace()
                 for img in y.split(1,dim=0):
                     for h_section in img.split(1,dim=2):
-                        for hw_section im h_section.split(1,dim=3)
+                        for hw_section in h_section.split(1,dim=3):
                             self.saved_samples_list.append(hw_section)
             return y
 
