@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from . import proxy
 from . import context
 from . import nested
-
+#big mistakes below.  Need to chuck output images allong spatial dimensions
 class StdFactorizeConv2d(proxy.ProxyLayer):
     def __init__(self, weight_provider , stride=1, padding=0, dilation=1, groups=1, **kwargs):
         super().__init__(weight_provider, **kwargs)
@@ -46,8 +46,10 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
                 assert(k == weights[0].shape[3]) #looking for square kernels
                 batchsplit_y = y.split(1)
                 #import pdb; pdb.set_trace()
-                for img in batchsplit_y:
-                    self.saved_samples_list.extend(extract_kbyk_list(img.squeeze(0),k=k))
+                for img in y.split(1,dim=0):
+                    for h_section in img.split(1,dim=2):
+                        for hw_section im h_section.split(1,dim=3)
+                            self.saved_samples_list.append(hw_section)
             return y
 
     def multiplies(self,img_h, img_w, input_channels):
@@ -71,7 +73,6 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         assert not self.training
         self.factorize_mode="svd"
         w_dim = self.weight_provider.sizes.reify()[0]
-        twod_dim = (w_dim[0], w_dim[1]*w_dim[2]*w_dim[3])
 
         self.factorize=True
         weight_list = self.weight_provider().reify()
@@ -90,7 +91,8 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         if sample_y is None:
            assert self.saved_samples_list 
            sample_y = nested.Package(self.saved_samples_list)
-        y_vec = sample_y.view(twod_dim[1],1)
+        import pdb; pdb.set_trace()
+        y_vec = sample_y.view(w_dim[0],1)
         Y_unnormalized = torch.cat(y_vec.reify(flat=True),1)
         y_mean = Y_unnormalized.mean(dim = 1) 
         Y = Y_unnormalized - y_mean
@@ -130,6 +132,8 @@ class StdFactorizeContext(context.Context):
             prox_layer.saved_samples_list=[]
 
 
+
+#wrong an unnecesary
 def extract_kbyk_list(img,k):
    '''
    Given a channels by k by k img
