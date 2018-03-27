@@ -84,8 +84,9 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
        
         if sample_y is None:
            sample_y = self.saved_samples_mat
+        assert(sample_y.shape[0] < sample_y.shape[1])
         import pdb; pdb.set_trace()
-        y_mean = samples_y.mean(dim = 1) 
+        y_mean = sample_y.mean(dim = 1) 
         Y = sample_y - y_mean
         U,_,_ = torch.svd(Y)
         U=U[:,:target_rank] #truncate
