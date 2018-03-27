@@ -44,6 +44,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
             weights = self.weight_provider().reify()
             y= self.conv_fn(x, *weights, **self._conv_kwargs)
             if self.save_samples:
+                imprt pdb; pdb.set_trace()
                 self.saved_samples_mat=torch.cat([self.saved_samples_mat, 
                     y.transpose(1,0).contiguous().view(y.shape[1],-1).data 
                     ],dim=1)
