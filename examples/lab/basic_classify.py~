@@ -401,7 +401,7 @@ def run(args, ensemble_test=False):
             scores= context.model(batch_in,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch_in)  #should have dimension batchsize by number of classes
             
             if args.born_again_enable:
-                context = torch.no_grad() if args.use_no_grad else surpress 
+                context = torch.no_grad() if args.use_no_grad else suppress 
                 batch_in_v=batch_in.clone()
                 batch_in_v.volatile=True
                 with context:
