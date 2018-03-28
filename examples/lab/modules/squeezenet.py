@@ -305,9 +305,9 @@ class ZagFire(serialmodule.SerializableModule):
          self.out_channels = out_channels
          if proxy_mode is not None and proxy_mode!="no_context":
             bn_wrapper = proxy_ctx.bypass
-            if bypass_first:
-                first_wrapper = proxy_ctx.bypass
-                last_wrapper = proxy_ctx.wrap
+            if bypass_last:
+                first_wrapper = proxy_ctx.wrap
+                last_wrapper = proxy_ctx.bypass
             else:
                 first_wrapper = last_wrapper = proxy_ctx.bypass
          else:
