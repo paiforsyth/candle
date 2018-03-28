@@ -464,7 +464,7 @@ def run(args, ensemble_test=False):
         context.tb_writer.write_accuracy(eval_score)
         logging.info("Finished epoch number "+ str(epoch_count+1) +  " of " +str(args.num_epochs)+".  Accuracy is "+ str(eval_score) +".")
         if args.report_unpruned:
-            n_unpruned = context.model.proxy_ctx.count_unpruned()
+            n_unpruned = float(context.model.proxy_ctx.count_unpruned())
             logging.info("Unpruned masks: "+str(n_unpruned))
             context.tb_writer.write_unpruned_params(n_unpruned)
            
