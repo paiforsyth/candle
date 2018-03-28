@@ -212,7 +212,7 @@ def show_params(input_size=(32,3,32,32)):
    parser=basic_classify.add_args(parser)
    args=parser.parse_known_args()[0]
    context=basic_classify.make_context(args)
-   if args.proxy_context_type == "no_context": 
+   if True: #args.proxy_context_type == "no_context": 
        for name, param in context.model.named_parameters():
          print(name)
          print(param.shape)

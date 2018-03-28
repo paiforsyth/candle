@@ -25,9 +25,6 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         #for factorization
         self.factorize=False
         self.factorize_mode=None
-        #self.P_weights=None
-        #self.W_prime_weights=None
-        #self.factorized_bias=None 
 
         #save samples from forward pass for use in factorization
         self.save_samples=False
