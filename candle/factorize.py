@@ -11,7 +11,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
     def __init__(self, weight_provider, svd_rank, stride=1, padding=0, dilation=1, groups=1, **kwargs):
         super().__init__(weight_provider, **kwargs)
         sizes = weight_provider.sizes.reify()
-        wsize= sizes[1] 
+        wsize= sizes[0] 
         self.bias = len(sizes) == 2
         self.stride = stride
         self.padding = padding
