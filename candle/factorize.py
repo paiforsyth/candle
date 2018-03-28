@@ -103,8 +103,10 @@ class StdFactorizeContext(context.Context):
     def __init__(self, config=None, **kwargs):
         super().__init__(config,**kwargs)
         self.proxy_layers=[]
+
     def compose(self, layer, **kwargs):
-        proxy_layer= super().compose(layer,factorize_method ="std") 
+
+        proxy_layer= super().compose(layer,factorize_method ="std",**kwargs) 
         self.proxy_layers.append(proxy_layer)
         return proxy_layer
 
