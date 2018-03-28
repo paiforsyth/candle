@@ -2,7 +2,7 @@ import math
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
-from toch.nn import Parameter
+from torch.nn import Parameter
 
 from . import proxy
 from . import context
