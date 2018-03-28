@@ -6,7 +6,6 @@ from torch.autograd import Variable
 from . import proxy
 from . import context
 from . import nested
-#big mistakes below.  Need to chuck output images allong spatial dimensions
 class StdFactorizeConv2d(proxy.ProxyLayer):
     def __init__(self, weight_provider , stride=1, padding=0, dilation=1, groups=1, **kwargs):
         super().__init__(weight_provider, **kwargs)
@@ -37,7 +36,6 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
 
     def on_forward(self, x):
         if self.factorize: 
-           assert not self.training 
            return F.conv2d(F.conv2d(x, self.W_prime_weights,bias=None,**self.__conv__kwargs), self.P_weights, bias=self.factorized_bias )
         else:
             weights = self.weight_provider().reify()
@@ -90,11 +88,13 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         Y = sample_y - y_mean.view(-1,1)
         U,_,_ = torch.svd(Y.mm(Y.transpose(1,0)))
         U=U[:,:target_rank] #truncate
-        self.W_prime_weights = Variable((U.transpose(1,0).mm(w_mat)).view(target_rank,w_dim[1], w_dim[2], w_dim[3]))
+        self.W_prime_weights = Parameter((U.transpose(1,0).mm(w_mat)).view(target_rank,w_dim[1], w_dim[2], w_dim[3]))
         self.P_weights = Variable(U.view(w_dim[0], target_rank, 1, 1) )
         M=U.mm(U.transpose(1,0))
-        self.factorized_bias = Variable(M.mv(w_bias) + y_mean - M.mv(y_mean)  ) 
-
+        self.factorized_bias = Parameter(M.mv(w_bias) + y_mean - M.mv(y_mean)  ) 
+        self.register_parameter("W_prime_weights",self.W_prime_weights)
+        self.register_parameter("P_weights",self.P_weights)
+        self.register_parameter("factorized_bias",self.factorized_bias)
         self.saved_samples_mat = None 
 
 
@@ -125,29 +125,4 @@ class StdFactorizeContext(context.Context):
             proxy_layer.saved_samples_mat=None
 
 
-
-#wrong an unnecesary
-def extract_kbyk_list(img,k):
-   '''
-   Given a channels by k by k img
-   return a list consisting of vectors, each of which
-   is reshaped from a k by k spatial section of the image
-   '''
-
-   vectorlist=[]
-   channels = img.shape[0]
-   img_h = img.shape[1]
-   img_w = img.shape[2]
-   padding_size = max(math.floor(k/2),1)
-   kernel_extent = math.floor(k/2)
-   assert kernel_extent < k/2 #assume odd k
-   padding_h = img.new(channels, padding_size, img_w).fill_(0)
-   padding_w = img.new(channels,2*padding_size+ img_h, padding_size).fill_(0)
-
-   padded_img = torch.cat([padding_h, img, padding_h  ], dim=1 )
-   padded_img = torch.cat([padding_w, padded_img, padding_w  ], dim=2  )
-   for i in range(padding_size, padding_size+img_h):
-       for j in range(padding_size, padding_size+img_w):
-           vectorlist.append( (padded_img[:,i-kernel_extent:i+kernel_extent+1, j-kernel_extent:j+kernel_extent+1  ]).contiguous().view(-1,1)  ) #+1 neccesary since python does not include the endpoints of slices
-   return vectorlist
 
