@@ -37,7 +37,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
 
     def on_forward(self, x):
         if self.factorize: 
-           return F.conv2d(F.conv2d(x, self.W_prime_weights,bias=None,**self.__conv__kwargs), self.P_weights, bias=self.factorized_bias )
+           return F.conv2d(F.conv2d(x, self.W_prime_weights,bias=None,**self._conv_kwargs), self.P_weights, bias=self.factorized_bias )
         else:
             weights = self.weight_provider().reify()
             y= self.conv_fn(x, *weights, **self._conv_kwargs)
