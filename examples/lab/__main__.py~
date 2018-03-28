@@ -166,7 +166,7 @@ def main():
         elif args.validate_fr_truthfiletype == "pickle_dict":
          with open(args.validate_fr_truthfile, 'rb') as f: 
              dictionary= pickle.load(f)
-             truth = dictionar[b'labels']
+             truth = dictionary[b'labels']
 
 
          acc = basic_classification.score_report(args.validate_fr_reportfile, truth)
