@@ -35,7 +35,7 @@ def default_parser(parser=None):
     parser.add_argument("--model_save_path",type=str, default= "./saved_models/") 
     parser.add_argument("--resume_mode", type=str, choices=["none", "standard", "ensemble"], default= "none" )
     parser.add_argument("--res_file",type=str, default="recent_model") 
-    parser.add_argument("--load_nonstrict",type=str, action="store_true") 
+    parser.add_argument("--load_nonstrict", action="store_true") 
 
     parser.add_argument("--mode", type=str, choices=["test", "train"], default="train")
 
@@ -129,6 +129,7 @@ def default_parser(parser=None):
     parser.add_argument("--factorize_trained", action="store_true", help="factorize a trained model, then resave it")
     parser.add_argument("--factorize_trained_method", choices=["svd"], default="svd")
     parser.add_argument("--factorize_svd_rank_prop",type=float, default=0.25)
+    parser.add_argument("--create_svd_rank_prop",type=float, default=1)
 
     return parser
 

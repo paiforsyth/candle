@@ -1,6 +1,7 @@
 import argparse
 import itertools
 import collections
+import math
 
 import torch
 import torch.nn as nn
@@ -102,7 +103,10 @@ class Context(object):
                 return ProxyConv3d(provider, **kwargs)
             elif isinstance(layer, nn.Conv2d):
                 if cfg.get("factorize_method", None) == "std":
-                    return factorize.StdFactorizeConv2d(provider,**kwargs) 
+                    if "svd_rank" not in cfg:
+                        cfg["svd_rank"] = math.ceil(cfg.get("svd_rank_prop",1)*layer.weight.shape[0] )
+                        
+                    return factorize.StdFactorizeConv2d(provider,svd_rank=cfg["svd_rank"],**kwargs) 
                 return ProxyConv2d(provider, **kwargs)
             elif isinstance(layer, nn.Conv1d):
                 return ProxyConv1d(provider, **kwargs)
