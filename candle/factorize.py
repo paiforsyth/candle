@@ -89,13 +89,13 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         Y = sample_y - y_mean.view(-1,1)
         U,_,_ = torch.svd(Y.mm(Y.transpose(1,0)))
         U=U[:,:target_rank] #truncate
-        self.W_prime_weights = Parameter((U.transpose(1,0).mm(w_mat)).view(target_rank,w_dim[1], w_dim[2], w_dim[3]))
-        self.P_weights = Variable(U.view(w_dim[0], target_rank, 1, 1) )
+        W_prime_weights = Parameter((U.transpose(1,0).mm(w_mat)).view(target_rank,w_dim[1], w_dim[2], w_dim[3]))
+        P_weights = Parameter(U.view(w_dim[0], target_rank, 1, 1) )
         M=U.mm(U.transpose(1,0))
-        self.factorized_bias = Parameter(M.mv(w_bias) + y_mean - M.mv(y_mean)  ) 
-        self.register_parameter("W_prime_weights", self.W_prime_weights)
-        self.register_parameter("P_weights", self.P_weights)
-        self.register_parameter("factorized_bias",s elf.factorized_bias)
+        factorized_bias = Parameter(M.mv(w_bias) + y_mean - M.mv(y_mean)  ) 
+        self.register_parameter("W_prime_weights", W_prime_weights)
+        self.register_parameter("P_weights",P_weights)
+        self.register_parameter("factorized_bias",factorized_bias)
         self.saved_samples_mat = None 
 
 
