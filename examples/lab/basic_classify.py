@@ -173,7 +173,7 @@ def make_context(args):
                 f=open(args.custom_test_data_file,"rb")
                 dictionary = pickle.load(f,encoding='bytes')
                 squashed_images=dictionary[b'data'][:args.num_custom_test_file_points]
-                test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=dicationary[b'labels'], transform=transforms.ToTensor())
+                test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=dictionary[b'labels'], transform=transforms.ToTensor())
                 f.close()
 
 

@@ -171,7 +171,7 @@ def make_context(args):
         category_names = {0:"airplane", 1:"automobile", 2:"bird", 3:"cat", 4:"deer", 5:"dog", 6:"frog", 7:"horse", 8: "ship", 9: "truck" }
         if args.use_custom_test_data_file:
                 f=open(args.custom_test_data_file,"rb")
-                dictioanry = pickle.load(f,encoding='bytes')
+                dictionary = pickle.load(f,encoding='bytes')
                 squashed_images=dictionary[b'data'][:args.num_custom_test_file_points]
                 test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=dicationary[b'labels'], transform=transforms.ToTensor())
                 f.close()
