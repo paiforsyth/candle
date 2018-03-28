@@ -307,7 +307,7 @@ def run(args, ensemble_test=False):
    context=make_context(args) 
    if args.resume_mode == "standard":
        logging.info("loading saved model from file: "+args.res_file)
-       context.model.load(os.path.join(args.model_save_path, args.res_file))
+       context.model.load(os.path.join(args.model_save_path, args.res_file), strict= not args.load_nonstrict)
    if args.born_again_enable:
        if args.born_again_args_file is not None:
             logging.info("loading born again args from "+args.born_again_args_file)

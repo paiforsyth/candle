@@ -165,7 +165,7 @@ def main():
               truth= pickle.load(f)
         elif args.validate_fr_truthfiletype == "pickle_dict":
          with open(args.validate_fr_truthfile, 'rb') as f: 
-             dictionary= pickle.load(f)
+             dictionary= pickle.load(f,encoding="bytes")
              truth = dictionary[b'labels']
 
 
