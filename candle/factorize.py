@@ -25,9 +25,9 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         #for factorization
         self.factorize=False
         self.factorize_mode=None
-        self.P_weights=None
-        self.W_prime_weights=None
-        self.factorized_bias=None 
+        #self.P_weights=None
+        #self.W_prime_weights=None
+        #self.factorized_bias=None 
 
         #save samples from forward pass for use in factorization
         self.save_samples=False
@@ -93,9 +93,9 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         self.P_weights = Variable(U.view(w_dim[0], target_rank, 1, 1) )
         M=U.mm(U.transpose(1,0))
         self.factorized_bias = Parameter(M.mv(w_bias) + y_mean - M.mv(y_mean)  ) 
-        self.register_parameter("W_prime_weights",self.W_prime_weights)
-        self.register_parameter("P_weights",self.P_weights)
-        self.register_parameter("factorized_bias",self.factorized_bias)
+        self.register_parameter("W_prime_weights", self.W_prime_weights)
+        self.register_parameter("P_weights", self.P_weights)
+        self.register_parameter("factorized_bias",s elf.factorized_bias)
         self.saved_samples_mat = None 
 
 
