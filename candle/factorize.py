@@ -8,10 +8,10 @@ from . import proxy
 from . import context
 from . import nested
 class StdFactorizeConv2d(proxy.ProxyLayer):
-    def __init__(self, weight_provider, svd_rank, stride=1, padding=0, dilation=1, groups=1, **kwargs):
+    def __init__(self, weight_provider, svd_rank, use_factors, stride=1, padding=0, dilation=1, groups=1, **kwargs):
         super().__init__(weight_provider, **kwargs)
         sizes = weight_provider.sizes.reify()
-        wsize= sizes[0] 
+        wsize= sizes[1] 
         self.bias = len(sizes) == 2
         self.stride = stride
         self.padding = padding
@@ -23,7 +23,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         if not self.bias:
             self._conv_kwargs["bias"] = None
         #for factorization
-        self.factorize=False
+        self.factorize=use_factors
         self.factorize_mode=None
         self.W_prime_weights= Parameter(torch.Tensor(svd_rank,wsize[1],wsize[2],wsize[3]   )) #dummy
         self.P_weights= Parameter(torch.Tensor(wsize[0],svd_rank,wsize[1],wsize[3])) #dummy
@@ -65,6 +65,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         Sample y should be a package of 1 by 1 sections of the output produced by this layer.  If it is None, will try use the saved_samples
         '''
         assert not self.training
+        assert not self.factorize
         self.factorize_mode="svd"
         w_dim = self.weight_provider.sizes.reify()[0]
 

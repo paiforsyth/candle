@@ -130,6 +130,7 @@ def default_parser(parser=None):
     parser.add_argument("--factorize_trained_method", choices=["svd"], default="svd")
     parser.add_argument("--factorize_svd_rank_prop",type=float, default=0.25)
     parser.add_argument("--create_svd_rank_prop",type=float, default=1)#this is the svd rank prop for newly created models.  The above is the svd_rank_prop for models we are factorizing
+    parser.add_argument("--factorize_use_factors", action="store_true", help="use factorize matricies rather than originals")
 
     return parser
 

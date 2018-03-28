@@ -592,7 +592,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -673,7 +673,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                 next_fire_bypass_first_last=args.squeezenet_next_fire_bypass_first_last,
                 freeze_hard_concrete_for_testing=args.squeezenet_freeze_hard_concrete_for_testing,
                 zag_fire_dropout = args.squeezenet_zag_fire_dropout,
-                create_svd_rank_prop = args.create_svd_rank_prop
+                create_svd_rank_prop = args.create_svd_rank_prop,
+                factorize_use_factors = args.factorize_use_factors
                 )
         return SqueezeNet(config)
 
@@ -703,7 +704,7 @@ class SqueezeNet(serialmodule.SerializableModule):
         elif config.proxy_context_type == "tanhbinarize_context":
             proxy_ctx = candle.quantize.TanhBinarizeContext() 
         elif config.proxy_context_type == "stdfactorize_context":
-            proxy_ctx = candle.factorize.StdFactorizeContext(svd_rank_prop=config.create_svd_rank_prop)
+            proxy_ctx = candle.factorize.StdFactorizeContext(svd_rank_prop=config.create_svd_rank_prop, use_factors=config.factorize_use_factors)
         else:
             raise Exception("unknown proxy_context_type")
 
