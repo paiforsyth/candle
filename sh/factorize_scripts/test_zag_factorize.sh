@@ -2,8 +2,8 @@
 ARGFILE=./sh/argfiles/zag_small
 RESUME_FILENAME=27_March_2018_Tuesday_23_57_36zag_checkpoint_0
 SAVE_PREFIX=zag_svd
-REPORT_FILENAME=./reports/small_re_factorize
 SVD_PROP=0.9
+REPORT_FILENAME=./reports/zag_factorize_${SVD_PROP}
 
 python -m examples.lab $(cat $ARGFILE) --res_file=${RESUME_FILENAME} --resume_mode=standard --save_prefix=$SAVE_PREFIX --factorize_trained  --proxy_context_type=stdfactorize_context --factorize_svd_rank_prop=$SVD_PROP --cuda 
 
