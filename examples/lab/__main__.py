@@ -35,7 +35,7 @@ def default_parser(parser=None):
     parser.add_argument("--model_save_path",type=str, default= "./saved_models/") 
     parser.add_argument("--resume_mode", type=str, choices=["none", "standard", "ensemble"], default= "none" )
     parser.add_argument("--res_file",type=str, default="recent_model") 
-    parser.add_argument("--load_nonstrict",type=str, action="store_true") 
+    parser.add_argument("--load_nonstrict", action="store_true") 
 
     parser.add_argument("--mode", type=str, choices=["test", "train"], default="train")
 
