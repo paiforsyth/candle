@@ -26,7 +26,7 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
         self.factorize=use_factors
         self.factorize_mode=None
         self.W_prime_weights= Parameter(torch.Tensor(svd_rank,wsize[1],wsize[2],wsize[3]   )) #dummy
-        self.P_weights= Parameter(torch.Tensor(wsize[0],svd_rank,wsize[1],wsize[3])) #dummy
+        self.P_weights= Parameter(torch.Tensor(wsize[0],svd_rank,1,1 ) ) #dummy
         self.factorized_bias= Parameter(torch.Tensor(wsize[0]  )) #dummy
 
         #save samples from forward pass for use in factorization
@@ -37,7 +37,9 @@ class StdFactorizeConv2d(proxy.ProxyLayer):
 
     def on_forward(self, x):
         if self.factorize: 
-           return F.conv2d(F.conv2d(x, self.W_prime_weights,bias=None,**self._conv_kwargs), self.P_weights, bias=self.factorized_bias )
+           result= F.conv2d(F.conv2d(x, self.W_prime_weights,bias=None,**self._conv_kwargs), self.P_weights, bias=self.factorized_bias )
+           import pdb; pdb.set_trace()
+           return result
         else:
             weights = self.weight_provider().reify()
             y= self.conv_fn(x, *weights, **self._conv_kwargs)
