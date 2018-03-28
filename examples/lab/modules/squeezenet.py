@@ -99,7 +99,7 @@ def add_args(parser):
 
     parser.add_argument("--squeezenet_freeze_hard_concrete_for_testing",action="store_true")
     parser.add_argument("--squeezenet_zag_fire_dropout",type=int, default=0.3)
-
+    parser.add_argument("--squeezenet_zag_dont_bypass_last",action="store_true")
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
 class Fire(serialmodule.SerializableModule):
@@ -309,7 +309,7 @@ class ZagFire(serialmodule.SerializableModule):
                 first_wrapper = proxy_ctx.wrap
                 last_wrapper = proxy_ctx.bypass
             else:
-                first_wrapper = last_wrapper = proxy_ctx.bypass
+                first_wrapper = last_wrapper = proxy_ctx.wrap
          else:
             bn_wrapper =first_wrapper =last_wrapper = lambda x:x
          layer_dict = collections.OrderedDict()
@@ -592,7 +592,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -674,7 +674,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                 freeze_hard_concrete_for_testing=args.squeezenet_freeze_hard_concrete_for_testing,
                 zag_fire_dropout = args.squeezenet_zag_fire_dropout,
                 create_svd_rank_prop = args.create_svd_rank_prop,
-                factorize_use_factors = args.factorize_use_factors
+                factorize_use_factors = args.factorize_use_factors,
+                zag_dont_bypass_last =args.squeezenet_zag_dont_bypass_last
                 )
         return SqueezeNet(config)
 
@@ -770,7 +771,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                         to_add2= NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type,  bypass_first_last = config.next_fire_bypass_first_last  )
                 elif config.mode  == "zag_fire":
                     name="zagfire{}".format(i+2)
-                    to_add=ZagFire(in_channels= self.channel_counts[i], out_channels=e, proxy_ctx=proxy_ctx, proxy_mode=config.proxy_context_type,bypass_last=True, activation=nn.ReLU(), dropout_rate=config.zag_fire_dropout)
+                    to_add=ZagFire(in_channels= self.channel_counts[i], out_channels=e, proxy_ctx=proxy_ctx, proxy_mode=config.proxy_context_type,bypass_last=not config.zag_dont_bypass_last, activation=nn.ReLU(), dropout_rate=config.zag_fire_dropout)
                 elif config.mode == "bnnfire":
                     name = "binaryfire{}".format(i+2)
                     bnn_pool_here= False
