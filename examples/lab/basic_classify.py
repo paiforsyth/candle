@@ -88,6 +88,7 @@ class Context:
         self.cuda=cuda
         self.num_categories=num_categories
         self.model_parameters = model_parameters
+
         
         self.stashfile=None
 
@@ -348,7 +349,7 @@ def run(args, ensemble_test=False):
 
    if args.factorize_trained:
        context.model.eval()
-       if args.dataset_for_classification == "cifar_challenge":
+       if args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification == "cifar10":
            img_h=32
            img_w=32
            channels=3
