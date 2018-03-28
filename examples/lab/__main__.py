@@ -107,7 +107,7 @@ def default_parser(parser=None):
     parser.add_argument("--validate_fr", action="store_true",help="get accuracy of a result report using ground truth")
     parser.add_argument("--validate_fr_reportfile",help="report file to validate")
     parser.add_argument("--validate_fr_truthfile", help="Ground truth file for validations")
-    parser.add_argument("--validate_fr_truthfiletype",choices=["pickle"], default="pickle" )
+    parser.add_argument("--validate_fr_truthfiletype",choices=["pickle","pickle_dict"], default="pickle" )
 
     parser.add_argument("--clamp_all_params",action="store_true")
     parser.add_argument("--clamp_all_min",type=int)
@@ -163,7 +163,10 @@ def main():
          with open(args.validate_fr_truthfile, 'rb') as f: 
               dummy =pickle.load(f)
               truth= pickle.load(f)
-
+        elif args.validate_fr_truthfiletype == "pickle_dict":
+         with open(args.validate_fr_truthfile, 'rb') as f: 
+             dictionary= pickle.load(f)
+             truth = dictionar[b'labels']
 
 
          acc = basic_classification.score_report(args.validate_fr_reportfile, truth)

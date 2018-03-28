@@ -156,13 +156,7 @@ def make_context(args):
             squashed_images=pickle.load(f)[:args.num_custom_test_file_points]
             test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=[-1]*squashed_images.shape[0], transform=transforms.ToTensor())
             f.close()
-            # if args.holdout:
-                # f=open("../data/cifar/train_data","rb")
-                # squashed_images=pickle.load(f)
-                # labels=pickle.load(f)
-                # f.close()
-                # _,val_dataset = datatools.set_cifar_challenge.make_train_val_datasets(squashed_images, labels, args.validation_set_size, transform=None) 
-                # holdout_dataset, val_dataset = val_dataset.split(args.holdout_size)
+
 
         category_names= { k:v for k,v in enumerate(set_cifar_challenge.CIFAR100_LABELS_LIST)}
    elif args.dataset_for_classification == "cifar10":
@@ -175,6 +169,13 @@ def make_context(args):
         train_dataset = tvds.CIFAR10("./local_data/cifar10/", train=True, download= True, transform=tr ) 
         val_dataset = tvds.CIFAR10("./local_data/cifar10/", train=False, download= True, transform=transforms.ToTensor() ) 
         category_names = {0:"airplane", 1:"automobile", 2:"bird", 3:"cat", 4:"deer", 5:"dog", 6:"frog", 7:"horse", 8: "ship", 9: "truck" }
+        if args.use_custom_test_data_file:
+                f=open(args.custom_test_data_file,"rb")
+                dictioanry = pickle.load(f,encoding='bytes')
+                squashed_images=dictionary[b'data'][:args.num_custom_test_file_points]
+                test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=dicationary[b'labels'], transform=transforms.ToTensor())
+                f.close()
+
 
 
    else:
