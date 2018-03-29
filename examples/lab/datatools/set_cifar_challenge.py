@@ -26,6 +26,10 @@ class Dataset(data.Dataset):
         self.data = self.data[p]
         self.labels = np.asarray(self.labels)[p].tolist()
 
+    def merge(self, other):
+        self.data= np.concatenate(self.data,other.data,axis=0)
+        self.labels = self.labels.extend(other.labels)
+
 def make_train_val_datasets(data,labels,index, transform, shuf=False):
     combined=Dataset(data,labels,transform)
     if shuf:

@@ -169,9 +169,33 @@ def make_context(args):
         tr = transforms.Compose([transforms.RandomCrop(size=32 ,padding= 4), transforms.RandomHorizontalFlip(), transforms.ToTensor() ])
         if args.cifar_random_erase:
             tr=transforms.Compose([tr, img_tools.RandomErase()])
-       
-        train_dataset = tvds.CIFAR10("./local_data/cifar10/", train=True, download= True, transform=tr ) 
-        val_dataset = tvds.CIFAR10("./local_data/cifar10/", train=False, download= True, transform=transforms.ToTensor() ) 
+
+            f=open('./local_data/cifar10/cifar-10-batches-py/data_batch_1','rb')
+            dictionary=pickle.load(f,encoding="bytes")
+            squashed_images = dictionary[b'data']
+            labels = dictionary[b'labels']
+            f.close()
+            for i in range(2,6):
+                f=open('local_data/cifar10/cifar-10-batches-py/data_batch_'+str(i),'rb')
+                dictionary = pickle.load(f, encoding='bytes')
+                squashed_images = np.concatenate((squashed_images, dictionary[b'data']),axis=0)
+                labels.extend(dictionary[b'labels'])
+                f.close()
+
+            train_dataset, val_dataset = set_cifar_challenge.make_train_val_datasets(squashed_images, labels, args.validation_set_size, transform=None, shuf=args.cifar_shuffle_val_set) 
+            train_dataset.transform = tr
+            val_dataset.transform = transforms.ToTensor()
+            f=open('./local_data/cifar10/cifar-10-batches-py/test_batch','rb')
+            dictionary=pickle.load(f,encoding="bytes")
+            squashed_images = dictionary[b'data']
+            labels = dictionary[b'labels']
+            f.close()
+            test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=labels, transform=transforms.ToTensor())
+
+
+        
+        #train_dataset = tvds.CIFAR10("./local_data/cifar10/", train=True, download= True, transform=tr ) 
+        #val_dataset = tvds.CIFAR10("./local_data/cifar10/", train=False, download= True, transform=transforms.ToTensor() ) 
         category_names = {0:"airplane", 1:"automobile", 2:"bird", 3:"cat", 4:"deer", 5:"dog", 6:"frog", 7:"horse", 8: "ship", 9: "truck" }
         if args.use_custom_test_data_file:
                 f=open(args.custom_test_data_file,"rb")
@@ -200,8 +224,8 @@ def make_context(args):
             train_loader=data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle= True, collate_fn=basic_classification.make_var_wrap_collater(args))
             val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True ))
        elif  args.mode == "test":
-            test_loader=data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args, volatile=True))
-            val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args)) #certain ensemble methods use the val dataset 
+            test_loader = data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args, volatile=True))
+            val_loader = data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args)) #certain ensemble methods use the val dataset 
             assert(args.resume_mode == "standard" or args.resume_mode == "ensemble")
             # if args.holdout:
                     # holdout_loader=data.DataLoader(holdout_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True))
