@@ -66,6 +66,10 @@ def add_args(parser):
     parser.add_argument("--custom_test_data_file")
     parser.add_argument("--num_custom_test_file_points", type=int, default=1000)
 
+    parser.add_argument("--multi_score_model",action="store_true") #for use with models that, like branchynet, prduce multiple score outputs at train time
+    parser.add_argument("--multi_score_unit_weighting",action="store_true")#losses all get same weight
+    parser.add_argument("--multi_score_loss_weighting",nargs="+" ) #weight for the losses derived from each of the scores 
+
     kim_cnn.add_args(parser)
     squeezenet.add_args(parser)
     
@@ -373,7 +377,7 @@ def run(args, ensemble_test=False):
        return
 
    if args.count_multiplies:
-       if args.dataset_for_classification == "cifar_challenge":
+       if args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification =="cifar10":
            img_h=32
            img_w=32
            channels=3
@@ -401,8 +405,9 @@ def run(args, ensemble_test=False):
             #For sequence-to-squence batch in will have dimension batchsize by the max sequence length in the batch. scores  will have dimension batchsize by max sqeunce_length by categoreis
 
             scores= context.model(batch_in,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch_in)  #should have dimension batchsize by number of classes
-            
+           # import pdb; pdb.set_trace() 
             if args.born_again_enable:
+                assert not args.multi_score_model
                 context = torch.no_grad() if args.use_no_grad else suppress 
                 batch_in_v=batch_in.clone()
                 batch_in_v.volatile=True
@@ -411,19 +416,33 @@ def run(args, ensemble_test=False):
 
 
             #move categories to same device as scores
-            if scores.is_cuda:
+            if not args.multi_score_model and  scores.is_cuda:
                 categories=categories.cuda(scores.get_device())
+            if args.multi_score_model and scores[0].is_cuda:
+                categories=categories.cuda(scores.get_device(scores[0]))
+
             if args.classification_loss_type == "cross_entropy":
-                loss=  F.cross_entropy(scores,categories) 
+                if args.multi_score_model:
+                    assert args.squeezenet_use_forking
+                    if args.multi_score_unit_weighting:
+                        loss=0
+                        for branch_scores in scores:
+                            loss+=F.cross_entropy(branch_scores,categories)
+                    else:
+                        raise Exception("Not implemented!")
+                else:
+                    loss=  F.cross_entropy(scores,categories) 
                 if args.born_again_enable:
                     previous_incarnation_probs = F.softmax(previous_incarnation_scores,dim=1)
                     previous_incarnation_divergence = F.kl_div(F.log_softmax(scores,dim=1), previous_incarnation_probs )
                     loss+=previous_incarnation_divergence
             elif args.classification_loss_type == "nll":
                 assert not args.born_again_enable
+                assert not args.multi_score_model
                 loss= F.nll_loss(scores,categories)
             elif args.classification_loss_type == "square_hinge": 
                 assert not args.born_again_enable
+                assert not args.multi_score_model
                 mult = Variable(categories.data.new(categories.shape[0], context.num_categories).fill_(0).float()) 
                 for i in range(categories.shape[0]):
                     mult[i,categories[i]]=1

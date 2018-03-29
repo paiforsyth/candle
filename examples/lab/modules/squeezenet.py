@@ -101,6 +101,10 @@ def add_args(parser):
     parser.add_argument("--squeezenet_zag_fire_dropout",type=int, default=0.3)
     parser.add_argument("--squeezenet_zag_dont_bypass_last",action="store_true")
 
+    parser.add_argument("--squeezenet_use_forking", action="store_true")
+    parser.add_argument("--squeezenet_fork_after_chunks",type=int,nargs="+") #fork after these chunks, to produce multiple output scores.  all output scores returned during training.  Only last during testing
+    parser.add_argument("--squeezenet_fork_module",choices=["zag_fire"], default="zag_fire")
+
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
 class Fire(serialmodule.SerializableModule):
     @staticmethod 
@@ -334,6 +338,18 @@ class ZagFire(serialmodule.SerializableModule):
     def multiplies(self,img_h, img_w, input_channels):
         mults, _,_,_ =  count_approx_multiplies(layer = self.seq, img_h=img_h, img_w=img_w, input_channels=input_channels)        
         return mults, self.out_channels,img_h ,img_w #residual branch means that we get the full number of out_channels even if we pruned some
+    
+class ForkFire(serialmodule.SerializableModule):
+
+        def __init__(self, fork_module):
+            super().__init__()
+            self.fork_module = fork_module
+
+        def forward(self, x):
+            return (x, self.fork_module(x)) 
+        
+        def multiplies(self, img_h, img_w, input_channels):
+            return self.fork_module.multiplies(img_h, img_w, input_channels)
                   
 
 class BNNFire(serialmodule.SerializableModule):
@@ -592,7 +608,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -675,7 +691,10 @@ class SqueezeNet(serialmodule.SerializableModule):
                 zag_fire_dropout = args.squeezenet_zag_fire_dropout,
                 create_svd_rank_prop = args.create_svd_rank_prop,
                 factorize_use_factors = args.factorize_use_factors,
-                zag_dont_bypass_last =args.squeezenet_zag_dont_bypass_last
+                zag_dont_bypass_last =args.squeezenet_zag_dont_bypass_last,
+                use_forking = args.squeezenet_use_forking,
+                fork_after_chunks =args.squeezenet_fork_after_chunks,
+                fork_module =args.squeezenet_fork_module
                 )
         return SqueezeNet(config)
 
@@ -683,6 +702,8 @@ class SqueezeNet(serialmodule.SerializableModule):
         super().__init__()
         self.freeze_hard_concrete_for_testing = config.freeze_hard_concrete_for_testing
         self.chunk_across_devices=config.chunk_across_devices
+        self.use_forking =config.use_forking
+        self.fork_after_chunks=config.fork_after_chunks
         if config.chunk_across_devices:
             assert len(config.layer_chunk_devices ) == config.num_layer_chunks  
             assert config.num_layer_chunks <= torch.cuda.device_count()
@@ -853,7 +874,19 @@ class SqueezeNet(serialmodule.SerializableModule):
                 layer_splits.append(i*chunk_size)
             
         for i in range( config.num_layer_chunks -1 ):
-            layer_chunk=nn.Sequential( collections.OrderedDict(list(layer_dict.items())[layer_splits[i]:layer_splits[i+1] ]) )
+            to_add_to_chunk=list(layer_dict.items())[layer_splits[i]:layer_splits[i+1] ]
+           # import pdb; pdb.set_trace()
+            if config.use_forking and i in config.fork_after_chunks:
+                if config.fork_module == "zag_fire":
+                   last_layer_of_chunk = to_add_to_chunk[-1][1]
+                   if isinstance(last_layer_of_chunk, nn.MaxPool2d):
+                       last_layer_of_chunk = to_add_to_chunk[-2][1]
+
+                   fork_module = ZagFire(in_channels =last_layer_of_chunk.out_channels, out_channels=config.out_dim, proxy_ctx=proxy_ctx, proxy_mode=config.proxy_context_type,bypass_last=not config.zag_dont_bypass_last, activation=nn.ReLU(), dropout_rate=config.zag_fire_dropout)
+                fork_fire = ForkFire(fork_module=fork_module) 
+                to_add_to_chunk.append(("fork", fork_fire))
+
+            layer_chunk=nn.Sequential( collections.OrderedDict(to_add_to_chunk) )
             self.add_module("layer_chunk_"+str(i),layer_chunk )
             self.layer_chunk_list.append(layer_chunk)
         #add last chunk
@@ -873,18 +906,33 @@ class SqueezeNet(serialmodule.SerializableModule):
                 -oput is batchsize by config.outdim
         '''
         
-
+        if self.use_forking:
+            score_list=[]
+            
 
 
         for i,layer_chunk in enumerate(self.layer_chunk_list):
             if self.chunk_across_devices:
-                x=x.cuda(self.layer_chunk_devices[i])
-            x=layer_chunk(x)
+                r=x.cuda(self.layer_chunk_devices[i])
+            r=layer_chunk(x)
+            if self.use_forking and i in self.fork_after_chunks:
+                assert isinstance(r, tuple)
+                score_list.append(r[1].mean(dim=3).mean(dim=2))
+                x=r[0]
+            else:
+                x=r
 
         x=torch.mean(x,dim=3)
         x=torch.mean(x,dim=2)
         if self.final_fc:
+            raise Exception("fc currently bugged")
             x=F.leaky_relu(self.final_fc_weights(x))
+        if self.use_forking and self.training:
+            score_list.append(x)
+            if score_list[0].is_cuda: #move all scores to the same device
+                for i in range(len(score_list)):
+                    score_list[i]=score_list[i].cuda(score_list[0].get_device())
+                return score_list
         return x
 
 
