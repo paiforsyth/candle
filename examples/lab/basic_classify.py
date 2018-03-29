@@ -419,7 +419,7 @@ def run(args, ensemble_test=False):
             if not args.multi_score_model and  scores.is_cuda:
                 categories=categories.cuda(scores.get_device())
             if args.multi_score_model and scores[0].is_cuda:
-                categories=categories.cuda(scores.get_device(scores[0]))
+                categories=categories.cuda(scores[0].get_device())
 
             if args.classification_loss_type == "cross_entropy":
                 if args.multi_score_model:
