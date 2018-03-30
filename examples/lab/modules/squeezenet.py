@@ -935,7 +935,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 if not self.training and self.fork_early_exit:
                     assert cur_scores.shape[0]==1 #cannot exit early with batches of size greater than 1
                     cur_scores_log_probs = F.log_softmax(cur_scores.view(-1))
-                    cur_scores_probs= F.sofmax(cur_scores.view(-1))
+                    cur_scores_probs= F.softmax(cur_scores.view(-1))
                     entropy = - torch.sum(cur_scores_probs*cur_scores_log_probs)
                     if entropy< config.fork_entropy_threshold:
                         if self.calculating_exit_proportions:
