@@ -932,7 +932,7 @@ class SqueezeNet(serialmodule.SerializableModule):
             if self.use_forking and i in self.fork_after_chunks:
                 assert isinstance(r, tuple)
                 cur_scores = r[1].mean(dim=3).mean(dim=2)
-                if not self.training and self.squeezenet_fork_early_exit:
+                if not self.training and self.fork_early_exit:
                     assert scores.shape[0]==1 #cannot exit early with batches of size greater than 1
                     cur_scores_log_probs = F.log_softmax(cur_scores.view(-1))
                     cur_scores_probs= F.sofmax(cur_scores.view(-1))
@@ -960,7 +960,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 for i in range(len(score_list)):
                     score_list[i]=score_list[i].cuda(score_list[0].get_device())
                 return score_list
-        if not self.training and self.squeezenet_fork_early_exit and self.calculating_exit_proportions:
+        if not self.training and self.fork_early_exit and self.calculating_exit_proportions:
             self.total_exits+=1
         return x
 
