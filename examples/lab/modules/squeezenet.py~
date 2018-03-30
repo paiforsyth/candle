@@ -1006,7 +1006,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                  culm_mults_by_chunk.append(culm_mults_by_chunk[i-1]+mults_by_chunk[i])
              avg_mults=0
              report_string=""
-             for i in len(self.layer_chunk_list):
+             for i in range(len(self.layer_chunk_list)):
                 avg_mults+=culm_mults_by_chunk[i]*self.exit_proportions[i] 
                 report_string +="+"+ str(culm_mults_by_chunk[i])+"*"+str(self.exit_proportions[i])
              report_string +="="+str(avg_mults)

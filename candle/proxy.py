@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import numpy as np
 
 from .nested import Package
-
+import util.countmult_util
 class SerializableModule(nn.Module):
     def __init__(self):
         super().__init__()
@@ -216,12 +216,10 @@ class ProxyConv2d(_ProxyConvNd):
     def multiplies(self,img_h, img_w, input_channels):
         w_dim = self.weight_provider.sizes.reify()[0]
         effective_out = self.effective_output_channels() 
-        mults= img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3]/self.groups
-        logging.debug("number of mults is {}*{}*{}*{}*{}*{} / {} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],self.groups,mults)  )
-        if effective_out == 16:
-            pass
-            #import pdb; pdb.set_trace()
-        return mults, effective_out, img_h, img_w
+              #img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3]/self.groups
+        mults, out_channels, height, width = util.countmult_util.conv2d_mult_compute(img_h, img_w, in_channels=input_channels, out_channels=effective_out, groups=self.groups, stride=self.stride, padding=self.padding, kernel_size=self.kernel_size, dilation=self.dilation)
+        logging.debug("number of mults is {}".format(mults))  #logging.debug("number of mults is {}*{}*{}*{}*{}*{} / {} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],self.groups,mults)  )
+        return mults, out_channels, height, width
 
 class ProxyConv1d(_ProxyConvNd):
     def __init__(self, weight_provider, **kwargs):

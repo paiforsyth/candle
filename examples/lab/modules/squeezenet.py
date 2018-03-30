@@ -828,7 +828,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                     else:
                         to_add2=None
                     to_add=ExcitationFire(to_add, in_channels=self.channel_counts[i], out_channels=e, r=config.excitation_r, skip=skip_here, skipmode=config.skipmode, shake_shake_enable=config.excitation_shake_shake, fire_to_wrap2=to_add2, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type)
-                    name="ExcitationFire{}".format(i+2)
+                name="ExcitationFire{}".format(i+2)
                 layer_dict[name]=to_add
 
                 self.channel_counts.append(e)
