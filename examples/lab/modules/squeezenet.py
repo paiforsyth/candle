@@ -995,8 +995,12 @@ class SqueezeNet(serialmodule.SerializableModule):
          if self.use_forking:
              assert self.exit_proportions_calculated
              mults_by_chunk = []
+             cur_h=img_h
+             cur_w=img_w
+             cur_channels=input_channels
              for chunk in self.layer_chunk_list:
-                mults_by_chunk.append(count_approx_multiplies(chunk)) 
+                mults,cur_channels, cur_h,cur_w =count_approx_multiplies(chunk,cur_h, cur_w, cur_channels)
+                mults_by_chunk.append(mults) 
              culm_mults_by_chunk = [mults_by_chunk[0]]
              for i in range(1,len(mults_by_chunk)):
                  culm_mults_by_chunk.append(cum_mults_by_chunk[i-1]+mults_by_chunk[i])
