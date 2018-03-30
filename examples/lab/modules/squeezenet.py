@@ -710,6 +710,7 @@ class SqueezeNet(serialmodule.SerializableModule):
         self.chunk_across_devices=config.chunk_across_devices
         self.use_forking =config.use_forking
         self.fork_after_chunks=config.fork_after_chunks
+        self.fork_early_exit= config.fork_early_exit
         self.num_layer_chunks = config.num_layer_chunks
         if config.use_forking:
             self.calculating_exit_proportions = False
