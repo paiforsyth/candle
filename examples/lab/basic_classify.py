@@ -404,6 +404,7 @@ def run(args, ensemble_test=False):
        return
 
    if args.count_multiplies:
+       context.model.eval() #for sampling to compute avg mults in forking models
        if args.get_forking_props_on_val:
             squeezenet.forking_props_from_sample(context.model,context.val_loader )
        if args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification =="cifar10":
