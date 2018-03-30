@@ -105,7 +105,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_fork_after_chunks",type=int,nargs="+") #fork after these chunks, to produce multiple output scores.  all output scores returned during training.  Only last during testing
     parser.add_argument("--squeezenet_fork_module",choices=["zag_fire"], default="zag_fire")
     parser.add_argument("--squeezenet_fork_early_exit",action="store_true")
-    parser.add_argument("--squeezenet_fork_entropy_threshold",type=float,nargs="+" ) #ith element is entropy required to exit after ith chunk Note that the ith chunk will only be considered as a possible eexit if i is in squeezenet_fork_after_chunks
+    parser.add_argument("--squeezenet_fork_entropy_threshold",type=float ) #ith element is entropy required to exit after ith chunk Note that the ith chunk will only be considered as a possible eexit if i is in squeezenet_fork_after_chunks
 
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")

@@ -718,6 +718,7 @@ class SqueezeNet(serialmodule.SerializableModule):
             self.exit_tallies = [0]*config.num_layer_chunks
             self.total_exits = 0
             self.exit_proportions = [-1] * config.num_layer_chunks
+            self.fork_entropy_threshold  = config.fork_entropy_threshold
         if config.chunk_across_devices:
             assert len(config.layer_chunk_devices ) == config.num_layer_chunks  
             assert config.num_layer_chunks <= torch.cuda.device_count()
