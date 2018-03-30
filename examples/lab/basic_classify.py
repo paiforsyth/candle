@@ -70,6 +70,8 @@ def add_args(parser):
     parser.add_argument("--multi_score_unit_weighting",action="store_true")#losses all get same weight
     parser.add_argument("--multi_score_loss_weighting",nargs="+" ) #weight for the losses derived from each of the scores 
 
+    parser.add_argument("--use_val_as_test",action="store_true")
+
     kim_cnn.add_args(parser)
     squeezenet.add_args(parser)
     
@@ -401,6 +403,8 @@ def run(args, ensemble_test=False):
        return
 
    if args.count_multiplies:
+       if args.get_forking_props_on_val:
+            squeezenet.forking_props_from_sample(context.model,context.val_loader )
        if args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification =="cifar10":
            img_h=32
            img_w=32

@@ -105,7 +105,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_fork_after_chunks",type=int,nargs="+") #fork after these chunks, to produce multiple output scores.  all output scores returned during training.  Only last during testing
     parser.add_argument("--squeezenet_fork_module",choices=["zag_fire"], default="zag_fire")
     parser.add_argument("--squeezenet_fork_early_exit",action="store_true")
-    parser.add_argument("--squeezenet_fork_entropy_thresholds_by_chunk",type=float,nargs="+" ) #ith element is entropy required to exit after ith chunk Note that the ith chunk will only be considered as a possible eexit if i is in squeezenet_fork_after_chunks
+    parser.add_argument("--squeezenet_fork_entropy_threshold",type=float,nargs="+" ) #ith element is entropy required to exit after ith chunk Note that the ith chunk will only be considered as a possible eexit if i is in squeezenet_fork_after_chunks
 
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
@@ -611,7 +611,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_thresholds_by_chunk")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -699,7 +699,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 fork_after_chunks =args.squeezenet_fork_after_chunks,
                 fork_module =args.squeezenet_fork_module,
                 fork_early_exit=args.squeezenet_fork_early_exit,
-                fork_entropy_thresholds_by_chunk =args.squeezenet_fork_entropy_thresholds_by_chunk
+                fork_entropy_threshold =args.squeezenet_fork_entropy_threshold
 
                 )
         return SqueezeNet(config)
@@ -936,8 +936,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                     assert scores.shape[0]==1 #cannot exit early with batches of size greater than 1
                     cur_scores_log_probs = F.log_softmax(cur_scores.view(-1))
                     cur_scores_probs= F.sofmax(cur_scores.view(-1))
-                    entropy = sum(cur_scores_probs*cur_scores_log_probs)
-                    if entropy> config.fork_entropy_thresholds_by_chunk[i]:
+                    entropy = -sum(cur_scores_probs*cur_scores_log_probs)
+                    if entropy< config.fork_entropy_threshold[i]:
                         if self.calculating_exit_proportions:
                             self.exit_tallies[i] += 1
                             self.total_exits+=1
@@ -960,7 +960,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 for i in range(len(score_list)):
                     score_list[i]=score_list[i].cuda(score_list[0].get_device())
                 return score_list
-        if not self.training and self.squeezenet_fork_early_exit and self.calculating_exit_proportions:
+        if not self.training and self.fork_early_exit and self.calculating_exit_proportions:
             self.total_exits+=1
         return x
 
@@ -993,6 +993,23 @@ class SqueezeNet(serialmodule.SerializableModule):
     def multiplies(self, img_h, img_w, input_channels ):
          if self.use_forking:
              assert self.exit_proportions_calculated
+             mults_by_chunk = []
+             for chunk in self.layer_chunk_list:
+                mults_by_chunk.append(count_approx_multiplies(chunk)) 
+             culm_mults_by_chunk = [mults_by_chunk[0]]
+             for i in range(1,len(mults_by_chunk)):
+                 culm_mults_by_chunk.append(cum_mults_by_chunk[i-1]+mults_by_chunk[i])
+             avg_mults=0
+             report_string=""
+             for i in length(self.layer_chunks):
+                avg_mults+=culm_mults_by_chunk[i]*self.exit_proportions[i] 
+                report_string +="+"+ str(culm_mults_by_chunk[i])+"*"+str(self.exit_proportions[i])
+            report_string +="="+str(avg_mults)
+            logging.info(report_string)
+            return avg_mults
+
+                          
+
 
          mults,_,_,_= count_approx_multiplies(self.layer_chunk_list,img_h=img_h, img_w=img_w,input_channels=input_channels ) 
          return mults
@@ -1000,9 +1017,15 @@ class SqueezeNet(serialmodule.SerializableModule):
     def calc_exit_proportions(self):
        assert squeezenet.use_forking 
        assert squeezenet.calculating_exit_proportions
-       total_exits=0
+       logging.info("Exit tallies:")
        for index in range(self.num_layer_chunks):
+            logging.info("chunk: "+str(i))
+            logging.info("exit tally: "+str(self.exit_tallies[i]))
             self.exit_proportions[index] = self.exit_tallies[i].self/self.total_exits
+       self.exit_proportions[-1]=1-sum(self.exit_proportions[:-1])
+       logging.info("exit proportions: "+str(self.exit_proportions))
+       self.exit_proportions_calculated = True
+       
         
 
             
@@ -1021,11 +1044,12 @@ def init_p(mod):
             elif isinstance(m,nn.Linear):
                 m.reset_parameters()
 
-def get_ext_props_on_sample(squeezenet,  loader):
+def forking_props_from_sample(squeezenet,  loader):
     assert squeezenet.use_forking
     assert not squeezenet.exit_proportions_calculated
     squeezenet.calculating_exit_proportions = True
     for batch, *other in loader:
         assert batch.shape[0] == 1 #to do early exit we need to have batch sizes of one
         squeezenet(batch) 
+    squeezenet.calc_exit_proportions()
 

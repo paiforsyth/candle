@@ -69,6 +69,7 @@ def add_args(parser):
     parser.add_argument("--multi_score_model",action="store_true") #for use with models that, like branchynet, prduce multiple score outputs at train time
     parser.add_argument("--multi_score_unit_weighting",action="store_true")#losses all get same weight
     parser.add_argument("--multi_score_loss_weighting",nargs="+" ) #weight for the losses derived from each of the scores 
+    parser.add_argument
 
     kim_cnn.add_args(parser)
     squeezenet.add_args(parser)
@@ -185,7 +186,7 @@ def make_context(args):
             train_dataset, val_dataset = set_cifar_challenge.make_train_val_datasets(squashed_images, labels, args.validation_set_size, transform=None, shuf=args.cifar_shuffle_val_set) 
             train_dataset.transform = tr
             val_dataset.transform = transforms.ToTensor()
-            f=open('./local_data/cifar10/cifar10-batches-py/test_batch','rb')
+            f=open('./local_data/cifar10/cifar-10-batches-py/test_batch','rb')
             dictionary=pickle.load(f,encoding="bytes")
             squashed_images = dictionary[b'data']
             labels = dictionary[b'labels']
@@ -401,6 +402,8 @@ def run(args, ensemble_test=False):
        return
 
    if args.count_multiplies:
+       if args.get_forking_props_on_val:
+            squeezenet.forking_props_from_sample(context.model,context.val_loader )
        if args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification =="cifar10":
            img_h=32
            img_w=32

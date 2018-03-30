@@ -133,6 +133,8 @@ def default_parser(parser=None):
     parser.add_argument("--factorize_use_factors", action="store_true", help="use factorize matricies rather than originals")
 
 
+    parser.add_argument("--get_forking_props_on_val", action="store_true")
+
     return parser
 
 
