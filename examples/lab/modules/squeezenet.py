@@ -1017,11 +1017,12 @@ class SqueezeNet(serialmodule.SerializableModule):
     def calc_exit_proportions(self):
        assert self.use_forking 
        assert self.calculating_exit_proportions
+       logging.info("Total Exits:"+str(self.total_exits))
        logging.info("Exit tallies:")
        for index in range(self.num_layer_chunks):
-            logging.info("chunk: "+str(i))
-            logging.info("exit tally: "+str(self.exit_tallies[i]))
-            self.exit_proportions[index] = self.exit_tallies[i].self/self.total_exits
+            logging.info("chunk: "+str(index))
+            logging.info("exit tally: "+str(self.exit_tallies[index]))
+            self.exit_proportions[index] = self.exit_tallies[index].self/self.total_exits
        self.exit_proportions[-1]=1-sum(self.exit_proportions[:-1])
        logging.info("exit proportions: "+str(self.exit_proportions))
        self.exit_proportions_calculated = True
