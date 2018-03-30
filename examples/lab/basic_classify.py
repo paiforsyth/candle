@@ -172,27 +172,28 @@ def make_context(args):
         if args.cifar_random_erase:
             tr=transforms.Compose([tr, img_tools.RandomErase()])
 
-            f=open('./local_data/cifar10/cifar-10-batches-py/data_batch_1','rb')
-            dictionary=pickle.load(f,encoding="bytes")
-            squashed_images = dictionary[b'data']
-            labels = dictionary[b'labels']
-            f.close()
-            for i in range(2,6):
+        f=open('./local_data/cifar10/cifar-10-batches-py/data_batch_1','rb')
+        dictionary=pickle.load(f,encoding="bytes")
+        squashed_images = dictionary[b'data']
+        labels = dictionary[b'labels']
+        f.close()
+        for i in range(2,6):
                 f=open('local_data/cifar10/cifar-10-batches-py/data_batch_'+str(i),'rb')
                 dictionary = pickle.load(f, encoding='bytes')
                 squashed_images = np.concatenate((squashed_images, dictionary[b'data']),axis=0)
                 labels.extend(dictionary[b'labels'])
                 f.close()
+        #import pdb; pdb.set_trace()
 
-            train_dataset, val_dataset = set_cifar_challenge.make_train_val_datasets(squashed_images, labels, args.validation_set_size, transform=None, shuf=args.cifar_shuffle_val_set) 
-            train_dataset.transform = tr
-            val_dataset.transform = transforms.ToTensor()
-            f=open('./local_data/cifar10/cifar-10-batches-py/test_batch','rb')
-            dictionary=pickle.load(f,encoding="bytes")
-            squashed_images = dictionary[b'data']
-            labels = dictionary[b'labels']
-            f.close()
-            test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=labels, transform=transforms.ToTensor())
+        train_dataset, val_dataset = set_cifar_challenge.make_train_val_datasets(squashed_images, labels, args.validation_set_size, transform=None, shuf=args.cifar_shuffle_val_set) 
+        train_dataset.transform = tr
+        val_dataset.transform = transforms.ToTensor()
+        f=open('./local_data/cifar10/cifar-10-batches-py/test_batch','rb')
+        dictionary=pickle.load(f,encoding="bytes")
+        squashed_images = dictionary[b'data']
+        labels = dictionary[b'labels']
+        f.close()
+        test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=labels, transform=transforms.ToTensor())
 
 
         

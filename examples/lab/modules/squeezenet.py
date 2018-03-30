@@ -715,9 +715,9 @@ class SqueezeNet(serialmodule.SerializableModule):
         if config.use_forking:
             self.calculating_exit_proportions = False
             self.exit_proportions_calculated = False
-            self.exit_tallies = [0]*len(config.num_layer_chunks)
-            self.total_exits
-            self.exit_proportions = [-1]*len(config.num_layer_chunks)
+            self.exit_tallies = [0]*config.num_layer_chunks
+            self.total_exits = 0
+            self.exit_proportions = [-1] * config.num_layer_chunks
         if config.chunk_across_devices:
             assert len(config.layer_chunk_devices ) == config.num_layer_chunks  
             assert config.num_layer_chunks <= torch.cuda.device_count()
@@ -1004,9 +1004,9 @@ class SqueezeNet(serialmodule.SerializableModule):
              for i in length(self.layer_chunks):
                 avg_mults+=culm_mults_by_chunk[i]*self.exit_proportions[i] 
                 report_string +="+"+ str(culm_mults_by_chunk[i])+"*"+str(self.exit_proportions[i])
-            report_string +="="+str(avg_mults)
-            logging.info(report_string)
-            return avg_mults
+             report_string +="="+str(avg_mults)
+             logging.info(report_string)
+             return avg_mults
 
                           
 

@@ -715,8 +715,8 @@ class SqueezeNet(serialmodule.SerializableModule):
         if config.use_forking:
             self.calculating_exit_proportions = False
             self.exit_proportions_calculated = False
-            self.exit_tallies = [0]*len(config.num_layer_chunks)
-            self.total_exits
+            self.exit_tallies = [0]*config.num_layer_chunks
+            self.total_exits = 0
             self.exit_proportions = [-1]*len(config.num_layer_chunks)
         if config.chunk_across_devices:
             assert len(config.layer_chunk_devices ) == config.num_layer_chunks  
@@ -937,7 +937,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                     cur_scores_log_probs = F.log_softmax(cur_scores.view(-1))
                     cur_scores_probs= F.sofmax(cur_scores.view(-1))
                     entropy = -sum(cur_scores_probs*cur_scores_log_probs)
-                    if entropy< config.fork_entropy_threshold[i]:
+                    if entropy< config.fork_entropy_threshold:
                         if self.calculating_exit_proportions:
                             self.exit_tallies[i] += 1
                             self.total_exits+=1
@@ -1004,9 +1004,9 @@ class SqueezeNet(serialmodule.SerializableModule):
              for i in length(self.layer_chunks):
                 avg_mults+=culm_mults_by_chunk[i]*self.exit_proportions[i] 
                 report_string +="+"+ str(culm_mults_by_chunk[i])+"*"+str(self.exit_proportions[i])
-            report_string +="="+str(avg_mults)
-            logging.info(report_string)
-            return avg_mults
+             report_string +="="+str(avg_mults)
+             logging.info(report_string)
+             return avg_mults
 
                           
 
