@@ -194,7 +194,8 @@ def make_context(args):
         labels = dictionary[b'labels']
         f.close()
         test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=labels, transform=transforms.ToTensor())
-
+        if args.use_val_as_test:
+            test_dataset=val_dataset
 
         
         #train_dataset = tvds.CIFAR10("./local_data/cifar10/", train=True, download= True, transform=tr ) 
