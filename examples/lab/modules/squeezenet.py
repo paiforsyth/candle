@@ -1019,7 +1019,7 @@ class SqueezeNet(serialmodule.SerializableModule):
        assert self.use_forking 
        assert self.calculating_exit_proportions
        logging.info("Total Exits:"+str(self.total_exits))
-       logging.info("Exit tallies:"+",".join(self.exit_tallies))
+       logging.info("Exit tallies:"+",".join(map(str,self.exit_tallies)) )
        for index in range(self.num_layer_chunks):
             logging.info("chunk: "+str(index))
             logging.info("exit tally: "+str(self.exit_tallies[index]))
