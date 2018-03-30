@@ -956,7 +956,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 for i in range(len(score_list)):
                     score_list[i]=score_list[i].cuda(score_list[0].get_device())
                 return score_list
-        if not self.training and config.squeezenet_fork_early_exit and self.calculating_exit_proportions:
+        if not self.training and self.squeezenet_fork_early_exit and self.calculating_exit_proportions:
             self.total_exits+=1
         return x
 
@@ -1021,7 +1021,7 @@ def get_ext_props_on_sample(squeezenet,  loader):
     assert squeezenet.use_forking
     assert not squeezenet.exit_proportions_calculated
     squeezenet.calculating_exit_proportions = True
-    for batch, other* in loader:
+    for batch, *other in loader:
         assert batch.shape[0] == 1 #to do early exit we need to have batch sizes of one
         squeezenet(batch) 
 
