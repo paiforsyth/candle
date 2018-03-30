@@ -1015,8 +1015,8 @@ class SqueezeNet(serialmodule.SerializableModule):
          return mults
 
     def calc_exit_proportions(self):
-       assert squeezenet.use_forking 
-       assert squeezenet.calculating_exit_proportions
+       assert self.use_forking 
+       assert self.calculating_exit_proportions
        logging.info("Exit tallies:")
        for index in range(self.num_layer_chunks):
             logging.info("chunk: "+str(i))
