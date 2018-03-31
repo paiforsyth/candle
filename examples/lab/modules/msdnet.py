@@ -65,10 +65,10 @@ class MSDConvUnit(nn.Sequential):
     def __init__(self, in_channels, out_channels, stride, proxy_ctx, proxy_ctx_mode):
         super().__init__()
         conv_wrapper, bn_wrapper = get_wrappers(proxy_ctx, proxy_ctx_mode) 
-        self.add_module('conv1',conv_wrapper(nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride), ))
+        self.add_module('conv1',conv_wrapper(nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1), ))
         self.add_module('bn1',bn_wrapper(nn.BatchNorm2d(out_channels))  )
         self.add_module('relu1',nn.ReLU() ) 
-        self.add_module('conv2',conv_wrapper(nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1), ))
+        self.add_module('conv2',conv_wrapper(nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1,stride=stride), ))
         self.add_module('bn2',bn_wrapper(nn.BatchNorm2d(out_channels))  )
         self.add_module('relu2', nn.ReLU())
 
