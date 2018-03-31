@@ -12,6 +12,7 @@ from . import serialmodule
 from . import shakedrop_func 
 from .countmult import count_approx_multiplies
 from . import shake_shake
+from . import msdnet
 from torch.autograd import Variable
 
 from candle.prune import PruneContext, GroupPruneContext
@@ -42,7 +43,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_sr",type=float, default=0.125)
     parser.add_argument("--squeezenet_out_dim",type=int)
 
-    parser.add_argument("--squeezenet_mode",type=str, choices=["zag_fire","shuffle_fire", "bnnfire", "resfire","wide_resfire","dense_fire","dense_fire_v2","next_fire","normal"], default="normal")
+    parser.add_argument("--squeezenet_mode",type=str, choices=["msd_fire","zag_fire","shuffle_fire", "bnnfire", "resfire","wide_resfire","dense_fire","dense_fire_v2","next_fire","normal"], default="normal")
 
     parser.add_argument("--squeezenet_dropout_rate",type=float,default=0)
     parser.add_argument("--squeezenet_densenet_dropout_rate",type=float,default=0)
@@ -106,6 +107,9 @@ def add_args(parser):
     parser.add_argument("--squeezenet_fork_module",choices=["zag_fire"], default="zag_fire")
     parser.add_argument("--squeezenet_fork_early_exit",action="store_true")
     parser.add_argument("--squeezenet_fork_entropy_threshold",type=float ) #ith element is entropy required to exit after ith chunk Note that the ith chunk will only be considered as a possible eexit if i is in squeezenet_fork_after_chunks
+
+    parser.add_argument("--squeezenet_msd_growth_rate", type=int)
+    parser.add_argument("--squeezenet_msd_num_scales",type=int, default=3)
 
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
@@ -611,7 +615,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -699,8 +703,9 @@ class SqueezeNet(serialmodule.SerializableModule):
                 fork_after_chunks =args.squeezenet_fork_after_chunks,
                 fork_module =args.squeezenet_fork_module,
                 fork_early_exit=args.squeezenet_fork_early_exit,
-                fork_entropy_threshold =args.squeezenet_fork_entropy_threshold
-
+                fork_entropy_threshold =args.squeezenet_fork_entropy_threshold,
+                msd_growth_rate = args.squeezenet_msd_growth_rate,
+                msd_num_scales = args.squeezenet_msd_num_scales
                 )
         return SqueezeNet(config)
 
@@ -773,8 +778,9 @@ class SqueezeNet(serialmodule.SerializableModule):
 
         num_pool_so_far =0 #for debugging
         self.channel_counts=[ first_layer_num_convs]#initial number of channels entering ith fire layer (labeled i+2 to match paper)
+
         for i in range(num_fires):
-            if  config.mode != "dense_fire" and config.mode != "dense_fire_v2":
+            if  config.mode != "dense_fire" and config.mode != "dense_fire_v2" and config.mode != "msd_fire":
                 if config.pool_interval_mode == "add":
                     e = config.base+math.floor(config.incr*math.floor(i/config.freq))
                 elif config.pool_interval_mode == "multiply":
@@ -844,18 +850,26 @@ class SqueezeNet(serialmodule.SerializableModule):
                 ts=max(math.floor(config.dense_fire_compression_level*doutsize),1)
                 layer_dict["transition{}".format(i+2)]=DenseFireV2Transition(doutsize, ts)
                 self.channel_counts.append(ts)
-                
+            elif config.mode == "msd_fire":
+                if i == 0:
+                    layer_dict["msd_init_fire_{}".format(i+2)] =msdnet.MSDInitialFire(in_channels=self.channel_counts[i],out_channels_finest=config.msd_growth_rate,num_scales =config.msd_num_scales,proxy_ctx=proxy_ctx, proxy_ctx_mode = config.proxy_context_type    ) 
+                    self.channel_counts.append(config.msd_growth_rate) #Note that the first column of a msdnet does not apped its input to its output, unlike the other columns
+                else:
+                    layer_dict["msd_column_fire_{}".format(i+2)] = msdnet.MSDColumnFire(in_channels_finest = self.channel_counts[i], growth_channels_finest =config.msd_growth_rate, num_scales = config.msd_num_scales, proxy_ctx= proxy_ctx, proxy_ctx_mode = config.proxy_context_type)
+                    self.channel_counts.append(self.channel_counts[i] + config.msd_growth_rate)
 
             if not config.disable_pooling and (i+pool_offset) % config.pool_interval == 0 and i !=0:
                 logging.info("adding max pool layer")
                 layer_dict["maxpool{}".format(i+2)]= nn.MaxPool2d(kernel_size=config.max_pool_size,stride=2,padding=1)
                 num_pool_so_far+=1
         logging.info("counted " +str(num_pool_so_far)+" pooling layers" )
-        layer_dict["dropout"]=nn.Dropout(p=config.dropout_rate)
+        skip_dropout = config.mode == "msd_fire"
+        if not skip_dropout:
+            layer_dict["dropout"]=nn.Dropout(p=config.dropout_rate)
         self.final_fc=config.final_fc
         assert( not self.final_fc) #temp bugged
         if not self.final_fc:
-            if config.mode != "normal":
+            if config.mode != "normal" and config.mode !="msd_fire":
                 if config.final_act_mode == "enable":
                     layer_dict["final_convrelu"]=nn.LeakyReLU()
                 if config.proxy_context_type == "no_context":
@@ -864,6 +878,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                     layer_dict["final_conv"]=proxy_ctx.bypass(nn.Conv2d(self.channel_counts[-1], config.out_dim, kernel_size=1)) 
                 else:
                     layer_dict["final_conv"]=proxy_ctx.wrap(nn.Conv2d(self.channel_counts[-1], config.out_dim, kernel_size=1)) 
+            elif config.mode == "msd_fire":
+                layer_dict["msd_final_exit"]= msdnet.MSDExitBranchFire( in_channels=self.channel_counts[-1],num_classes= config.out_dim,num_scales=config.msd_num_scales, proxy_ctx=proxy_ctx, proxy_ctx_mode=config.proxy_context_type)
             else: 
                 layer_dict["final_conv"]=nn.Conv2d(self.channel_counts[-1], config.out_dim, kernel_size=1) 
                 if config.final_act_mode =="enable":
