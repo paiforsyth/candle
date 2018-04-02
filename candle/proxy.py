@@ -181,7 +181,7 @@ class ProxyBatchNorm2d(ProxyLayer):
     def multiplies(self,img_h, img_w, input_channels):
         from . import prune
         if isinstance(self.weight_provider,prune.BatchNorm2DMask ):
-            effective_out = self.effective_output_channels
+            effective_out = self.effective_output_channels()
             logging.debug("effective output channels for ProxyBatchNorm2d is {} ".format(effective_out))
         return  0, effective_out, img_h, img_w
 
