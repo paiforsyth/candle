@@ -288,7 +288,8 @@ class ExternChannel2DMask(WeightMaskGroup):
         return Package([nn.Parameter(torch.Tensor([]) )])
 
     def expand_masks(self):
-        return Package([Variable( following_proxy_bn.data.new([1])), Variable(following_proxy_bn.data.new([1]))])
+        weights= self.root.parameters()[0] #only for getting the right device
+        return Package([Variable( weights.data.new([1])), Variable(weights.data.new([1]))])
 
 
 class LinearRowMask(WeightMaskGroup):
