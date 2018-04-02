@@ -400,12 +400,12 @@ class PruneContext(Context):
                 self._prune_one_mask(weight, mask, percentage)   
 
     
-     def prune_global_smallest(self, percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
-         '''
+    def prune_global_smallest(self, percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
+        '''
          Idea is to find the globally smallest weights (across layers) and set the corresponding masks to 0 
          only suitable for situations in which the wegiht norms being pruned have comparable magnitudes across channels
          (i.e. network slimming)
-         '''
+        '''
         rank_call = method_map[method]
         proxies = self.list_proxies("weight_hook", mask_type)
         weights_list = rank_call(self, proxies)
@@ -418,7 +418,7 @@ class PruneContext(Context):
         thresh = float(global_weights[thresh_dex.data])
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
-                 _, indices = torch.sort(weight.view(-1)) #unnecesary
+                _, indices = torch.sort(weight.view(-1)) #unnecesary
                 indices = indices[mask.view(-1)[indices] != 0 and weight.view(-1)[indicies] <=thresh ]
                 if indices.size(0) <= 1:
                     continue
@@ -429,11 +429,11 @@ class PruneContext(Context):
 
 
             
-    def _prune_one_mask(self, weight,mask, percentage)
-    '''
-    given a tensor of magnitudes and a correspondiny tensor masks, prune the masks corresponding to the smallest magnitudes
-    '''
-                 _, indices = torch.sort(weight.view(-1))
+    def _prune_one_mask(self, weight,mask, percentage):
+                '''
+    given a tensor of magnitudes and a corresponding tensor og masks, prune the masks corresponding to the smallest magnitudes
+                '''
+                _, indices = torch.sort(weight.view(-1))
                 ne0_indices = indices[mask.view(-1)[indices] != 0]
                 if ne0_indices.size(0) <= 1:
                     return
