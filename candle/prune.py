@@ -122,6 +122,7 @@ class WeightMaskGroup(ProxyDecorator):
 
     def call(self, input):
         masks = self.expand_masks()
+        #import pdb; pdb.set_trace()
         return input * masks
 
 class HardConcreteFunction(Function):
@@ -241,11 +242,11 @@ class BatchNorm2DMask(WeightMaskGroup):
         else:
             mask = self._flattened_masks[0]
         expand_weight = mask
-        expand_bias = 1 #Don't mask biases.  Teh bias of a pruned BN channel can simply be factored into the bias of the subsequent conv, if it is not killed by a ReLU
+        expand_bias = Variable(torch.Tensor([1])) #Don't mask biases.  Teh bias of a pruned BN channel can simply be factored into the bias of the subsequent conv, if it is not killed by a ReLU
         return Package([expand_weight, expand_bias])
 
-    def l1_loss_slimming(self):
-        return self.layer.weight_provider.reify()[0].norm(p=1)
+    def l1_loss_slimming(self,lambd):
+        return lambd*self.root.parameters()[0].norm(p=1)
 
 
 class Channel2DMask(WeightMaskGroup):
@@ -281,13 +282,13 @@ class ExternChannel2DMask(WeightMaskGroup):
         self.following_proxy_bn = following_proxy_bn 
 
     def build_masks(self,init_value):
-        return Package(nn.Parameter(torch.Tensor([])))
+        return Package([nn.Parameter(torch.Tensor([]))])
 
     def split(self, root):
-        return Package(nn.Parameter(torch.Tensor([])))
+        return Package([nn.Parameter(torch.Tensor([]) )])
 
     def expand_masks(self):
-        return 1 
+        return Package([Variable(torch.Tensor([1])), Variable(torch.Tensor([1]))])
 
 
 class LinearRowMask(WeightMaskGroup):
@@ -464,7 +465,7 @@ class GroupPruneContext(PruneContext):
             construct= functools.partial( ConvGroupChannel2DMask, conv_group_size =  conv_group_size )
             return construct
         elif layer_type == ProxyConv2d and prune == "slim":
-             assert extern_mask_group is not None
+             assert following_proxy_bn is not None
              return  functools.partial(ExternChannel2DMask, following_proxy_bn = following_proxy_bn ) 
         elif layer_type == ProxyBatchNorm2d and prune == "slim":
             return BatchNorm2DMask

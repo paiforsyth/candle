@@ -176,7 +176,7 @@ class ProxyBatchNorm2d(ProxyLayer):
     def on_forward(self, x):
         #note: F.batch_norm will automatically update running_mean and runnning_var
         weights = self.weight_provider().reify()
-        return F.batch_norm(self.running_mean, self.running_var,*weights, self.training, self.momentum, self.eps )
+        return F.batch_norm(x,self.running_mean, self.running_var,*weights, training=self.training,momentum= self.momentum,eps= self.eps )
     
     def multiplies(self,img_h, img_w, input_channels):
         from . import prune

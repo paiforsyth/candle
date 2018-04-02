@@ -113,7 +113,7 @@ class Context(object):
             else:
                 raise ValueError("Unsupported!")
         elif isinstance(layer, nn.BatchNorm2d):
-           num_features, eps, momentum = layer.num_features, layer_eps, layer_momentum
+           num_features, eps, momentum = layer.num_features, layer.eps, layer.momentum
            kwargs["num_features"] = num_features
            kwargs["momentum"] = momentum
            kwargs["eps"] = eps

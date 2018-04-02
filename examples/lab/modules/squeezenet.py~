@@ -332,12 +332,11 @@ class ZagFire(serialmodule.SerializableModule):
          layer_dict = collections.OrderedDict()
          layer_dict["bn1"]=bn_wrapper(nn.BatchNorm2d(in_channels))
          layer_dict["activation1"]=activation
-         #accomadate weight slimming
          if proxy_mode != "l1reg_context_slimming":
             layer_dict["conv1"]=   first_wrapper(nn.Conv2d(in_channels=in_channels, out_channels= in_channels, kernel_size=3, padding=1) )
             layer_dict["dropout"]=nn.Dropout(p=dropout_rate,inplace=True)
             layer_dict["bn2"] = bn_wrapper(nn.BatchNorm2d(in_channels)) 
-         else:
+         else: #neccesary to correctly count multiplies with weight slimming 
              bn2 = bn_wrapper(nn.BatchNorm2d(in_channels)) 
              conv1 = first_wrapper(nn.Conv2d(in_channels=in_channels, out_channels= in_channels, kernel_size=3, padding=1),following_proxy_bn = bn2 )
              layer_dict["conv1"] = conv1

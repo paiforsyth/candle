@@ -114,7 +114,7 @@ def make_context(args):
    if args.enable_l0reg or args.proxy_context_type == "l0reg_context" :
        assert  args.enable_l0reg and args.proxy_context_type == "l0reg_context" 
    if args.enable_l1reg or args.proxy_context_type == "l1reg_context_slimming":
-       assert args.enable_l1_reg and args.proxy_context_type == "l1reg_context_slimming"
+       assert args.enable_l1reg and args.proxy_context_type == "l1reg_context_slimming"
   
    if args.dataset_for_classification == "simple":
         if args.save_prefix is None:
@@ -367,6 +367,8 @@ def run(args, ensemble_test=False):
    
    report_interval=max(len(context.train_loader) //  args.reports_per_epoch ,1)
    accumulated_loss=0 
+   if args.enable_l1reg:
+       accumulated_l1l=0
    param_count=genutil_modules.count_trainable_params(context.model)
    if args.proxy_context_type == "no_context": 
         param_count = modules.count_trainable_params(context.model)
@@ -425,7 +427,7 @@ def run(args, ensemble_test=False):
             prune_target = int(init_mask_count *args.prune_target_frac )
         else:
             prune_target =args.prune_target
-        logging.info("Target number of masks is :{}".format(prune_target))
+        logging.info("Target number of masks is : {}".format(prune_target))
    
    best_eval_score=-float("inf")
    for epoch_count in range(args.num_epochs):
@@ -496,9 +498,9 @@ def run(args, ensemble_test=False):
                 loss += context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 
 
             if args.enable_l1reg:
-                loss +=context.model.proxy_ctx.l1_loss_slimming(args.l1reg_lambda)
-
-
+                l1l = context.model.proxy_ctx.l1_loss_slimming(args.l1reg_lambda)
+                accumulated_l1l+=l1l
+                loss += l1l
             loss.backward()
 
 
@@ -516,7 +518,10 @@ def run(args, ensemble_test=False):
             if step % report_interval == 0:
                 reporting.report(epoch_start_time,step,len(context.train_loader), accumulated_loss / report_interval)
                 accumulated_loss = 0
-             #added tor try to clear computation graph after every eppoch
+                if args.enable_l1reg:
+                    logging.info("l1_loss:{}".format(accumulated_l1l))
+                    accumulated_l1l=0
+        #added tor try to clear computation graph after every eppoch
         del loss
         del scores
         context.model.eval()
