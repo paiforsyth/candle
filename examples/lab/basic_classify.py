@@ -40,6 +40,7 @@ from  .modules import saveable_data_par
 from .genutil import modules
 from torchvision import transforms
 import torchvision.datasets as tvds
+import candle.prune
 def add_args(parser):
     if parser is None:
         parser= argparse.ArgumentParser() 
@@ -548,7 +549,7 @@ def run(args, ensemble_test=False):
                     context.model.proxy_ctx.prune(1)
                 elif args.prune_layer_mode == "global":
                     assert args.proxy_context_type == "l1reg_context_slimming" 
-                    context.model.proxy_ctx.prune_global_smallest(1)
+                    context.model.proxy_ctx.prune_global_smallest(1,mask_type=candle.prune. BatchNorm2DMask)
        
         if args.save_every_epoch:
             context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_most_recent" )  )
