@@ -415,7 +415,7 @@ class PruneContext(Context):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
                global_weights = weight if global_weights is  None else torch.cat([global_weights, weight]) 
         global_weights,_=torch.sort(global_weights)
-        imprt pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
         thresh_dex = math.ceil(percentage*global_weights.size(0))
         thresh = float(global_weights[thresh_dex])
         for weights, proxy in zip(weights_list, proxies):
