@@ -536,6 +536,7 @@ def run(args, ensemble_test=False):
            
         if args.enable_pruning: 
              if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> prune_target:
+                logging.info("pruning...")
                 context.model.proxy_ctx.prune(1)
        
         if args.save_every_epoch:
