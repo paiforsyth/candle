@@ -242,7 +242,7 @@ class BatchNorm2DMask(WeightMaskGroup):
         else:
             mask = self._flattened_masks[0]
         expand_weight = mask
-        expand_bias = Variable(torch.Tensor([1])) #Don't mask biases.  Teh bias of a pruned BN channel can simply be factored into the bias of the subsequent conv, if it is not killed by a ReLU
+        expand_bias = Variable(mask.data.new([1])) #Don't mask biases.  Teh bias of a pruned BN channel can simply be factored into the bias of the subsequent conv, if it is not killed by a ReLU
         return Package([expand_weight, expand_bias])
 
     def l1_loss_slimming(self,lambd):
@@ -288,7 +288,7 @@ class ExternChannel2DMask(WeightMaskGroup):
         return Package([nn.Parameter(torch.Tensor([]) )])
 
     def expand_masks(self):
-        return Package([Variable(torch.Tensor([1])), Variable(torch.Tensor([1]))])
+        return Package([Variable( following_proxy_bn.data.new([1])), Variable(following_proxy_bn.data.new([1]))])
 
 
 class LinearRowMask(WeightMaskGroup):
