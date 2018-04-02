@@ -540,9 +540,15 @@ def run(args, ensemble_test=False):
             context.tb_writer.write_unpruned_params(n_unpruned)
            
         if args.enable_pruning: 
+             assert(args.report_unpruned)
              if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> prune_target:
                 logging.info("pruning...")
-                context.model.proxy_ctx.prune(1)
+                if args.prune_layer_mode == "by_layer" :
+                    assert args.proxy_context_type != "l1reg_context_slimming" 
+                    context.model.proxy_ctx.prune(1)
+                elif args.prune_layer_mode == "global":
+                    assert args.proxy_context_type == "l1reg_context_slimming" 
+                    context.model.proxy_ctx.prune_global_smallest(1)
        
         if args.save_every_epoch:
             context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_most_recent" )  )

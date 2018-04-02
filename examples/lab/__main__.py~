@@ -97,7 +97,7 @@ def default_parser(parser=None):
     parser.add_argument("--l0reg_lambda", type=float, default =1.5 / 50000 )
 
     parser.add_argument("--enable_l1reg", action="store_true")
-    parser.add_argument("l1reg_lambda", type=float, default = 10**(-5))
+    parser.add_argument("--l1reg_lambda", type=float, default = 10**(-5))
 
     parser.add_argument("--report_unpruned",action="store_true") 
     
@@ -107,6 +107,7 @@ def default_parser(parser=None):
 
     #prune trained model
     parser.add_argument("--prune_trained", action="store_true", help= "Prune a trained model, then resave it ")
+    parser.add_argument("--prune_layer_mode", choices = ["by_layer, global"], default= "by_layer")
     parser.add_argument("--prune_trained_pct", type=int, help="pct of weights to prune")
 
     parser.add_argument("--validate_fr", action="store_true",help="get accuracy of a result report using ground truth")

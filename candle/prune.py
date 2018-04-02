@@ -397,10 +397,46 @@ class PruneContext(Context):
         weights_list = rank_call(self, proxies)
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
-                _, indices = torch.sort(weight.view(-1))
+                self._prune_one_mask(weight, mask, percentage)   
+
+    
+     def prune_global_smallest(self, percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
+         '''
+         Idea is to find the globally smallest weights (across layers) and set the corresponding masks to 0 
+         only suitable for situations in which the wegiht norms being pruned have comparable magnitudes across channels
+         (i.e. network slimming)
+         '''
+        rank_call = method_map[method]
+        proxies = self.list_proxies("weight_hook", mask_type)
+        weights_list = rank_call(self, proxies)
+        global_weights = None
+        for weights, proxy in zip(weights_list, proxies):
+            for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
+               global_weights = weight if global_weights==None else torch.cat([global_weights, weight]) 
+        global_weights,_=torch.sort(global_weights)
+        thresh_dex = math.ceil(percentage*global_weights.size(0))
+        thresh = float(global_weights[thresh_dex.data])
+        for weights, proxy in zip(weights_list, proxies):
+            for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
+                 _, indices = torch.sort(weight.view(-1)) #unnecesary
+                indices = indices[mask.view(-1)[indices] != 0 and weight.view(-1)[indicies] <=thresh ]
+                if indices.size(0) <= 1:
+                    continue
+                if indices.size(0) > 0:
+                    mask.data.view(-1)[indices.data] = 0
+
+               
+
+
+            
+    def _prune_one_mask(self, weight,mask, percentage)
+    '''
+    given a tensor of magnitudes and a correspondiny tensor masks, prune the masks corresponding to the smallest magnitudes
+    '''
+                 _, indices = torch.sort(weight.view(-1))
                 ne0_indices = indices[mask.view(-1)[indices] != 0]
                 if ne0_indices.size(0) <= 1:
-                    continue
+                    return
                 length = math.ceil(ne0_indices.size(0) * percentage / 100)
                 indices = ne0_indices[:length]
                 if indices.size(0) > 0:
@@ -485,3 +521,6 @@ class GroupPruneContext(PruneContext):
 
     def prune(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
         super().prune(percentage, method, method_map, mask_type)
+
+    def prune_global_smallest(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
+        super().prune_global_smallest(percentage, method, method_map, mask_type)
