@@ -350,6 +350,7 @@ class WeightMask(ProxyDecorator):
         return input * self.masks
 
 def _group_rank_norm(context, proxies, p=1):
+    import pdb; pdb.set_trace()
     return [proxy.split(proxy.root).norm(p, 0) for proxy in proxies]
 
 def _group_rank_l1(context, proxies):
