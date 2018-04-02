@@ -49,7 +49,7 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
         stride = layer.stride
         dilation = layer.dilation
         dim=layer.weight.data.shape
-        assert(dim[1] == input_channels)
+        #assert(dim[1] == input_channels) NOTE: This actually need not hold if we pruned a preceeding convolution
 
         out_h = img_h
         mults, chan_out, h, w =  util.countmult_util.conv2d_mult_compute(img_h, img_w, in_channels=input_channels, out_channels=dim[0], groups=groups, stride=stride, padding=padding, kernel_size=kernel_size, dilation=dilation)
