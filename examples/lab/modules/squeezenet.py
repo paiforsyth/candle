@@ -315,7 +315,12 @@ class ZagFire(serialmodule.SerializableModule):
          super().__init__()
          self.in_channels = in_channels
          self.out_channels = out_channels
-         if proxy_mode is not None and proxy_mode!="no_context":
+         if proxy_mode == "l1reg_context_slimming":
+             bn_wrapper = proxy_ctx.wrap
+             first_wrapper = proxy_ctx.wrap
+             last_wrapper  = proxy_ctx.bypass
+             #note we need to treat the first conv specially in this case, so it can calc muttiplies based on the following batch norm
+         elif proxy_mode is not None and proxy_mode != "no_context":
             bn_wrapper = proxy_ctx.bypass
             if bypass_last:
                 first_wrapper = proxy_ctx.wrap
@@ -327,9 +332,18 @@ class ZagFire(serialmodule.SerializableModule):
          layer_dict = collections.OrderedDict()
          layer_dict["bn1"]=bn_wrapper(nn.BatchNorm2d(in_channels))
          layer_dict["activation1"]=activation
-         layer_dict["conv1"]=first_wrapper(nn.Conv2d(in_channels=in_channels, out_channels= in_channels, kernel_size=3, padding=1) )
-         layer_dict["dropout"]=nn.Dropout(p=dropout_rate,inplace=True)
-         layer_dict["bn2"] = bn_wrapper(nn.BatchNorm2d(in_channels)) 
+         if proxy_mode != "l1reg_context_slimming":
+            layer_dict["conv1"]=   first_wrapper(nn.Conv2d(in_channels=in_channels, out_channels= in_channels, kernel_size=3, padding=1) )
+            layer_dict["dropout"]=nn.Dropout(p=dropout_rate,inplace=True)
+            layer_dict["bn2"] = bn_wrapper(nn.BatchNorm2d(in_channels)) 
+         else: #neccesary to correctly count multiplies with weight slimming 
+             bn2 = bn_wrapper(nn.BatchNorm2d(in_channels)) 
+             conv1 = first_wrapper(nn.Conv2d(in_channels=in_channels, out_channels= in_channels, kernel_size=3, padding=1),following_proxy_bn = bn2 )
+             layer_dict["conv1"] = conv1
+             layer_dict["dropout"] = nn.Dropout(p=dropout_rate,inplace=True)
+             layer_dict["bn2"] = bn2
+
+
          layer_dict["activation2"] =activation
          layer_dict["conv2"]=last_wrapper(nn.Conv2d(in_channels=in_channels, out_channels = out_channels, kernel_size=3, padding=1))
          self.seq=nn.Sequential(layer_dict)
@@ -743,6 +757,8 @@ class SqueezeNet(serialmodule.SerializableModule):
             proxy_ctx = candle.prune.GroupPruneContext(stochastic=False)
         elif config.proxy_context_type == "l0reg_context":
             proxy_ctx = candle.prune.GroupPruneContext(stochastic=True) 
+        elif config.proxy_context_type == "l1reg_context_slimming":
+            proxy_ctx = candle.prune.GroupPruneContext(stochastic = False, prune="slim")
         elif config.proxy_context_type == "no_context":
             proxy_ctx = None
         elif config.proxy_context_type == "tanhbinarize_context":

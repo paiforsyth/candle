@@ -113,6 +113,8 @@ def make_context(args):
    holdout_loader =None
    if args.enable_l0reg or args.proxy_context_type == "l0reg_context" :
        assert  args.enable_l0reg and args.proxy_context_type == "l0reg_context" 
+   if args.enable_l1reg or args.proxy_context_type == "l1reg_context_slimming":
+       assert args.enable_l1_reg and args.proxy_context_type == "l1reg_context_slimming"
   
    if args.dataset_for_classification == "simple":
         if args.save_prefix is None:
@@ -264,6 +266,8 @@ def make_context(args):
    else:
        if args.enable_l0reg:
            assert args.use_all_params
+       elif args.enable_l1reg:
+           assert not args.use_all_params #in the network slimming case, we do not optimize over the masks.  They are set to zero based on a pruning scheule
        if args.use_all_params:
            model_parameters = model.proxy_ctx.list_params()
        else: 
@@ -414,7 +418,14 @@ def run(args, ensemble_test=False):
            channels=3
        print("Approx number of multiplies: ", countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels))    
        return
-
+   if args.enable_pruning:
+        init_mask_count = context.model.proxy_ctx.count_unpruned()
+        logging.info("Initial number of masks {}".format(init_mask_count))
+        if args.prune_target_frac is not None:
+            prune_target = int(init_mask_count *args.prune_target_frac )
+        else:
+            prune_target =args.prune_target
+        logging.info("Target number of masks is :{}".format(prune_target))
    
    best_eval_score=-float("inf")
    for epoch_count in range(args.num_epochs):
@@ -484,6 +495,9 @@ def run(args, ensemble_test=False):
             if args.enable_l0reg:
                 loss += context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 
 
+            if args.enable_l1reg:
+                loss +=context.model.proxy_ctx.l1_loss_slimming(args.l1reg_lambda)
+
 
             loss.backward()
 
@@ -521,7 +535,7 @@ def run(args, ensemble_test=False):
             context.tb_writer.write_unpruned_params(n_unpruned)
            
         if args.enable_pruning: 
-             if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> args.prune_target:
+             if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> prune_target:
                 context.model.proxy_ctx.prune(1)
        
         if args.save_every_epoch:

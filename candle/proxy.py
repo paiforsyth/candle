@@ -164,6 +164,33 @@ class ProxyLayer(nn.Module):
     def on_forward(self, *args, **kwargs):
         raise NotImplementedError
 
+class ProxyBatchNorm2d(ProxyLayer):
+    def __init__(self,weight_provider, num_features, eps, momentum, **kwargs):
+        super().__init__(weight_provider, **kwargs)
+        self.num_features = num_features
+        self. eps = eps
+        self. momentum = momentum
+        self.register_buffer('running_mean', torch.zeros(num_features))
+        self.register_buffer('running_var', torch.zeros(num_features))
+
+    def on_forward(self, x):
+        #note: F.batch_norm will automatically update running_mean and runnning_var
+        weights = self.weight_provider().reify()
+        return F.batch_norm(self.running_mean, self.running_var,*weights, self.training, self.momentum, self.eps )
+    
+    def multiplies(self,img_h, img_w, input_channels):
+        from . import prune
+        if isinstance(self.weight_provider,prune.BatchNorm2dMask ):
+            effective_out = self.effective_output_channels
+            logging.debug("effective output channels for ProxyBatchNorm2d is {} ".format(effective_out))
+        return  0, effective_out, img_h, img_w
+
+    def effective_output_channels(self):
+        return  self.weight_provider.mask_unpruned[0]
+
+
+
+
 class _ProxyConvNd(ProxyLayer):
     def __init__(self, weight_provider, conv_fn, stride=1, padding=0, dilation=1, groups=1, **kwargs):
         super().__init__(weight_provider, **kwargs)
@@ -200,6 +227,9 @@ class _ProxyConvNd(ProxyLayer):
             effective_out = unpruned_masks * self.weight_provider.conv_group_size
             logging.debug(" effective output channels is {}*{}={}".format(unpruned_masks,self.weight_provider.conv_group_size,effective_out) )
             return effective_out
+        elif isinstance(self.weight_provider, prune.ExternChannel2DMask):
+            assert isinstance(self.weight_provider.following_proxy_bn,  ProxyBatchNorm2d)
+            return self.weight_provider.following_proxy_bn.effective_output_channels() 
         else:
             import pdb; pdb.set_trace()
             raise Exception("unknown weight provider type")

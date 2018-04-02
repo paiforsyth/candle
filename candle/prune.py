@@ -69,6 +69,7 @@ class WeightMaskGroup(ProxyDecorator):
 
     @property
     def n_groups(self):
+        #params per group
         total_params = sum((self.expand_masks() != 0).float().sum().data[0].reify(flat=True))
         group_params = sum(self.masks.numel().reify(flat=True))
         return float(total_params / group_params)
@@ -78,6 +79,11 @@ class WeightMaskGroup(ProxyDecorator):
             raise ValueError("Mask group must be in stochastic mode!")
         cdf_gt0 = self.concrete_fn.cdf_gt0()
         return lambd * sum((self.n_groups * cdf_gt0).sum().reify(flat=True))
+
+    def l1_loss_slimming(self, lambd):
+        if self.stochastic:
+            raise ValueError("Mask group cannot be in stochastic mode")
+        return 0 #only batchnorm weight groups contribute to l1 loss in the network slimming scheme
 
     def parameters(self):
         return self._flattened_masks
@@ -215,7 +221,31 @@ class ConvGroupChannel2DMask(WeightMaskGroup): #for zeroing entire groups. e.g. 
         return Package([expand_weight, expand_bias])
 
 
+class BatchNorm2DMask(WeightMaskGroup):
+    def __init__(self, layer , child, **kwargs):
+        super().__init__(layer,child,**kwargs)
 
+    def build_masks(self, init_value):
+        return self._build_masks(init_value, self.child.sizes.reify()[0][0])
+        # One mask for each batch norm param
+
+    def split(self, root):
+        #This method is trivial here, but is implemented tos tay consistent with outher weight groups.  It returns a 1 by N matrix whose ith element is the ith scale factor
+        param = root.parameters()[0] #get the scale factors
+        split_root = param.view(param.size(0), -1).permute(1, 0)
+        return Package([split_root])
+
+    def expand_masks(self):
+        if self.stochastic:
+            mask = self.sample_concrete().singleton()
+        else:
+            mask = self._flattened_masks[0]
+        expand_weight = mask
+        expand_bias = 1 #Don't mask biases.  Teh bias of a pruned BN channel can simply be factored into the bias of the subsequent conv, if it is not killed by a ReLU
+        return Package([expand_weight, expand_bias])
+
+    def l1_loss_slimming(self):
+        return self.layer.weight_provider.reify()[0].norm(p=1)
 
 
 class Channel2DMask(WeightMaskGroup):
@@ -239,6 +269,26 @@ class Channel2DMask(WeightMaskGroup):
         expand_weight = mask.expand(sizes[3], sizes[2], sizes[1], -1).permute(3, 2, 1, 0)
         expand_bias = mask
         return Package([expand_weight, expand_bias])
+
+
+class ExternChannel2DMask(WeightMaskGroup):
+    '''
+    Intended use of this class is to allow a conv2d to correctly count its multiplies when it is followed by a barchnorm that may habe pruned channels.
+    I.e. this channel has no masks of its own.  It simply references another set of masks, so that they can be used to calc multiplies
+    '''
+    def __init__(self, layer, child, following_proxy_bn, **kwargs):
+        super().__init__(layer, child, **kwargs)
+        self.following_proxy_bn = following_proxy_bn 
+
+    def build_masks(self,init_value):
+        return Package(nn.Parameter(torch.Tensor([])))
+
+    def split(self, root):
+        return Package(nn.Parameter(torch.Tensor([])))
+
+    def expand_masks(self):
+        return 1 
+
 
 class LinearRowMask(WeightMaskGroup):
     def __init__(self, layer, child, **kwargs):
@@ -371,7 +421,7 @@ class GroupPruneContext(PruneContext):
                 conv_group_size = layer.weight_provider.sizes.reify()[0][0] / layer.groups
         else:
             conv_group_size = -1
-        layer.hook_weight(self.find_mask_type(type(layer), kwargs.get("prune", "out"), conv_group_size = conv_group_size) , stochastic=self.stochastic)
+        layer.hook_weight(self.find_mask_type(type(layer), kwargs.get("prune", "out"), conv_group_size = conv_group_size, following_proxy_bn = kwargs.get("following_proxy_bn", None)) , stochastic=self.stochastic)
         return layer
 
     def l0_loss(self, lambd):
@@ -380,6 +430,15 @@ class GroupPruneContext(PruneContext):
         for mask in group_masks:
             loss = loss + mask.l0_loss(lambd)
         return loss
+
+    def l1_loss_slimming(self, lambd):
+        group_masks = self.list_proxies("weight_hook", WeightMaskGroup)
+        loss = 0
+        for mask in group_masks:
+            loss = loss + mask.l1_loss_slimming(lambd)
+        return loss
+
+
 
     def freeze(self, refresh=True):
         group_masks = self.list_proxies("weight_hook", WeightMaskGroup)
@@ -391,7 +450,7 @@ class GroupPruneContext(PruneContext):
         for mask in group_masks:
             mask.unfreeze()
 
-    def find_mask_type(self, layer_type, prune="out", conv_group_size=-1 ):
+    def find_mask_type(self, layer_type, prune="out", conv_group_size=-1, following_proxy_bn = None ):
         #import pdb; pdb.set_trace()
         if layer_type == ProxyLinear and prune == "out":
             return LinearRowMask
@@ -404,6 +463,11 @@ class GroupPruneContext(PruneContext):
             #import pdb; pdb.set_trace()
             construct= functools.partial( ConvGroupChannel2DMask, conv_group_size =  conv_group_size )
             return construct
+        elif layer_type == ProxyConv2d and prune == "slim":
+             assert extern_mask_group is not None
+             return  functools.partial(ExternChannel2DMask, following_proxy_bn = following_proxy_bn ) 
+        elif layer_type == ProxyBatchNorm2d and prune == "slim":
+            return BatchNorm2DMask
         elif layer_type == ProxyRNN:
             return RNNMask
         else:

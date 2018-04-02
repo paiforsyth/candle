@@ -112,6 +112,13 @@ class Context(object):
                 return ProxyConv1d(provider, **kwargs)
             else:
                 raise ValueError("Unsupported!")
+        elif isinstance(layer, nn.BatchNorm2d):
+           num_features, eps, momentum = layer.num_features, layer_eps, layer_momentum
+           kwargs["num_features"] = num_features
+           kwargs["momentum"] = momentum
+           kwargs["eps"] = eps
+           return ProxyBatchNorm2d(provider, **kwargs) 
+
         elif isinstance(layer, nn.Linear):
             return ProxyLinear(provider, **kwargs)
         elif isinstance(layer, nn.modules.rnn.RNNBase):
@@ -122,6 +129,7 @@ class Context(object):
                 bias=bias, batch_first=batch_first, bidirectional=bidirectional, dropout=dropout)
             provider = IdentityProxy(layer, layer.all_weights)
             return ProxyRNN(base, provider, **kwargs)
+            
         else:
             raise ValueError("Unsupported!")
 
