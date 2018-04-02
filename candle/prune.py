@@ -413,7 +413,7 @@ class PruneContext(Context):
         global_weights = None
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
-               global_weights = weight if global_weights==None else torch.cat([global_weights, weight]) 
+               global_weights = weight if global_weights is  None else torch.cat([global_weights, weight]) 
         global_weights,_=torch.sort(global_weights)
         thresh_dex = math.ceil(percentage*global_weights.size(0))
         thresh = float(global_weights[thresh_dex.data])
