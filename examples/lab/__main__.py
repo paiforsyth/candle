@@ -127,6 +127,9 @@ def default_parser(parser=None):
 
     parser.add_argument("--count_multiplies", action="store_true")
     parser.add_argument("--count_multiplies_every_cycle",action="store_true")
+    parser.add_argument("--count_mult_override_img_dims", action="store_true")
+    parser.add_argument("--count_mult_override_imgh", type=int)
+    parser.add_argument("--count_mult_override_imgw", type=int)
 
 
     parser.add_argument("--use_all_params",action="store_true") #ie optimize over mask params
@@ -139,6 +142,8 @@ def default_parser(parser=None):
 
 
     parser.add_argument("--get_forking_props_on_val", action="store_true")
+
+    parser.add_argument("--show_network_strucutre_every_epoch",action="store_true")
 
     return parser
 

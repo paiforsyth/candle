@@ -332,20 +332,21 @@ class ZagFire(serialmodule.SerializableModule):
          layer_dict = collections.OrderedDict()
          layer_dict["bn1"]=bn_wrapper(nn.BatchNorm2d(in_channels))
          layer_dict["activation1"]=activation
+         import pdb; pdb.set_trace()
          if proxy_mode != "l1reg_context_slimming":
-            layer_dict["conv1"]=   first_wrapper(nn.Conv2d(in_channels=in_channels, out_channels= in_channels, kernel_size=3, padding=1) )
+            layer_dict["conv1"]=   first_wrapper(nn.Conv2d(in_channels=in_channels, out_channels= out_channels, kernel_size=3, padding=1) )
             layer_dict["dropout"]=nn.Dropout(p=dropout_rate,inplace=True)
-            layer_dict["bn2"] = bn_wrapper(nn.BatchNorm2d(in_channels)) 
+            layer_dict["bn2"] = bn_wrapper(nn.BatchNorm2d(out_channels)) 
          else: #neccesary to correctly count multiplies with weight slimming 
-             bn2 = bn_wrapper(nn.BatchNorm2d(in_channels)) 
-             conv1 = first_wrapper(nn.Conv2d(in_channels=in_channels, out_channels= in_channels, kernel_size=3, padding=1),following_proxy_bn = bn2 )
+             bn2 = bn_wrapper(nn.BatchNorm2d(out_channels)) 
+             conv1 = first_wrapper(nn.Conv2d(in_channels=in_channels, out_channels= out_channels, kernel_size=3, padding=1),following_proxy_bn = bn2 )
              layer_dict["conv1"] = conv1
              layer_dict["dropout"] = nn.Dropout(p=dropout_rate,inplace=True)
              layer_dict["bn2"] = bn2
 
 
          layer_dict["activation2"] =activation
-         layer_dict["conv2"]=last_wrapper(nn.Conv2d(in_channels=in_channels, out_channels = out_channels, kernel_size=3, padding=1))
+         layer_dict["conv2"]=last_wrapper(nn.Conv2d(in_channels=out_channels, out_channels = out_channels, kernel_size=3, padding=1))
          self.seq=nn.Sequential(layer_dict)
 
     def forward(self,x):
@@ -360,6 +361,13 @@ class ZagFire(serialmodule.SerializableModule):
     def multiplies(self,img_h, img_w, input_channels):
         mults, _,_,_ =  count_approx_multiplies(layer = self.seq, img_h=img_h, img_w=img_w, input_channels=input_channels)        
         return mults, self.out_channels,img_h ,img_w #residual branch means that we get the full number of out_channels even if we pruned some
+
+class ZagFinalBlockFire(serialmodule.SerializableModule):
+    def __init__(self, in_channels, out_classes, proxy_ctx, activation, dropout_rate):
+        self.bn = proxy_ctx.wrap(nn.BatchNorm2d(in_channels))
+        self.activation=activation()
+    
+
     
 class ForkFire(serialmodule.SerializableModule):
 
@@ -777,7 +785,7 @@ class SqueezeNet(serialmodule.SerializableModule):
         pool_offset=config.pooling_count_offset
         layer_dict=collections.OrderedDict()
         if not config.skip_conv1:
-         self.channel_counts=i [first_layer_num_convs]
+         self.channel_counts= [first_layer_num_convs]
          if config.mode != "normal":
             if config.proxy_context_type == "no_context":
                 layer_dict["conv1"] = nn.Conv2d(config.in_channels, first_layer_num_convs, first_layer_conv_width, padding=first_layer_padding, stride=config.conv1_stride)
@@ -878,7 +886,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                     layer_dict["msd_column_fire_{}".format(i+2)] = msdnet.MSDColumnFire(in_channels_finest = self.channel_counts[i], growth_channels_finest =config.msd_growth_rate, num_scales = config.msd_num_scales, proxy_ctx= proxy_ctx, proxy_ctx_mode = config.proxy_context_type)
                     self.channel_counts.append(self.channel_counts[i] + config.msd_growth_rate)
 
-            if not config.disable_pooling and (i+pool_offset) % config.pool_interval == 0 and i !=0:
+            if not config.disable_pooling and (i+pool_offset) % config.pool_interval == 0 and i !=0 and i!=(num_fires -1):
                 logging.info("adding max pool layer")
                 layer_dict["maxpool{}".format(i+2)]= nn.MaxPool2d(kernel_size=config.max_pool_size,stride=2,padding=1)
                 num_pool_so_far+=1

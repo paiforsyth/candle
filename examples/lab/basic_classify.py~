@@ -415,7 +415,11 @@ def run(args, ensemble_test=False):
        context.model.eval() #for sampling to compute avg mults in forking models
        if args.get_forking_props_on_val:
             squeezenet.forking_props_from_sample(context.model,context.val_loader )
-       if args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification =="cifar10":
+       if args.count_mult_override_img_dims:
+           img_h = args.count_mult_override_imgh
+           img_w = args.count_mult_override_imgw
+           channels=3
+       elif args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification =="cifar10":
            img_h=32
            img_w=32
            channels=3
@@ -551,7 +555,9 @@ def run(args, ensemble_test=False):
                 elif args.prune_layer_mode == "global":
                     assert args.proxy_context_type == "l1reg_context_slimming" 
                     context.model.proxy_ctx.prune_global_smallest(args.prune_unit,mask_type=candle.prune.BatchNorm2DMask)
-                logging.debug(repr(context.model))
+             if args.show_network_strucutre_every_epoch:
+                 logging.info("current model:")
+                 logging.info(repr(context.model))
        
         if args.save_every_epoch:
             context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_most_recent" )  )
