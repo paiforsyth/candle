@@ -428,7 +428,6 @@ class PruneContext(Context):
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
                 _, indices = torch.sort(weight.view(-1)) #unnecesary
-                import pdb; pdb.set_trace()
                 indices = (indices[mask.view(-1)[indices] != 0) & (weight.view(-1)[indicies] <=thresh ])
                 if indices.size(0) <= 1:
                     continue
