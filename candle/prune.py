@@ -428,7 +428,7 @@ class PruneContext(Context):
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
                 _, indices = torch.sort(weight.view(-1)) #unnecesary
-                if (mask.view(-1) != 0 ).size(0) < 1: 
+                if (mask.view(-1) != 0 ).size(0) <= 1: 
                     continue #if there is only one nozero mask in this weight group, dont prune it
 
                 indices = indices[(mask.view(-1)[indices] != 0) & (weight.view(-1)[indices] <=thresh) ] 
