@@ -22,6 +22,8 @@ class WeightMaskGroup(ProxyDecorator):
         self.cache = Memoizer()
         self._reset_buffers()
 
+ 
+
     def _reset_buffers(self):
         if not self.stochastic:
             return
@@ -257,6 +259,13 @@ class Channel2DMask(WeightMaskGroup):
     def __init__(self, layer, child, **kwargs):
         super().__init__(layer, child, **kwargs)
 
+    def __repr__(self):
+        s= super().__repr__()
+        mask_len = self._flattened_masks[0].size(0)
+        mask_nonzero= float((self._flattened_masks[0] != 0).sum())
+        s+= " Nonzero masks: {} / {}".format(mask_nonzero, mask_len)
+        return s
+
     def build_masks(self, init_value):
         return self._build_masks(init_value, self.child.sizes.reify()[0][0])
 
@@ -434,7 +443,7 @@ class PruneContext(Context):
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
                 _, indices = torch.sort(weight.view(-1)) #unnecesary
-                if (mask.view(-1) != 0 ).size(0) <= 1: 
+                if sum(mask.view(-1)) <= 1: #changed 
                     continue #if there is only one nozero mask in this weight group, dont prune it
 
                 indices = indices[(mask.view(-1)[indices] != 0) & (weight.view(-1)[indices] <=thresh) ] 

@@ -551,6 +551,8 @@ def run(args, ensemble_test=False):
                 elif args.prune_layer_mode == "global":
                     assert args.proxy_context_type == "l1reg_context_slimming" 
                     context.model.proxy_ctx.prune_global_smallest(args.prune_unit,mask_type=candle.prune.BatchNorm2DMask)
+                logging.debug("current model:")
+                logging.debug(repr(context.model))
        
         if args.save_every_epoch:
             context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_most_recent" )  )
