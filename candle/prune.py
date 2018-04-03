@@ -227,7 +227,7 @@ class BatchNorm2DMask(WeightMaskGroup):
 
     def __repr__(self):
         mask_len = self._flattened_masks[0].size(0)
-        mask_nonzer0= float((self._flattened_masks[0] != 0).sum())
+        mask_nonzero= float((self._flattened_masks[0] != 0).sum())
         return "BatchNorm2DMask(layer= {},child={}) [{} / {} masks nonzero]".format(self.layer,self.child,mask_nonzero,mask_len)
 
     def build_masks(self, init_value):
