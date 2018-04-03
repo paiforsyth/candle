@@ -241,7 +241,7 @@ class BatchNorm2DMask(WeightMaskGroup):
         else:
             mask = self._flattened_masks[0]
         expand_weight = mask
-        expand_bias = Variable(mask.data.new([1])) #Don't mask biases.  Teh bias of a pruned BN channel can simply be factored into the bias of the subsequent conv, if it is not killed by a ReLU
+        expand_bias = mask # masking biases for debugging
         return Package([expand_weight, expand_bias])
 
     def l1_loss_slimming(self,lambd):

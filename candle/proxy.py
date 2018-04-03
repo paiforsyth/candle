@@ -159,6 +159,7 @@ class ProxyLayer(nn.Module):
         out = self.on_forward(*args, **kwargs)
         if self.output_proxy is not None:
             out = self.output_proxy(out)
+        
         return out
 
     def on_forward(self, *args, **kwargs):
