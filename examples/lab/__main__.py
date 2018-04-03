@@ -93,6 +93,7 @@ def default_parser(parser=None):
     parser.add_argument("--prune_epoch_freq", type=int, default=1)
     parser.add_argument("--prune_warmup_epochs", type=int, default=10)
     parser.add_argument("--prune_layer_mode", choices = ["by_layer", "global"], default= "by_layer")
+    parser.add_argument("--prune_unit",type=int, default=1)
 
     parser.add_argument("--enable_l0reg",action = "store_true")
     parser.add_argument("--l0reg_lambda", type=float, default =1.5 / 50000 )
