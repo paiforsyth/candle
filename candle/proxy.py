@@ -217,7 +217,8 @@ class _ProxyConvNd(ProxyLayer):
         self._conv_kwargs = dict(dilation=dilation, padding=padding, stride=stride,groups=groups)
         if not self.bias:
             self._conv_kwargs["bias"] = None
-        def __repr__(self):
+
+    def __repr__(self):
             s= "{}(conv_fn = {}, stride = {}, padding ={}, dilation = {}, groups = {} ).  Weight provider =".format(self.__class__.__name__, conv_fn, stride, padding, dilation, groups,self.weight_provider )
             return s
 
