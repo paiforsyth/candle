@@ -776,7 +776,7 @@ class SqueezeNet(serialmodule.SerializableModule):
 
         pool_offset=config.pooling_count_offset
         layer_dict=collections.OrderedDict()
-        if not config.skipmode:
+        if not config.skip_conv1:
          if config.mode != "normal":
             if config.proxy_context_type == "no_context":
                 layer_dict["conv1"] = nn.Conv2d(config.in_channels, first_layer_num_convs, first_layer_conv_width, padding=first_layer_padding, stride=config.conv1_stride)

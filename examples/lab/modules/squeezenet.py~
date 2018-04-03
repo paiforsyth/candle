@@ -349,7 +349,7 @@ class ZagFire(serialmodule.SerializableModule):
          self.seq=nn.Sequential(layer_dict)
 
     def forward(self,x):
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         out = self.seq(x)
         if self.in_channels <self.out_channels:
             padding = Variable(out.data.new(out.data.shape[0],self.out_channels-self.in_channels,out.data.shape[2],out.data.shape[3]).fill_(0)) 
