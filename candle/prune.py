@@ -387,6 +387,7 @@ class PruneContext(Context):
 
 
     def count_unpruned_masks(self):
+        #this method will be inheritted, and allows
         return sum( float(p.sum().cpu()) for p in self.list_mask_params())
 
 
@@ -421,7 +422,6 @@ class PruneContext(Context):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
                global_weights = weight if global_weights is  None else torch.cat([global_weights, weight]) 
         global_weights,_=torch.sort(global_weights)
-        import pdb; pdb.set_trace()
         proportion=percentage/100
         thresh_dex = math.ceil(proportion*global_weights.size(0))
         thresh = float(global_weights[thresh_dex])
