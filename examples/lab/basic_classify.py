@@ -544,7 +544,7 @@ def run(args, ensemble_test=False):
              assert(args.report_unpruned)
              if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> prune_target:
                 logging.info("pruning...")
-                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
                 if args.prune_layer_mode == "by_layer" :
                     assert args.proxy_context_type != "l1reg_context_slimming" 
                     context.model.proxy_ctx.prune(args.prune_unit)
