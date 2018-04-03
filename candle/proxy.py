@@ -174,7 +174,7 @@ class ProxyBatchNorm2d(ProxyLayer):
         self.register_buffer('running_mean', torch.zeros(num_features))
         self.register_buffer('running_var', torch.zeros(num_features))
 
-    def repr(self):
+    def __repr__(self):
         return "ProxyBatchNorm2d: num_features={}. Weight Proivder:\n {}".format(self.num_features,repr(self.weight_provider))
 
     def on_forward(self, x):
