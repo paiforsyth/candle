@@ -385,6 +385,12 @@ class PruneContext(Context):
     def list_model_params(self):
         return self.list_mask_params(inverse=True)
 
+
+    def count_unpruned_masks(self):
+        return sum( float(p.sum().cpu()) for p in self.list_mask_params())
+
+
+
     def count_unpruned(self):
         return sum( float(p.sum().cpu()) for p in self.list_mask_params())
 
@@ -416,7 +422,8 @@ class PruneContext(Context):
                global_weights = weight if global_weights is  None else torch.cat([global_weights, weight]) 
         global_weights,_=torch.sort(global_weights)
         import pdb; pdb.set_trace()
-        thresh_dex = math.ceil(percentage*global_weights.size(0))
+        proportion=percentage/100
+        thresh_dex = math.ceil(proportion*global_weights.size(0))
         thresh = float(global_weights[thresh_dex])
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):

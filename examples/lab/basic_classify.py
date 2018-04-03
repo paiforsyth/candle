@@ -382,7 +382,7 @@ def run(args, ensemble_test=False):
 
    if args.prune_trained:
        context.model.proxy_ctx.prune(args.prune_trained_pct)
-       n_unpruned = context.model.proxy_ctx.count_unpruned()
+       n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
        logging.info("Unpruned masks: "+str(n_unpruned))
        context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
        return
@@ -422,7 +422,7 @@ def run(args, ensemble_test=False):
        print("Approx number of multiplies: ", countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels))    
        return
    if args.enable_pruning:
-        init_mask_count = context.model.proxy_ctx.count_unpruned()
+        init_mask_count = context.model.proxy_ctx.count_unpruned_masks()
         logging.info("Initial number of masks {}".format(init_mask_count))
         if args.prune_target_frac is not None:
             prune_target = int(init_mask_count *args.prune_target_frac )
@@ -536,7 +536,7 @@ def run(args, ensemble_test=False):
         context.tb_writer.write_accuracy(eval_score)
         logging.info("Finished epoch number "+ str(epoch_count+1) +  " of " +str(args.num_epochs)+".  Accuracy is "+ str(eval_score) +".")
         if args.report_unpruned:
-            n_unpruned = float(context.model.proxy_ctx.count_unpruned())
+            n_unpruned = float(context.model.proxy_ctx.count_unpruned_masks())
             logging.info("Unpruned masks: "+str(n_unpruned))
             context.tb_writer.write_unpruned_params(n_unpruned)
            
