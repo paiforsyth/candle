@@ -177,7 +177,8 @@ class ProxyBatchNorm2d(ProxyLayer):
         #note: F.batch_norm will automatically update running_mean and runnning_var
         weights = self.weight_provider().reify()
         if (weights[0]==0).any():
-            import pdb; pdb.set_trace()
+            pass
+            #import pdb; pdb.set_trace()
         return F.batch_norm(x,self.running_mean, self.running_var,*weights, training=self.training,momentum= self.momentum,eps= self.eps )
     
     def multiplies(self,img_h, img_w, input_channels):

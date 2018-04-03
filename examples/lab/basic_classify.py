@@ -546,10 +546,10 @@ def run(args, ensemble_test=False):
                 logging.info("pruning...")
                 if args.prune_layer_mode == "by_layer" :
                     assert args.proxy_context_type != "l1reg_context_slimming" 
-                    context.model.proxy_ctx.prune(1)
+                    context.model.proxy_ctx.prune(args.prune_unit)
                 elif args.prune_layer_mode == "global":
                     assert args.proxy_context_type == "l1reg_context_slimming" 
-                    context.model.proxy_ctx.prune_global_smallest(1,mask_type=candle.prune.BatchNorm2DMask)
+                    context.model.proxy_ctx.prune_global_smallest(args.prune_unit,mask_type=candle.prune.BatchNorm2DMask)
        
         if args.save_every_epoch:
             context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_most_recent" )  )

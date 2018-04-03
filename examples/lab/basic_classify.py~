@@ -536,7 +536,7 @@ def run(args, ensemble_test=False):
         context.tb_writer.write_accuracy(eval_score)
         logging.info("Finished epoch number "+ str(epoch_count+1) +  " of " +str(args.num_epochs)+".  Accuracy is "+ str(eval_score) +".")
         if args.report_unpruned:
-            n_unpruned = float(context.model.proxy_ctx.count_unpruned())
+            n_unpruned = float(context.model.proxy_ctx.count_unpruned_masks())
             logging.info("Unpruned masks: "+str(n_unpruned))
             context.tb_writer.write_unpruned_params(n_unpruned)
            
@@ -546,7 +546,7 @@ def run(args, ensemble_test=False):
                 logging.info("pruning...")
                 if args.prune_layer_mode == "by_layer" :
                     assert args.proxy_context_type != "l1reg_context_slimming" 
-                    context.model.proxy_ctx.prune(1)
+                    context.model.proxy_ctx.prune(args.prune_unit)
                 elif args.prune_layer_mode == "global":
                     assert args.proxy_context_type == "l1reg_context_slimming" 
                     context.model.proxy_ctx.prune_global_smallest(1,mask_type=candle.prune.BatchNorm2DMask)
