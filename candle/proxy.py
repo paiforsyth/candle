@@ -174,12 +174,12 @@ class ProxyBatchNorm2d(ProxyLayer):
         self.register_buffer('running_mean', torch.zeros(num_features))
         self.register_buffer('running_var', torch.zeros(num_features))
 
-    deghtsf on_forward(self, x):
+    def on_forward(self, x):
         #note: F.batch_norm will automatically update running_mean and runnning_var
         weights = self.weight_provider().reify()
         if (weights[0]==0).any():
             pass
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
         return F.batch_norm(x,self.running_mean, self.running_var,*weights, training=self.training,momentum= self.momentum,eps= self.eps )
     
     def multiplies(self,img_h, img_w, input_channels):
