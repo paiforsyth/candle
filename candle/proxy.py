@@ -174,6 +174,9 @@ class ProxyBatchNorm2d(ProxyLayer):
         self.register_buffer('running_mean', torch.zeros(num_features))
         self.register_buffer('running_var', torch.zeros(num_features))
 
+    def repr(self):
+        return "ProxyBatchNorm2d: num_features={}. Weight Proivder:\n {}".format(self.num_features,repr(self.weight_provider))
+
     def on_forward(self, x):
         #note: F.batch_norm will automatically update running_mean and runnning_var
         weights = self.weight_provider().reify()
