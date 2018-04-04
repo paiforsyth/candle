@@ -409,6 +409,7 @@ class FinalZagBlockFire(serialmodule.SerializableModule):
         x=F.adaptive_avg_pool2d(x,output_size=1)
         x=self.fc(x)
         x=x.view(-1,self.out_classes, 1,1)
+        return x
 
 
     

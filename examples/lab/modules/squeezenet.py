@@ -403,7 +403,7 @@ class FinalZagBlockFire(serialmodule.SerializableModule):
         self.activation=activation()
         self.fc = proxy_ctx.bypass(nn.Linear(in_channels, out_classes))
 
-    def forward(self,x )
+    def forward(self,x ):
         x=self.bn(x)
         x=self.activation(x)
         x=F.adaptive_avg_pool2d(x,output_size=1)
