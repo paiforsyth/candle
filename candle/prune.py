@@ -262,7 +262,7 @@ class Channel2DMask(WeightMaskGroup):
     def __repr__(self):
         s= super().__repr__()
         mask_len = self._flattened_masks[0].size(0)
-        mask_nonzero= float((self._flattened_masks[0] != 0).sum())
+        mask_nonzero= float((self._flattened_masks[0] != 0).long().sum())
         s+= " Nonzero masks: {} / {}".format(mask_nonzero, mask_len)
         return s
 
