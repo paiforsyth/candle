@@ -9,6 +9,9 @@ def conv2d_mult_compute(img_h, img_w, in_channels, out_channels, groups, stride,
             stride= (stride, stride)
         if isinstance(dilation, int):
             dilation = (dilation, dilation) 
+        if stride[0]!= 1:
+            pass
+            #import pdb; pdb.set_trace()
         out_h = math.floor((img_h +2*padding[0] -dilation[0]*(kernel_size[0] - 1  ) - 1)/stride[0] +1 )
         out_w = math.floor((img_w +2*padding[1] -dilation[1]*(kernel_size[1] - 1  ) - 1)/stride[1] +1 )
         logging.debug("counting multiplies for a 2d comvolution")

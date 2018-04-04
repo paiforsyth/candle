@@ -47,6 +47,7 @@ def add_args(parser):
 
     parser.add_argument("--squeezenet_dropout_rate",type=float,default=0)
     parser.add_argument("--squeezenet_densenet_dropout_rate",type=float,default=0)
+    parser.add_argument("--squeezenet_densenet_no_bottleneck",action="store_true")
 
     parser.add_argument("--fire_skip_mode", type=str, choices=["simple", "none", "zero_pad"], default= "none")
     parser.add_argument("--squeezenet_pool_interval_mode",type=str, choices=["add","multiply"], default="add")
@@ -55,12 +56,12 @@ def add_args(parser):
     parser.add_argument("--squeezenet_conv1_stride", type=int, default=2)
     parser.add_argument("--squeezenet_conv1_size",type=int, default=7)
     parser.add_argument("--squeezenet_num_conv1_filters", type=int, default=96) 
-    parser.add_argument("--squeezenet_pooling_count_offset", type=int, default=2) #should be greater than 0, otherwise you get a pool in the first layer
+    parser.add_argument("--squeezenet_pooling_count_offset", type=int, default=2) 
     parser.add_argument("--squeezenet_max_pool_size",type=int, default=3)
     parser.add_argument("--squeezenet_disable_pooling",action="store_true")
 
     parser.add_argument("--squeezenet_dense_k",type=int, default=12)
-    parser.add_argument("--squeezenet_dense_fire_depths",type=str, default="default, shallow")
+    parser.add_argument("--squeezenet_dense_fire_depths",type=str, default="default, shallow, std_equal")
     parser.add_argument("--squeezenet_dense_fire_compress_level", type=float, default=0.5 )
     parser.add_argument("--squeezenet_use_excitation",   action="store_true")
     parser.add_argument("--squeezenet_excitation_r", type=int, default=16 )
@@ -403,7 +404,7 @@ class FinalZagBlockFire(serialmodule.SerializableModule):
         self.activation=activation()
         self.fc = proxy_ctx.bypass(nn.Linear(in_channels, out_classes))
 
-    def forward(self,x )
+    def forward(self,x ):
         x=self.bn(x)
         x=self.activation(x)
         x=F.adaptive_avg_pool2d(x,output_size=1)
@@ -640,31 +641,38 @@ class DenseFireV2Section(serialmodule.SerializableModule):
     Based on the more efficient official implementation of Densenet
     https://github.com/pytorch/vision/blob/master/torchvision/models/densenet.py
     '''
-    def __init__(self, input_size, k, num_squeeze, dropout_rate ):
+    def __init__(self, input_size, k, num_squeeze, dropout_rate, bottleneck ):
         super().__init__()
         layerdict = collections.OrderedDict()
-        layerdict["batchnorm1"]=nn.BatchNorm2d(input_size)
-        layerdict["relu1"]=nn.ReLU(inplace=True)
-        layerdict["conv1"]=nn.Conv2d(input_size, num_squeeze, kernel_size=1)
-        layerdict["batchnorm2"]=nn.BatchNorm2d(num_squeeze)
-        layerdict["relu2"]=nn.ReLU(inplace=True)
-        layerdict["conv2"]=nn.Conv2d(num_squeeze, k, kernel_size=3, padding=1)
+        if bottleneck:
+            layerdict["batchnorm1"]=nn.BatchNorm2d(input_size)
+            layerdict["relu1"]=nn.ReLU(inplace=True)
+            layerdict["conv1"]=nn.Conv2d(input_size, num_squeeze, kernel_size=1)
+            layerdict["batchnorm2"]=nn.BatchNorm2d(num_squeeze)
+            layerdict["relu2"]=nn.ReLU(inplace=True)
+            layerdict["conv2"]=nn.Conv2d(num_squeeze, k, kernel_size=3, padding=1)
+        else:
+            layerdict["batchnorm"]=nn.BatchNorm2d(input_size)
+            layerdict["relu"]=nn.ReLU(inplace=True)
+            layerdict["conv"]=nn.Conv2d(input_size, k, kernel_size=3, padding=1)
         if dropout_rate>0:
             layerdict["droupout"]=nn.Dropout(p=dropout_rate)
         self.seq=nn.Sequential(layerdict)
+
     def forward(self, x):
         return torch.cat([x, self.seq(x)], dim = 1  )
 
         
 class DenseFireV2Block(serialmodule.SerializableModule):
-    def __init__(self, k0, k, num_subunits, num_squeeze, dropout_rate):
+    def __init__(self, k0, k, num_subunits, num_squeeze, dropout_rate,bottleneck):
         super().__init__()
         layer_dict=collections.OrderedDict()
         cur_channels=k0
         for i in range(num_subunits):
-            layer_dict["section{}".format(i)]=DenseFireV2Section(input_size=cur_channels, k=k, num_squeeze=num_squeeze, dropout_rate = dropout_rate )
+            layer_dict["section{}".format(i)]=DenseFireV2Section(input_size=cur_channels, k=k, num_squeeze=num_squeeze, dropout_rate = dropout_rate , bottleneck=bottleneck)
             cur_channels+=k
         self.seq=nn.Sequential(layer_dict)
+
     def forward(self,x):
         return self.seq(x)
 
@@ -680,11 +688,12 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         layer_dict["transition_conv"]=nn.Conv2d(num_in,num_out, kernel_size=1)
         layer_dict["transition_pool"]=nn.AvgPool2d(kernel_size=2, stride=2)
         self.seq = nn.Sequential(layer_dict)
+
     def forward(self,x):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride, densenet_no_bottleneck")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -715,6 +724,8 @@ class SqueezeNet(serialmodule.SerializableModule):
             depthlist=[6, 12, 24, 16]
         elif args.squeezenet_dense_fire_depths=="shallow":
             depthlist=[1, 2, 4, 8]
+        elif args.squeezenet_dense_fire_depths=="std_equal":
+            depthlist=[12, 12, 12]
         else:
             depthlist=None
 
@@ -776,7 +787,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                 msd_growth_rate = args.squeezenet_msd_growth_rate,
                 msd_num_scales = args.squeezenet_msd_num_scales,
                 skip_conv1 = args.squeezenet_skip_conv1,
-                downsample_via_stride= args.squeezenet_downsample_via_stride
+                downsample_via_stride= args.squeezenet_downsample_via_stride,
+                densenet_no_bottleneck = args.squeezenet_densenet_no_bottleneck
                 )
         return SqueezeNet(config)
 
@@ -934,7 +946,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                     layer_dict["transition{}".format(i+2)]=nn.Conv2d(config.dense_fire_k, ts, 1)
                     self.channel_counts.append(ts)
             elif config.mode == "dense_fire_v2":
-                layer_dict["dense_firev2{}".format(i+2)]=DenseFireV2Block(k0=self.channel_counts[i], num_subunits=config.dense_fire_depth_list[i], k=config.dense_fire_k, num_squeeze=4*config.dense_fire_k, dropout_rate= config.densenet_dropout_rate)
+                layer_dict["dense_firev2{}".format(i+2)]=DenseFireV2Block(k0=self.channel_counts[i], num_subunits=config.dense_fire_depth_list[i], k=config.dense_fire_k, num_squeeze=4*config.dense_fire_k, dropout_rate= config.densenet_dropout_rate, bottleneck = not config.densenet_no_bottleneck)
                 doutsize=self.channel_counts[i]+config.dense_fire_k*config.dense_fire_depth_list[i]
                 ts=max(math.floor(config.dense_fire_compression_level*doutsize),1)
                 layer_dict["transition{}".format(i+2)]=DenseFireV2Transition(doutsize, ts)

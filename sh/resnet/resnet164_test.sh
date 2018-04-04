@@ -1,5 +1,5 @@
 ARGFILE=./sh/argfiles/resnet_164
-RESUME_FILENAME=03_April_2018_Tuesday_23_59_06resnet164_checkpoint_1
+RESUME_FILENAME=04_April_2018_Wednesday_13_00_36resnet164_endofcycle_checkpoint_0
 SAVE_PREFIX=res_net_164_test
 REPORT_FILENAME=./reports/res_net_164_test
 
