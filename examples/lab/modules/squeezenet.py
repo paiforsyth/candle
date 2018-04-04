@@ -175,7 +175,37 @@ class ResFire(serialmodule.SerializableModule):
 class NextFire(serialmodule.SerializableModule):
 
     def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None,proxy_mode = None, bypass_first_last=True):
-        super().__init__()
+     super().__init__()
+     if proxy_mode == "l1reg_context_slimming":
+             bn_wrapper = proxy_ctx.wrap
+             first_wrapper = proxy_ctx.wrap
+             group_wrapper = proxy_ctx.wrap
+             last_wrapper  = proxy_ctx.bypass
+             layer_dict = collections.OrderedDict()
+             
+
+
+             layer_dict["bn1"] = bn_wrapper(nn.BatchNorm2d(in_channels))
+             layer_dict["leaky_reu1" ] = nn.LeakyReLU(inplace=True)
+
+             bn2 = bn_wrapper(nn.BatchNorm2d(num_squeeze))
+             squeeze_conv =   first_wrapper(nn.Conv2d(in_channels, num_squeeze, (1,1)), following_proxy_bn=bn2)
+
+             layer_dict["squeeze_conv"] = squeeze_conv 
+             layer_dict["bn2"] =  bn2  
+
+             layer_dict["leaky_relu2"] = nn.LeakyReLU(inplace=True)
+
+             bn3= bn_wrapper(nn.BatchNorm2d(num_squeeze))
+             group_conv=group_wrapper(nn.Conv2d(num_squeeze, num_squeeze, kernel_size=3, padding=1, groups=groups), following_proxy_bn=bn3)
+
+             layer_dict["group_conv"] = group_conv 
+             layer_dict["bn3"] = bn3 
+
+             layer_dict["leaky_relu3"] = nn.LeakyReLU(inplace=True)
+             layer_dict["expand_conv"] =  last_wrapper(nn.Conv2d(num_squeeze, num_expand, kernel_size=1))
+
+     else:     
         if proxy_mode is not None and proxy_mode!="no_context":
             bn_wrapper = proxy_ctx.bypass
             if bypass_first_last:
@@ -202,22 +232,22 @@ class NextFire(serialmodule.SerializableModule):
 
              
 
-        self.seq= nn.Sequential(layer_dict)
-        self.skip=skip
-        self.skipmode=skipmode
-        self.in_channels=in_channels
-        self.out_channels=num_expand
-        self.stochastic_depth=stochastic_depth
-        self.survival_prob=survival_prob
-        self.shakedrop=shakedrop
-        self.shake_shake=shake_shake
-        if self.stochastic_depth:
+     self.seq= nn.Sequential(layer_dict)
+     self.skip=skip
+     self.skipmode=skipmode
+     self.in_channels=in_channels
+     self.out_channels=num_expand
+     self.stochastic_depth=stochastic_depth
+     self.survival_prob=survival_prob
+     self.shakedrop=shakedrop
+     self.shake_shake=shake_shake
+     if self.stochastic_depth:
             logging.info("Making NextFire layer with stochastic depth")
             assert self.skip
             assert not self.shakedrop
-        if self.shakedrop:
+     if self.shakedrop:
             logging.info("Making NextFire Layer with Shakedrop")
-        if self.shake_shake:
+     if self.shake_shake:
             assert proxy_mode is None
             assert not self.shakedrop
             logging.info("Making a NextFire with Shake Shake")
