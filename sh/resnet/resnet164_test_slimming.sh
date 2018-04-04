@@ -1,4 +1,4 @@
-ARGFILE=./sh/argfiles/resmet_164_slimming
+ARGFILE=./sh/argfiles/resnet_164_slimming
 RESUME_FILENAME=03_April_2018_Tuesday_23_56_39resnet164_checkpoint_1
 SAVE_PREFIX=res_net_164_slimming_08_test
 REPORT_FILENAME=./reports/res_net_164_slimming_08_test
