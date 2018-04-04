@@ -263,6 +263,9 @@ class ProxyConv2d(_ProxyConvNd):
         w_dim = self.weight_provider.sizes.reify()[0]
         effective_out = self.effective_output_channels() 
               #img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3]/self.groups
+        if self.stride !=(1,1):
+            pass
+            #import pdb; pdb.set_trace()
         mults, out_channels, height, width = util.countmult_util.conv2d_mult_compute(img_h, img_w, in_channels=input_channels, out_channels=effective_out, groups=self.groups, stride=self.stride, padding=self.padding, kernel_size=self.kernel_size, dilation=self.dilation)
         logging.debug("number of mults is {}".format(mults))  #logging.debug("number of mults is {}*{}*{}*{}*{}*{} / {} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],self.groups,mults)  )
         return mults, out_channels, height, width

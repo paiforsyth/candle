@@ -112,6 +112,9 @@ def add_args(parser):
     parser.add_argument("--squeezenet_msd_num_scales",type=int, default=3)
     parser.add_argument("--squeezenet_skip_conv1",action="store_true")
 
+    parser.add_argument("--squeezenet_downsample_via_stride", action="store_true")
+    parser.add_argument("--squeezenet_downsample_stride_freq", default=None) #None means use the same freq as the channel increase
+
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
 class Fire(serialmodule.SerializableModule):
@@ -174,7 +177,7 @@ class ResFire(serialmodule.SerializableModule):
 
 class NextFire(serialmodule.SerializableModule):
 
-    def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None,proxy_mode = None, bypass_first_last=True):
+    def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None,proxy_mode = None, bypass_first_last=True, stride=1):
      super().__init__()
      if proxy_mode == "l1reg_context_slimming":
              bn_wrapper = proxy_ctx.wrap
@@ -203,7 +206,7 @@ class NextFire(serialmodule.SerializableModule):
              layer_dict["bn3"] = bn3 
 
              layer_dict["leaky_relu3"] = nn.LeakyReLU(inplace=True)
-             layer_dict["expand_conv"] =  last_wrapper(nn.Conv2d(num_squeeze, num_expand, kernel_size=1))
+             layer_dict["expand_conv"] =  last_wrapper(nn.Conv2d(num_squeeze, num_expand, kernel_size=1,stride=stride))
 
      else:     
         if proxy_mode is not None and proxy_mode!="no_context":
@@ -225,29 +228,29 @@ class NextFire(serialmodule.SerializableModule):
         layer_dict["group_conv"] = group_wrapper(nn.Conv2d(num_squeeze, num_squeeze, kernel_size=3, padding=1, groups=groups))
         layer_dict["bn3"] = bn_wrapper(nn.BatchNorm2d(num_squeeze))
         layer_dict["leaky_relu3"] = nn.LeakyReLU(inplace=True)
-        layer_dict["expand_conv"] =  first_last_wrapper(nn.Conv2d(num_squeeze, num_expand, kernel_size=1))
+        layer_dict["expand_conv"] =  first_last_wrapper(nn.Conv2d(num_squeeze, num_expand, kernel_size=1, stride=stride))
         if final_bn:
             logging.info("Making NextFire layer with a final batchnorm")
             layer_dict["final_bn"]=bn_wrapper(nn.BatchNorm2d(num_expand))
 
              
 
-        self.seq= nn.Sequential(layer_dict)
-        self.skip=skip
-        self.skipmode=skipmode
-        self.in_channels=in_channels
-        self.out_channels=num_expand
-        self.stochastic_depth=stochastic_depth
-        self.survival_prob=survival_prob
-        self.shakedrop=shakedrop
-        self.shake_shake=shake_shake
-        if self.stochastic_depth:
+     self.seq= nn.Sequential(layer_dict)
+     self.skip=skip
+     self.skipmode=skipmode
+     self.in_channels=in_channels
+     self.out_channels=num_expand
+     self.stochastic_depth=stochastic_depth
+     self.survival_prob=survival_prob
+     self.shakedrop=shakedrop
+     self.shake_shake=shake_shake
+     if self.stochastic_depth:
             logging.info("Making NextFire layer with stochastic depth")
             assert self.skip
             assert not self.shakedrop
-        if self.shakedrop:
+     if self.shakedrop:
             logging.info("Making NextFire Layer with Shakedrop")
-        if self.shake_shake:
+     if self.shake_shake:
             assert proxy_mode is None
             assert not self.shakedrop
             logging.info("Making a NextFire with Shake Shake")
@@ -295,8 +298,8 @@ class NextFire(serialmodule.SerializableModule):
 
     def multiplies(self,img_h, img_w, input_channels):
         assert not self.shake_shake and not self.shakedrop and not self.stochastic_depth
-        mults, _,_,_ =  count_approx_multiplies(layer=self.seq, img_h=img_h, img_w=img_w,input_channels=input_channels)        
-        return mults, self.out_channels,img_h ,img_w #residual branch means that we get the full number of out_channels even if we pruned some
+        mults, _,out_h,out_w =  count_approx_multiplies(layer=self.seq, img_h=img_h, img_w=img_w,input_channels=input_channels)        
+        return mults, self.out_channels,out_h ,out_w #residual branch means that we get the full number of out_channels even if we pruned some
         
 
 class WideResFire(serialmodule.SerializableModule):
@@ -389,13 +392,25 @@ class ZagFire(serialmodule.SerializableModule):
             out = out + x
         return out
     def multiplies(self,img_h, img_w, input_channels):
-        mults, _,_,_ =  count_approx_multiplies(layer = self.seq, img_h=img_h, img_w=img_w, input_channels=input_channels)        
-        return mults, self.out_channels,img_h ,img_w #residual branch means that we get the full number of out_channels even if we pruned some
+        mults, _,out_h,out_w =  count_approx_multiplies(layer = self.seq, img_h=img_h, img_w=img_w, input_channels=input_channels)        
+        return mults, self.out_channels,out_h ,out_w #residual branch means that we get the full number of out_channels even if we pruned some
 
-class ZagFinalBlockFire(serialmodule.SerializableModule):
+class FinalZagBlockFire(serialmodule.SerializableModule):
     def __init__(self, in_channels, out_classes, proxy_ctx, activation, dropout_rate):
-        self.bn = proxy_ctx.wrap(nn.BatchNorm2d(in_channels))
+        suoer().__init__()
+        self.out_classes=out_classes
+        self.bn = proxy_ctx.bypass(nn.BatchNorm2d(in_channels))
         self.activation=activation()
+        self.fc = proxy_ctx.bypass(nn.Linear(in_channels, out_classes))
+
+    def forward(self,x )
+        x=self.bn(x)
+        x=self.activation(x)
+        x=F.adaptive_avg_pool2d(x,output_size=1)
+        x=self.fc(x)
+        x=x.view(-1,self.out_classes, 1,1)
+
+
     
 
     
@@ -668,7 +683,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -759,7 +774,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                 fork_entropy_threshold =args.squeezenet_fork_entropy_threshold,
                 msd_growth_rate = args.squeezenet_msd_growth_rate,
                 msd_num_scales = args.squeezenet_msd_num_scales,
-                skip_conv1 = args.squeezenet_skip_conv1
+                skip_conv1 = args.squeezenet_skip_conv1,
+                downsample_via_stride= args.squeezenet_downsample_via_stride
                 )
         return SqueezeNet(config)
 
@@ -778,6 +794,9 @@ class SqueezeNet(serialmodule.SerializableModule):
             self.total_exits = 0
             self.exit_proportions = [-1] * config.num_layer_chunks
             self.fork_entropy_threshold  = config.fork_entropy_threshold
+        if config.downsample_via_stride:
+            stride_freq = config.freq
+            assert(config.disable_pooling)
         if config.chunk_across_devices:
             assert len(config.layer_chunk_devices ) == config.num_layer_chunks  
             assert config.num_layer_chunks <= torch.cuda.device_count()
@@ -837,12 +856,18 @@ class SqueezeNet(serialmodule.SerializableModule):
             self.channel_counts = [config.in_channels]
 
         num_pool_so_far =0 #for debugging
+        num_stride_so_far=0
+
         for i in range(num_fires):
             if  config.mode != "dense_fire" and config.mode != "dense_fire_v2" and config.mode != "msd_fire":
                 if config.pool_interval_mode == "add":
                     e = config.base+math.floor(config.incr*math.floor(i/config.freq))
                 elif config.pool_interval_mode == "multiply":
                     e=config.base* (config.multiplicative_incr ** math.floor(i/config.freq)) 
+                if config.downsample_via_stride and i!=0 and i % stride_freq ==0:
+                    do_stride_downsample = True
+                else:
+                    do_stride_downsample = False
                 num_squeeze=max(math.floor(config.sr*e),1)
                 num_expand3=max(math.floor(config.prop3*e),1)
                 num_expand1=e-num_expand3
@@ -866,7 +891,12 @@ class SqueezeNet(serialmodule.SerializableModule):
                 elif config.mode == "next_fire":
                     name = "next_fire{}".format(i+2)
                     survival_prob = 1-0.5*i/num_fires 
-                    to_add = NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type, bypass_first_last = config.next_fire_bypass_first_last )
+                    if do_stride_downsample:
+                        stride=2
+                        num_stride_so_far+=1
+                    else:
+                        stride=1
+                    to_add = NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type, bypass_first_last = config.next_fire_bypass_first_last, stride= stride )
                     if config.excitation_shake_shake:
                         to_add2= NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type,  bypass_first_last = config.next_fire_bypass_first_last  )
                 elif config.mode  == "zag_fire":
@@ -921,6 +951,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 layer_dict["maxpool{}".format(i+2)]= nn.MaxPool2d(kernel_size=config.max_pool_size,stride=2,padding=1)
                 num_pool_so_far+=1
         logging.info("counted " +str(num_pool_so_far)+" pooling layers" )
+        logging.info("counted " +str(num_stride_so_far)+" strided layers" )
         skip_dropout = config.mode == "msd_fire"
         if not skip_dropout:
             layer_dict["dropout"]=nn.Dropout(p=config.dropout_rate)
