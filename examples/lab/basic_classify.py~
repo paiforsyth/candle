@@ -617,7 +617,11 @@ def run(args, ensemble_test=False):
                 raise Exception("Unknown Scheduler")
 
             if args.count_multiplies_every_cycle:
-                if args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification == "cifar10":
+                if args.count_mult_override_img_dims:
+                    img_h = args.count_mult_override_imgh
+                    img_w = args.count_mult_override_imgw
+                    channels=3
+                elif args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification == "cifar10":
                     img_h=32
                     img_w=32
                     channels=3

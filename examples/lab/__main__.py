@@ -144,6 +144,7 @@ def default_parser(parser=None):
     parser.add_argument("--get_forking_props_on_val", action="store_true")
 
     parser.add_argument("--show_network_strucutre_every_epoch",action="store_true")
+    parser.add_argument("--print_model",action="store_true")
 
     return parser
 
