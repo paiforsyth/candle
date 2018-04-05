@@ -99,7 +99,7 @@ def default_parser(parser=None):
     parser.add_argument("--l0reg_lambda", type=float, default =1.5 / 50000 )
 
     parser.add_argument("--enable_l1reg", action="store_true")
-    parser.add_argument("--l1reg_lambda", type=float, default = 10**(-6))
+    parser.add_argument("--l1reg_lambda", type=float, default = 10**(-5))
 
     parser.add_argument("--report_unpruned",action="store_true") 
     
