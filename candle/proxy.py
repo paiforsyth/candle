@@ -273,7 +273,7 @@ class ProxyConv2d(_ProxyConvNd):
 
     def multiplies(self,img_h, img_w, input_channels, unpruned):
         w_dim = self.weight_provider.sizes.reify()[0]
-        if self.groups == wdim[0]:
+        if self.groups == w_dim[0] and self.groups == w_dim[1]:
             logging.debug("depthwise convolution detected.  Input channels= output channels")
             effective_out = input_channels
         else:

@@ -181,6 +181,7 @@ class NextFire(serialmodule.SerializableModule):
     def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None,proxy_mode = None, bypass_first_last=True, stride=1):
      super().__init__()
      if proxy_mode == "l1reg_context_slimming":
+             assert groups ==1
              bn_wrapper = proxy_ctx.wrap
              first_wrapper = proxy_ctx.wrap
              group_wrapper = proxy_ctx.wrap
@@ -307,6 +308,14 @@ class NextFire(serialmodule.SerializableModule):
         prop2 = self.seq.bn2.prop_nonzero_masks()
         prop3 = self.seq.bn3.prop_nonzero_masks()
         return prop1, prop2, prop3 
+
+class MobileResFire(serialmodule.SerializableModule):
+    def __init__(self, in_channels, out_channels, proxy_ctx, proxy_ctx_mode, activation):
+        layer_dict= collections.OrderedDict
+        layer_dict["bn1"] = nn.BatchNorm2d(in_channels)
+        layer_dict["actvation1"] = activation()
+        layer_dict.conv1= nn.Conv2d(in_channels, out_channels)
+
 
 class WideResFire(serialmodule.SerializableModule):
     '''
@@ -595,10 +604,10 @@ class ShuffleFire(serialmodule.SerializableModule):
         out = self.bn1(x)
         out = self.activation(out)
         out = self.gconv1(out)
-
-        out = out.view(shape[0],self.groups1,-1,shape[2],shape[3])
-        out = out.transpose(2, 1)
-        out = out.contiguous().view(shape[0],-1,shape[2],shape[3])
+        if self. groups1 > 1: 
+            out = out.view(shape[0],self.groups1,-1,shape[2],shape[3])
+            out = out.transpose(2, 1)
+            out = out.contiguous().view(shape[0],-1,shape[2],shape[3])
 
         out = self.bn2(out)
         out = self.activation(out)
