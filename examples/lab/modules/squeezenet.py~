@@ -1115,7 +1115,7 @@ class SqueezeNet(serialmodule.SerializableModule):
     def init_params(self):
         init_p(self)
 
-    def multiplies(self, img_h, img_w, input_channels ):
+    def multiplies(self, img_h, img_w, input_channels,unpruned ):
          if self.use_forking:
              assert self.exit_proportions_calculated
              mults_by_chunk = []
@@ -1140,7 +1140,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                           
 
 
-         mults,_,_,_= count_approx_multiplies(self.layer_chunk_list,img_h=img_h, img_w=img_w,input_channels=input_channels ) 
+         mults,_,_,_= count_approx_multiplies(self.layer_chunk_list,img_h=img_h, img_w=img_w,input_channels=input_channels,unpruned=unpruned ) 
          return mults
 
     def calc_exit_proportions(self):
@@ -1191,7 +1191,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 if isinstance(layer,unit_target):
                     props.append(pruned_mults / layer_mults)
                     difs.append(layer_mults - pruned_mults)
-        return props
+        return props, difs
 
 
 
