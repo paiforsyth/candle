@@ -892,13 +892,13 @@ class SqueezeNet(serialmodule.SerializableModule):
                 num_expand1=e-num_expand3
                 if config.skipmode == FireSkipMode.SIMPLE and e == self.channel_counts[i]:
                     skip_here=True
-                    logging.info("Making simple skip layer.")
+                    logging.debu("Making simple skip layer.")
                 elif config.skipmode == FireSkipMode.PAD:
                     skip_here=True
                     if e == self.channel_counts[i]:
-                        logging.info("Padding is enabled, but channel count has not changed.  Simple skipping will occur")
+                        logging.debug("Padding is enabled, but channel count has not changed.  Simple skipping will occur")
                     else:
-                        logging.info("Making Padding skip layer")
+                        logging.debug("Making Padding skip layer")
                 else:
                     skip_here=False
                 if config.mode == "wide_resfire":
@@ -1123,7 +1123,7 @@ class SqueezeNet(serialmodule.SerializableModule):
              cur_w=img_w
              cur_channels=input_channels
              for chunk in self.layer_chunk_list:
-                mults,cur_channels, cur_h,cur_w =count_approx_multiplies(chunk,cur_h, cur_w, cur_channels)
+                mults,cur_channels, cur_h,cur_w =count_approx_multiplies(chunk,cur_h, cur_w, cur_channels, unpruned= unpruned)
                 mults_by_chunk.append(mults) 
              culm_mults_by_chunk = [mults_by_chunk[0]]
              for i in range(1,len(mults_by_chunk)):

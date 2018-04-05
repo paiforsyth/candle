@@ -892,13 +892,13 @@ class SqueezeNet(serialmodule.SerializableModule):
                 num_expand1=e-num_expand3
                 if config.skipmode == FireSkipMode.SIMPLE and e == self.channel_counts[i]:
                     skip_here=True
-                    logging.info("Making simple skip layer.")
+                    logging.debug("Making simple skip layer.")
                 elif config.skipmode == FireSkipMode.PAD:
                     skip_here=True
                     if e == self.channel_counts[i]:
-                        logging.info("Padding is enabled, but channel count has not changed.  Simple skipping will occur")
+                        logging.debug("Padding is enabled, but channel count has not changed.  Simple skipping will occur")
                     else:
-                        logging.info("Making Padding skip layer")
+                        logging.debug("Making Padding skip layer")
                 else:
                     skip_here=False
                 if config.mode == "wide_resfire":
