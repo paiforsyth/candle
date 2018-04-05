@@ -190,15 +190,21 @@ class ProxyBatchNorm2d(ProxyLayer):
             #import pdb; pdb.set_trace()
         return F.batch_norm(x,self.running_mean, self.running_var,*weights, training=self.training,momentum= self.momentum,eps= self.eps )
     
-    def multiplies(self,img_h, img_w, input_channels):
+    def multiplies(self,img_h, img_w, input_channels, unpruned):
         from . import prune
         if isinstance(self.weight_provider,prune.BatchNorm2DMask ):
-            effective_out = self.effective_output_channels()
-            logging.debug("effective output channels for ProxyBatchNorm2d is {} ".format(effective_out))
+            if unpruned:
+                effective_out = self.num_features 
+            else:
+                effective_out = self.effective_output_channels()
+                logging.debug("effective output channels for ProxyBatchNorm2d is {} ".format(effective_out))
         return  0, effective_out, img_h, img_w
 
     def effective_output_channels(self):
         return  self.weight_provider.mask_unpruned[0]
+
+    def prop_nonzero_masks(self):
+        return self.weight_provider.prop_nonzero_masks()
 
 
 
@@ -227,11 +233,14 @@ class _ProxyConvNd(ProxyLayer):
         return self.conv_fn(x, *weights, **self._conv_kwargs)
 
     #added by Peter 
-    def effective_output_channels(self):
+    def effective_output_channels(self, unpruned=False):
         from . import prune
         base_output_channels=self.weight_provider.sizes.reify()[0][0]
         logging.debug("base output channels is "+str(base_output_channels))
-        if isinstance(self.weight_provider,IdentityProxy):
+        if unpruned:
+            logging.debug("unpruned mode enabled.  using base output_channels")
+            return base_output_channels
+        elif isinstance(self.weight_provider,IdentityProxy):
             logging.debug("found no weight mask. using base output_channels. ")
             return base_output_channels 
         elif isinstance(self.weight_provider, prune.Channel2DMask):
@@ -259,9 +268,9 @@ class ProxyConv2d(_ProxyConvNd):
     def __init__(self, weight_provider, **kwargs):
         super().__init__(weight_provider, F.conv2d, **kwargs)
 
-    def multiplies(self,img_h, img_w, input_channels):
+    def multiplies(self,img_h, img_w, input_channels, unpruned):
         w_dim = self.weight_provider.sizes.reify()[0]
-        effective_out = self.effective_output_channels() 
+        effective_out = self.effective_output_channels(unpruned=unpruned) 
               #img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3]/self.groups
         if self.stride !=(1,1):
             pass

@@ -232,6 +232,11 @@ class BatchNorm2DMask(WeightMaskGroup):
         mask_nonzero= float((self._flattened_masks[0] != 0).sum())
         return "BatchNorm2DMask child={} [{} / {} masks nonzero]".format(self.child,mask_nonzero,mask_len)
 
+    def prop_nonzero_masks(self):
+        mask_len = self._flattened_masks[0].size(0)
+        mask_nonzero= float((self._flattened_masks[0] != 0).sum())
+        return mask_nonzero / mask_len
+
     def build_masks(self, init_value):
         return self._build_masks(init_value, self.child.sizes.reify()[0][0])
         # One mask for each batch norm param
@@ -283,6 +288,11 @@ class Channel2DMask(WeightMaskGroup):
         expand_weight = mask.expand(sizes[3], sizes[2], sizes[1], -1).permute(3, 2, 1, 0)
         expand_bias = mask
         return Package([expand_weight, expand_bias])
+
+class Column2DMask(WeightMaskGroup):
+    def __init__(self, layer, child, following_proxy_conv, **kwargs):
+        super().__init__(layer, child, **kwargs)
+        pass
 
 
 class ExternChannel2DMask(WeightMaskGroup):

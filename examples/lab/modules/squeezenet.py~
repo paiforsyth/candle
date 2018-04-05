@@ -297,11 +297,16 @@ class NextFire(serialmodule.SerializableModule):
 
         return out
 
-    def multiplies(self,img_h, img_w, input_channels):
+    def multiplies(self,img_h, img_w, input_channels, unpruned ):
         assert not self.shake_shake and not self.shakedrop and not self.stochastic_depth
-        mults, _,out_h,out_w =  count_approx_multiplies(layer=self.seq, img_h=img_h, img_w=img_w,input_channels=input_channels)        
+        mults, _,out_h,out_w =  count_approx_multiplies(layer=self.seq, img_h=img_h, img_w=img_w,input_channels=input_channels, unpruned=unpruned)        
         return mults, self.out_channels,out_h ,out_w #residual branch means that we get the full number of out_channels even if we pruned some
-        
+
+    def prop_nonzero_masks(self):
+        prop1 = self.seq.bn1.prop_nonzero_masks()
+        prop2 = self.seq.bn2.prop_nonzero_masks()
+        prop3 = self.seq.bn3.prop_nonzero_masks()
+        return prop1, prop2, prop3 
 
 class WideResFire(serialmodule.SerializableModule):
     '''
@@ -725,7 +730,7 @@ class SqueezeNet(serialmodule.SerializableModule):
         elif args.squeezenet_dense_fire_depths=="shallow":
             depthlist=[1, 2, 4, 8]
         elif args.squeezenet_dense_fire_depths=="std_equal":
-            depthlist=[12, 12, 12]
+            depthlist=[11, 11, 11]
         else:
             depthlist=None
 
@@ -794,6 +799,7 @@ class SqueezeNet(serialmodule.SerializableModule):
 
     def __init__(self, config):
         super().__init__()
+        self.mode =config.mode
         self.freeze_hard_concrete_for_testing = config.freeze_hard_concrete_for_testing
         self.chunk_across_devices=config.chunk_across_devices
         self.use_forking =config.use_forking
@@ -1150,7 +1156,47 @@ class SqueezeNet(serialmodule.SerializableModule):
        logging.info("exit proportions: "+str(self.exit_proportions))
        self.exit_proportions_calculated = True
        
-        
+    def prop_nonzero_masks(self):
+        if self.mode == "next_fire": 
+            prop1_list = []
+            prop2_list = [] 
+            prop3_list = []
+
+            for chunk in self.layer_chunk_list:
+                 for layer in chunk:
+                     if isinstance(layer, NextFire):
+                        p1, p2, p3 = layer.prop_nonzero_masks()
+                        prop1_list.append(p1)
+                        prop2_list.append(p2)
+                        prop3_list.append(p3)
+
+            return {"bn1" : prop1_list, "bn2" : prop2_list, "bn3" : prop3_list} 
+
+    def prop_flop_reduction(self, img_h, img_w, input_channels ,unit_target = "by_mode"):
+        if unit_target == "by_mode":
+            if self.mode == "next_fire": 
+                unit_target = NextFire
+        props = [] 
+        difs=[]
+        cur_h_unpruned = img_h 
+        cur_w_unpruned = img_w
+        cur_channels_unpruned = input_channels
+        cur_h_pruned = img_h
+        cur_w_pruned = img_w
+        cur_channels_pruned = input_channels
+        for chunk in self.layer_chunk_list:
+            for layer in chunk:
+                pruned_mults, cur_channels_pruned, cur_h_pruned, cur_w_pruned = count_approx_multiplies(layer, img_h = cur_h_pruned,img_w = cur_w_pruned,input_channels=  cur_channels_pruned, unpruned = False)
+                layer_mults, cur_channels_unpruned, cur_h_unpruned, cur_w_unpruned = count_approx_multiplies(layer, img_h = cur_h_unpruned,img_w = cur_w_unpruned, input_channels=  cur_channels_unpruned, unpruned = True)
+                if isinstance(layer,unit_target):
+                    props.append(pruned_mults / layer_mults)
+                    difs.append(layer_mults - pruned_mults)
+        return props
+
+
+
+                
+
 
             
 

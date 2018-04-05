@@ -2,11 +2,12 @@ import logging
 import torch.nn as nn 
 import math
 import util.countmult_util
-def count_approx_multiplies(layer,img_h,img_w, input_channels):
+def count_approx_multiplies(layer,img_h,img_w, input_channels, unpruned=False):
     '''
     img_h: height of image
     img_w: width of image
     input_channels: The effective number of input channels that layer is to be fed, taking into account any zeroing of output channels that may have occured as the result of pruning in previous layers
+    unpruned = if true, ignore the effect of pruning
     returns:
     -1.  count of approximate multiplies carried out by this channel
     -2.  Count of effective output channels produced by this channel
@@ -60,7 +61,7 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
 
     #see if layer implements a multiplies method
     if getattr(layer,"multiplies",None) is not None:
-        return layer.multiplies(img_h=img_h, img_w=img_w, input_channels = input_channels)
+        return layer.multiplies(img_h=img_h, img_w=img_w, input_channels = input_channels, unpruned = unpruned)
     #see if layer is iterable
     total=0
     sublayer_channels = input_channels
@@ -68,7 +69,7 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels):
     sublayer_w=img_w
     # import pdb; pdb.set_trace()
     for sublayer in layer:
-            sublayer_mult, sublayer_channels, sublayer_h, sublayer_w = count_approx_multiplies(sublayer, img_h = sublayer_h,img_w = sublayer_w,input_channels=  sublayer_channels)
+            sublayer_mult, sublayer_channels, sublayer_h, sublayer_w = count_approx_multiplies(sublayer, img_h = sublayer_h,img_w = sublayer_w,input_channels=  sublayer_channels, unpruned = unpruned)
             try:
                 total += sublayer_mult
             except:

@@ -357,6 +357,51 @@ def run(args, ensemble_test=False):
             param.requires_grad = False
    if args.print_model:
         logging.info(repr(context.model))
+        return
+
+   if args.plot_unpruned_masks:
+        import matplotlib.pyplot as plt
+        import numpy as np
+        plot_dict = context.model.prop_nonzero_masks()    
+        fig, ax = plt.subplots()
+        for label, props in plot_dict.items():
+            layer_nums = np.arange(0,len(props))
+            np_props = np.asarray(props)
+            ax.plot(layer_nums, np_props, label=label)
+        legend = ax.legend(loc='upper left')
+        ax.set(xlabel="residual unit #", ylabel = "proportion of masks unpruned", title=args.plot_title)
+        plt.show()
+        return
+
+   if args.plot_flop_reduction_by_layer:
+        import matplotlib.pyplot as plt
+        import numpy as np
+        img_h, img_w, channels = get_dims_from_dataset(args.dataset_for_classification)   
+        props, _ =  context.model.prop_flop_reduction(img_h = img_h, img_w= img_w, input_channels = channels)    
+        fig, ax = plt.subplots()
+        layer_nums = np.arange(0,len(props))
+        np_props = np.asarray(props)
+        ax.plot(layer_nums, np_props)
+        ax.set(xlabel="residual unit #", ylabel = "pruned flops / unpruned flops", title=args.plot_title)
+        plt.show()
+        return
+
+   if args.plot_absolute_flop_reduction_by_layer:
+        import matplotlib.pyplot as plt
+        import numpy as np
+        img_h, img_w, channels = get_dims_from_dataset(args.dataset_for_classification)   
+        _, difs =  context.model.prop_flop_reduction(img_h = img_h, img_w= img_w, input_channels = channels)    
+        fig, ax = plt.subplots()
+        layer_nums = np.arange(0,len(props))
+        np_difs = np.asarray(difs)
+        ax.plot(layer_nums, np_difs)
+        ax.set(xlabel="residual unit #", ylabel =  "unpruned flops - pruned_flops", title=args.plot_title)
+        plt.show()
+        return
+
+
+
+
    if args.mode == "test":
         basic_classification.make_prediction_report(context, context.test_loader,args.test_report_filename, no_grad=args.use_nograd)  
         return
@@ -637,3 +682,9 @@ def run(args, ensemble_test=False):
    #context.model.load(os.path.join( args.model_save_path,timestamp+ args.save_prefix +"_best_model"))
    #if context.data_type == DataType.SEQUENCE:
     #    datatools.sequence_classification.write_evaulation_report(context, context.val_loader,os.path.join(args.timestamp + report_path,args.save_prefix +".txt") , category_names=context.category_names) 
+def get_dims_from_dataset(dataset_for_classification):
+    if dataset_for_classification == "cifar_challenge" or dataset_for_classification == "cifar10":
+           img_h=32
+           img_w=32
+           channels=3
+    return img_h, img_w, channels
