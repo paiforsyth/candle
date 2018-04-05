@@ -191,6 +191,8 @@ class ProxyBatchNorm2d(ProxyLayer):
         return F.batch_norm(x,self.running_mean, self.running_var,*weights, training=self.training,momentum= self.momentum,eps= self.eps )
     
     def multiplies(self,img_h, img_w, input_channels, unpruned):
+        #important note: mixing bn and conv pruning is not supported at the moment
+        #in this case we would need to take into account the reductions in input channels caued both by pruning of the batchnorm and pruning of the output of the preceding conv
         from . import prune
         if isinstance(self.weight_provider,prune.BatchNorm2DMask ):
             if unpruned:
@@ -236,6 +238,7 @@ class _ProxyConvNd(ProxyLayer):
     def effective_output_channels(self, unpruned=False):
         from . import prune
         base_output_channels=self.weight_provider.sizes.reify()[0][0]
+
         logging.debug("base output channels is "+str(base_output_channels))
         if unpruned:
             logging.debug("unpruned mode enabled.  using base output_channels")
@@ -270,7 +273,11 @@ class ProxyConv2d(_ProxyConvNd):
 
     def multiplies(self,img_h, img_w, input_channels, unpruned):
         w_dim = self.weight_provider.sizes.reify()[0]
-        effective_out = self.effective_output_channels(unpruned=unpruned) 
+        if self.groups == wdim[0]:
+            logging.debug("depthwise convolution detected.  Input channels= output channels")
+            effective_out = input_channels
+        else:
+            effective_out = self.effective_output_channels(unpruned=unpruned) 
               #img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3]/self.groups
         if self.stride !=(1,1):
             pass
