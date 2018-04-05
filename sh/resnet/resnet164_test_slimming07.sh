@@ -9,4 +9,8 @@ python -m examples.lab $(cat $ARGFILE) --save_prefix=$SAVE_PREFIX --mode=test --
 python -m examples.lab --validate_fr  --validate_fr_reportfile=$REPORT_FILENAME  --validate_fr_truthfile=local_data/cifar10/cifar-10-batches-py/test_batch --validate_fr_truthfiletype="pickle_dict"
 
 
+#print pruned structure
+
+python -m examples.lab $(cat $ARGFILE) --save_prefix=$SAVE_PREFIX  --resume_mode=standard  --res_file=${RESUME_FILENAME} --print_model   --cuda
+
 
