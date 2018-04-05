@@ -357,6 +357,7 @@ def run(args, ensemble_test=False):
             param.requires_grad = False
    if args.print_model:
         logging.info(repr(context.model))
+        return
    if args.mode == "test":
         basic_classification.make_prediction_report(context, context.test_loader,args.test_report_filename, no_grad=args.use_nograd)  
         return
