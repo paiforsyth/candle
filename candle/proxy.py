@@ -298,7 +298,7 @@ class ProxyConv2d(_ProxyConvNd):
     def reset_underlying_weights(self):
         wparams = self.weight_provider.root.parameters()[0]
         v=wparams.shape[1]*wparams.shape[2]*wparams.shape[3]
-        stddev = 1. / math.sqrt(v)
+        stdv = 1. / math.sqrt(v)
         self.weight_provider.root.parameters()[0].data.uniform_(-stdv, stdv)
         self.weight_provider.root.parameters()[1].data.uniform_(-stdv, stdv)
 
