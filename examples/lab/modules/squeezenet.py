@@ -116,6 +116,7 @@ def add_args(parser):
 
     parser.add_argument("--squeezenet_downsample_via_stride", action="store_true")
     parser.add_argument("--squeezenet_downsample_stride_freq", default=None) #None means use the same freq as the channel increase
+    parser.add_argument("--squeezenet_allow_pooling_after_first_fire",action="store_true")
 
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
@@ -459,7 +460,7 @@ class BNNFire(serialmodule.SerializableModule):
             self.act = candle.quantize.BinaryTanh() 
         self.pool=pool
         if pool:
-            self.pool_layer = nn.MaxPool2d(kernel_size=2,stride=2,padding=1)
+            self.pool_layer = nn.MaxPool2d(kernel_size=2,stride=2)
         self.use_prelu= use_prelu
         if use_prelu:
             self.prelu =  nn.PReLU(num_parameters=out_channels)
@@ -713,7 +714,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride, densenet_no_bottleneck")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride, densenet_no_bottleneck, allow_pooling_after_first_fire")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -808,7 +809,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                 msd_num_scales = args.squeezenet_msd_num_scales,
                 skip_conv1 = args.squeezenet_skip_conv1,
                 downsample_via_stride= args.squeezenet_downsample_via_stride,
-                densenet_no_bottleneck = args.squeezenet_densenet_no_bottleneck
+                densenet_no_bottleneck = args.squeezenet_densenet_no_bottleneck,
+                allow_pooling_after_first_fire = args.squeezenet_allow_pooling_after_first_fire
                 )
         return SqueezeNet(config)
 
@@ -883,7 +885,7 @@ class SqueezeNet(serialmodule.SerializableModule):
             layer_dict=collections.OrderedDict([
             ("conv1", nn.Conv2d(config.in_channels, first_layer_num_convs, first_layer_conv_width, padding=first_layer_padding, stride=config.conv1_stride)),
             ("conv1relu", nn.LeakyReLU()),
-            ("maxpool1", nn.MaxPool2d(kernel_size=3,stride=2,padding=1))
+            ("maxpool1", nn.MaxPool2d(kernel_size=3,stride=2))
             ]) 
             self.channel_counts=[ first_layer_num_convs]#initial number of channels entering ith fire layer (labeled i+2 to match paper)
         else:
@@ -980,9 +982,9 @@ class SqueezeNet(serialmodule.SerializableModule):
                     layer_dict["msd_column_fire_{}".format(i+2)] = msdnet.MSDColumnFire(in_channels_finest = self.channel_counts[i], growth_channels_finest =config.msd_growth_rate, num_scales = config.msd_num_scales, proxy_ctx= proxy_ctx, proxy_ctx_mode = config.proxy_context_type)
                     self.channel_counts.append(self.channel_counts[i] + config.msd_growth_rate)
 
-            if not config.disable_pooling and (i+pool_offset) % config.pool_interval == 0 and i !=0 and i!=(num_fires -1):
+            if not config.disable_pooling and (i+pool_offset) % config.pool_interval == 0 and (i !=0 or config.allow_pooling_after_first_fire) and i!=(num_fires -1):
                 logging.info("adding max pool layer")
-                layer_dict["maxpool{}".format(i+2)]= nn.MaxPool2d(kernel_size=config.max_pool_size,stride=2,padding=1)
+                layer_dict["maxpool{}".format(i+2)]= nn.MaxPool2d(kernel_size=config.max_pool_size,stride=2)
                 num_pool_so_far+=1
         logging.info("counted " +str(num_pool_so_far)+" pooling layers" )
         logging.info("counted " +str(num_stride_so_far)+" strided layers" )
