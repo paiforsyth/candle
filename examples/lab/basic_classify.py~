@@ -477,7 +477,7 @@ def run(args, ensemble_test=False):
         init_mask_count = context.model.proxy_ctx.count_unpruned_masks()
         logging.info("Initial number of masks {}".format(init_mask_count))
         if args.autocalc_prune_unit:
-            prune_unit = math.ceil(1- (args.prune_target_frac)**(1/10))*100)
+            prune_unit = math.ceil(1- (args.prune_target_frac)**(1/10))*100
         else:
             prune_unit = args.prune_unit
         logging.info("prune unit is {}".format(prune_unit))
