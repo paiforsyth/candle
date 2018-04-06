@@ -305,6 +305,7 @@ class NextFire(serialmodule.SerializableModule):
         return mults, self.out_channels,out_h ,out_w #residual branch means that we get the full number of out_channels even if we pruned some
 
     def reset_weights(self):
+        logging.info("reseting squeezenet weights")
         reset_weights(self.seq)
         
 

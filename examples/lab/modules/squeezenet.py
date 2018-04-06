@@ -1211,7 +1211,7 @@ class SqueezeNet(serialmodule.SerializableModule):
     def reset_weights(self):
         for chunk in self.layer_chunk_list:
             for layer in chunk:
-                layer.reset_weights()
+                reset_weights(layer)
 
 
 
