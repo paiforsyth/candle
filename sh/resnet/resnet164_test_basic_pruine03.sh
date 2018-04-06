@@ -1,4 +1,4 @@
-ARGFILE=./sh/argfiles/resnet_164
+ARGFILE=./sh/argfiles/resnet_164_no_first_last
 RESUME_FILENAME=05_April_2018_Thursday_19_38_46resnet164_basic_prune_03_retrain_most_recent
 SAVE_PREFIX=res_net_164_basic_prune_03_test
 REPORT_FILENAME=./reports/res_net_basic_prune_03_test
