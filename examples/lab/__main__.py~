@@ -96,6 +96,7 @@ def default_parser(parser=None):
     parser.add_argument("--prune_warmup_epochs", type=int, default=10)
     parser.add_argument("--prune_layer_mode", choices = ["by_layer", "global"], default= "by_layer")
     parser.add_argument("--prune_unit",type=int, default=1)
+    parser.add_argument("--autocalc_prune_unit",action="store_true")
 
     parser.add_argument("--enable_l0reg",action = "store_true")
     parser.add_argument("--l0reg_lambda", type=float, default =1.5 / 50000 )
@@ -184,7 +185,7 @@ def main():
    iparser = initial_parser()
    [initial_args, remaining_vargs ] = iparser.parse_known_args()
    if initial_args.log_to_file:    
-        logging.basicConfig(level=logging.INFO, filename = inital_args.log_file_name)
+        logging.basicConfig(level=logging.INFO, filename = initial_args.log_file_name)
    else:
         logging.basicConfig(level=logging.INFO)
    logging.info("command line options:"  )
