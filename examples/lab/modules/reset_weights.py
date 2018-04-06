@@ -12,23 +12,23 @@ def reset_weights(module):
         if module.bias is not None:
             module.bias.data.uniform_(-stdv, stdv)
         return
-    elif isinstance(layer, nn.BatchNorm2d):
-        layer.running_mean.zero_()
-        layer.running_var.fill_(1)
-        layer.weight.data.uniform_()
-        layer.bias.data.zero_()
+    elif isinstance(module, nn.BatchNorm2d):
+        module.running_mean.zero_()
+        module.running_var.fill_(1)
+        module.weight.data.uniform_()
+        module.bias.data.zero_()
         return
-    elif isinstance(layer, nn.MaxPool2d):
+    elif isinstance(module, nn.MaxPool2d):
         return
-    elif getattr(layer,"reset_weights",None) is not None:
-        layer.reset_weights()
+    elif getattr(module,"reset_weights",None) is not None:
+        module.reset_weights()
         return
-    elif getattr(layer,"reset_underlying_weights",None) is not None:
-        layer.reset_underlying_weights()
+    elif getattr(module,"reset_underlying_weights",None) is not None:
+        module.reset_underlying_weights()
         return
     else:
-        for sublayer in layer:
-            sublayer.reset_weights()
+        for sublayer in module:
+            reset_weights(sublayer)
         return
         
 
