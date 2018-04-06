@@ -18,7 +18,7 @@ def reset_weights(module):
         module.weight.data.uniform_()
         module.bias.data.zero_()
         return
-    elif isinstance(module, nn.LeakyReLU) or isinstance(module, nn.ReLU)
+    elif isinstance(module, nn.LeakyReLU) or isinstance(module, nn.ReLU):
         return
     elif isinstance(module, nn.MaxPool2d):
         return
