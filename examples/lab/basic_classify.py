@@ -682,7 +682,7 @@ def run(args, ensemble_test=False):
                 context.model.reset_weights()
            
             if args.print_params_after_epoch:
-                logginginfo("model_params:")
+                logging.info("model_params:")
                 for param in context.model.proxy_ctx.list_model_params():
                    logging.info(str(param)) 
                 logging.info("mask_params")
