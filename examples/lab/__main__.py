@@ -22,6 +22,8 @@ def initial_parser(parser = None):
     if parser is None:
         parser= argparse.ArgumentParser()
     parser.add_argument("--paradigm", type=str, choices=["classification", "sequence_to_sequence"], default="classification")
+    parser.add_argument("--log_to_file", action="store_true")
+    parser.add_argument("--log_file_name")
     return parser  
 
 def default_parser(parser=None):
@@ -156,8 +158,7 @@ def default_parser(parser=None):
 
     parser.add_argument("--print_params_after_epoch", action = "store_true")
 
-    parser.add_argument("--log_to_file", action="store_true")
-    parser.add_argument("--log_file_name")
+
 
     return parser
 
@@ -180,17 +181,19 @@ def main():
 
 
 
-   logging.basicConfig(level=logging.INFO)
-   logging.info("command line options:"  )
-   logging.info(" ".join(sys.argv))
    iparser = initial_parser()
    [initial_args, remaining_vargs ] = iparser.parse_known_args()
+   if initial_args.log_to_file:    
+        logging.basicConfig(level=logging.INFO, filename = initial_args.log_file_name)
+   else:
+        logging.basicConfig(level=logging.INFO)
+   logging.info("command line options:"  )
+   logging.info(" ".join(sys.argv))
    if initial_args.paradigm == "classification":
     parser=default_parser()
     parser=basic_classify.add_args(parser)
     args = parser.parse_args(remaining_vargs)
-    if args.log_to_file:
-       logging.basicConfig(filename=args.log_file_name) 
+        
     if args.validate_fr: #dont build a model.  Just evaluate a report
         if args.validate_fr_truthfiletype =="pickle":
          with open(args.validate_fr_truthfile, 'rb') as f: 
