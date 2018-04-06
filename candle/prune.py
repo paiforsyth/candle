@@ -466,7 +466,7 @@ class PruneContext(Context):
             
     def _prune_one_mask(self, weight,mask, percentage):
                 '''
-    given a tensor of magnitudes and a corresponding tensor og masks, prune the masks corresponding to the smallest magnitudes
+    given a tensor of magnitudes and a corresponding tensor of masks, prune the masks corresponding to the smallest magnitudes
                 '''
                 _, indices = torch.sort(weight.view(-1))
                 ne0_indices = indices[mask.view(-1)[indices] != 0]

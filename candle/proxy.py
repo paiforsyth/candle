@@ -208,6 +208,14 @@ class ProxyBatchNorm2d(ProxyLayer):
     def prop_nonzero_masks(self):
         return self.weight_provider.prop_nonzero_masks()
 
+    def reset_underlying_weights(self):
+        self.weight_provider.root.parameters[0].fill_(1)
+        self.weight_provider.root.parameters[1].fill_(0)
+        self.running_mean.zero_()
+        self.running_var.fill_(1)
+
+
+
 
 
 
@@ -285,6 +293,14 @@ class ProxyConv2d(_ProxyConvNd):
         mults, out_channels, height, width = util.countmult_util.conv2d_mult_compute(img_h, img_w, in_channels=input_channels, out_channels=effective_out, groups=self.groups, stride=self.stride, padding=self.padding, kernel_size=self.kernel_size, dilation=self.dilation)
         logging.debug("number of mults is {}".format(mults))  #logging.debug("number of mults is {}*{}*{}*{}*{}*{} / {} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],self.groups,mults)  )
         return mults, out_channels, height, width
+
+    def reset_underlying_weights(self)::
+        wparams = self.weight_provider.root.parameter()[0]
+        v=wparams.shape[1]*wparams.shape[2]*wparams.shape[3]
+        stddev = 1. / math.sqrt(v)
+        self.weight_provider.root.parameters()[0].data.uniform_(-stdv, stdv)
+        self.weight_provider.root.paramters()[1].data.uniform_(-stdv, stdv)
+
 
 class ProxyConv1d(_ProxyConvNd):
     def __init__(self, weight_provider, **kwargs):

@@ -143,12 +143,18 @@ def default_parser(parser=None):
 
     parser.add_argument("--get_forking_props_on_val", action="store_true")
 
+    parser.add_argument("--weight_reset_enable", action = "store_true")
+    parser.add_argument("--weight_reset_epoch_num", type=int,  default =0)
+
+
     parser.add_argument("--show_network_strucutre_every_epoch",action="store_true")
     parser.add_argument("--print_model",action="store_true")
     parser.add_argument("--plot_unpruned_masks", action="store_true") #create a plot of the unpruned masks by layer in a pruned model
     parser.add_argument("--plot_flop_reduction_by_layer", action="store_true") #create a plot of the proportionate flop reduction 
     parser.add_argument("--plot_absolute_flop_reduction_by_layer", action="store_true") #create a plot of the proportionate flop reduction 
     parser.add_argument("--plot_title")
+
+    parser.add_argument("--print_params_after_epoch", action = "store_true")
 
     return parser
 

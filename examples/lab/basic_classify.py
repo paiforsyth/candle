@@ -678,6 +678,17 @@ def run(args, ensemble_test=False):
                 else:
                     raise Exception("dataset not supported for count_multiplies")
 
+            if args.weight_reset_enable and epoch_count == args.weight_reset_epoch_num :
+                context.model.reset_weights()
+           
+            if args.print_params_after_epoch:
+                logginginfo("model_params:")
+                for param in context.model.proxy_ctx.list_model_params():
+                   logging.info(str(param)) 
+                logging.info("mask_params")
+                for param in context.model.proxy_ctx.list_mask_params():
+                    logging.info(str(param))
+
          # logging.info("Loading best model")
    #context.model.load(os.path.join( args.model_save_path,timestamp+ args.save_prefix +"_best_model"))
    #if context.data_type == DataType.SEQUENCE:

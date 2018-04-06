@@ -11,6 +11,7 @@ import torch.cuda
 from . import serialmodule
 from . import shakedrop_func 
 from .countmult import count_approx_multiplies
+from .reset_weights import reset_weights
 from . import shake_shake
 from . import msdnet
 from torch.autograd import Variable
@@ -302,6 +303,11 @@ class NextFire(serialmodule.SerializableModule):
         assert not self.shake_shake and not self.shakedrop and not self.stochastic_depth
         mults, _,out_h,out_w =  count_approx_multiplies(layer=self.seq, img_h=img_h, img_w=img_w,input_channels=input_channels, unpruned=unpruned)        
         return mults, self.out_channels,out_h ,out_w #residual branch means that we get the full number of out_channels even if we pruned some
+
+    def reset_weights(self):
+        logging.info("reseting squeezenet weights")
+        reset_weights(self.seq)
+        
 
     def prop_nonzero_masks(self):
         prop1 = self.seq.bn1.prop_nonzero_masks()
@@ -1201,6 +1207,11 @@ class SqueezeNet(serialmodule.SerializableModule):
                     props.append(pruned_mults / layer_mults)
                     difs.append(layer_mults - pruned_mults)
         return props, difs
+
+    def reset_weights(self):
+        for chunk in self.layer_chunk_list:
+            for layer in chunk:
+                layer.reset_weights()
 
 
 

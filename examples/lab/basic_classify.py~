@@ -392,7 +392,7 @@ def run(args, ensemble_test=False):
         img_h, img_w, channels = get_dims_from_dataset(args.dataset_for_classification)   
         _, difs =  context.model.prop_flop_reduction(img_h = img_h, img_w= img_w, input_channels = channels)    
         fig, ax = plt.subplots()
-        layer_nums = np.arange(0,len(props))
+        layer_nums = np.arange(0,len(difs))
         np_difs = np.asarray(difs)
         ax.plot(layer_nums, np_difs)
         ax.set(xlabel="residual unit #", ylabel =  "unpruned flops - pruned_flops", title=args.plot_title)
@@ -677,6 +677,16 @@ def run(args, ensemble_test=False):
                     context.tb_writer.write_multiplies(mults)
                 else:
                     raise Exception("dataset not supported for count_multiplies")
+
+            if args.weight_reset_enable and epoch_count == args.weight_reset_epoch_num :
+                context.model.reset_weights()
+           
+            if args.print_params_after_epoch:
+                logginginfo("model_params:")
+                for param in context.model.proxy_ctx.list_model_params():
+                   logging.info(str(param)) 
+                logging.info("mask_params")
+                for param in context.model.proxy_ctx.list_mask_params():
 
          # logging.info("Loading best model")
    #context.model.load(os.path.join( args.model_save_path,timestamp+ args.save_prefix +"_best_model"))
