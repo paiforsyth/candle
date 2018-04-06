@@ -22,7 +22,7 @@ def reset_weights(module):
         return
     elif isinstance(module, nn.MaxPool2d):
         return
-    if isinstance(layer, nn.Dropout):
+    if isinstance(module, nn.Dropout):
         return
     elif getattr(module,"reset_weights",None) is not None:
         module.reset_weights()
