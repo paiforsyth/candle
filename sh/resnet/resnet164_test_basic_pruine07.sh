@@ -1,0 +1,13 @@
+ARGFILE=./sh/argfiles/resnet_164_no_first_last
+RESUME_FILENAME=06_April_2018_Friday_01_55_37resnet164_basic_prune_07_most_recent
+
+SAVE_PREFIX=res_net_164_basic_prune_07_test
+REPORT_FILENAME=./reports/res_net_basic_prune_07_test
+
+
+python -m examples.lab $(cat $ARGFILE) --save_prefix=$SAVE_PREFIX --mode=test --resume_mode=standard  --res_file=${RESUME_FILENAME}    --test_report_filename=$REPORT_FILENAME  --cuda
+
+python -m examples.lab --validate_fr  --validate_fr_reportfile=$REPORT_FILENAME  --validate_fr_truthfile=local_data/cifar10/cifar-10-batches-py/test_batch --validate_fr_truthfiletype="pickle_dict"
+
+
+
