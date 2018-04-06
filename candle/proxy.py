@@ -294,7 +294,7 @@ class ProxyConv2d(_ProxyConvNd):
         logging.debug("number of mults is {}".format(mults))  #logging.debug("number of mults is {}*{}*{}*{}*{}*{} / {} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],self.groups,mults)  )
         return mults, out_channels, height, width
 
-    def reset_underlying_weights(self)::
+    def reset_underlying_weights(self):
         wparams = self.weight_provider.root.parameter()[0]
         v=wparams.shape[1]*wparams.shape[2]*wparams.shape[3]
         stddev = 1. / math.sqrt(v)
