@@ -12,6 +12,7 @@ from . import serialmodule
 from . import shakedrop_func 
 from .countmult import count_approx_multiplies
 from .reset_weights import reset_weights
+from .reset_masks import reset_masks
 from . import shake_shake
 from . import msdnet
 from torch.autograd import Variable
@@ -306,8 +307,12 @@ class NextFire(serialmodule.SerializableModule):
         return mults, self.out_channels,out_h ,out_w #residual branch means that we get the full number of out_channels even if we pruned some
 
     def reset_weights(self):
-        logging.info("reseting squeezenet weights")
+        logging.info("reseting NextFire weights")
         reset_weights(self.seq)
+
+    def reset_masks(self):
+        logging.info("ressietting NextFire masks")
+        reset_masks(self.seq)
         
 
     def prop_nonzero_masks(self):
@@ -1214,6 +1219,10 @@ class SqueezeNet(serialmodule.SerializableModule):
         for chunk in self.layer_chunk_list:
             for layer in chunk:
                 reset_weights(layer)
+
+    def reset_masks(self):
+        for chunk in self.layer_chunk_list:
+            rest_masks(chunk)
 
 
 

@@ -37,6 +37,7 @@ def default_parser(parser=None):
     parser.add_argument("--model_save_path",type=str, default= "./saved_models/") 
     parser.add_argument("--resume_mode", type=str, choices=["none", "standard", "ensemble"], default= "none" )
     parser.add_argument("--res_file",type=str, default="recent_model") 
+    parser.add_argument("--reset_masks_after_loading", action="store_true")
     parser.add_argument("--load_nonstrict", action="store_true") 
 
     parser.add_argument("--mode", type=str, choices=["test", "train"], default="train")
@@ -162,6 +163,7 @@ def default_parser(parser=None):
 
 
 
+
     return parser
 
 
@@ -208,6 +210,7 @@ def main():
 
 
          acc = basic_classification.score_report(args.validate_fr_reportfile, truth)
+
         print("ACCURACY ON GROUND TRUTH: ",acc ) 
         return
 

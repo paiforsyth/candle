@@ -215,6 +215,13 @@ class ProxyBatchNorm2d(ProxyLayer):
         self.running_mean.zero_()
         self.running_var.fill_(1)
 
+    def reset_masks(self):
+        assert not self.weight_provider.stochastic
+        from . import prune
+        assert isinstance(self.weight_provider, prune.BatchNorm2DMask )
+        for param in self.weight_provider.parameters(): 
+            param.data.fill_(1)
+
 
 
 
@@ -301,6 +308,19 @@ class ProxyConv2d(_ProxyConvNd):
         stdv = 1. / math.sqrt(v)
         self.weight_provider.root.parameters()[0].data.uniform_(-stdv, stdv)
         self.weight_provider.root.parameters()[1].data.uniform_(-stdv, stdv)
+
+    def reset_masks(self):
+        from . import prune
+        if isinstance(self.weight_provider,prune. ExternChannel2DMask):
+            return
+        import pdb; pdb.set_trace()
+        assert isinstance(self.weight_provider, prune.Channel2DMask)
+        assert not self.weight_provider.stochastic
+        for param in self.weight_provider.parameters():
+            param.data.fill_(1)
+
+
+        
 
 
 class ProxyConv1d(_ProxyConvNd):

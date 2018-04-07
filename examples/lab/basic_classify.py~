@@ -36,6 +36,7 @@ from .monitoring import reporting
 from .monitoring import tb_log
 from  .genutil import modules as genutil_modules
 from  .genutil import optimutil
+from .modules import reset_masks
 from . import __main__ as mainfuncs
 from  .modules import saveable_data_par 
 from .genutil import modules
@@ -360,6 +361,10 @@ def run(args, ensemble_test=False):
         logging.info(repr(context.model))
         return
 
+   if args.reset_masks_after_loading:
+        reset_masks.reset_masks(context.model)
+        
+
    if args.plot_unpruned_masks:
         import matplotlib.pyplot as plt
         import numpy as np
@@ -405,6 +410,12 @@ def run(args, ensemble_test=False):
 
    if args.mode == "test":
         basic_classification.make_prediction_report(context, context.test_loader,args.test_report_filename, no_grad=args.use_nograd)  
+        if args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification == "cifar10":
+           img_h=32
+           img_w=32
+           channels=3
+       logging.info("multiplies performed by tested model "+ str(countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)))    
+
         return
    
    if args.lr_scheduler == "epoch_anneal":
@@ -477,7 +488,6 @@ def run(args, ensemble_test=False):
         init_mask_count = context.model.proxy_ctx.count_unpruned_masks()
         logging.info("Initial number of masks {}".format(init_mask_count))
         if args.autocalc_prune_unit:
-            import pdb; pdb.set_trace()
             prune_unit = math.ceil((1- (args.prune_target_frac)**(1/10))*100)
         else:
             prune_unit = args.prune_unit
@@ -598,18 +608,7 @@ def run(args, ensemble_test=False):
             logging.info("Unpruned masks: "+str(n_unpruned))
             context.tb_writer.write_unpruned_params(n_unpruned)
            
-        if args.enable_pruning: 
-             assert(args.report_unpruned)
-             if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> prune_target:
-                logging.info("pruning...")
-                #import pdb; pdb.set_trace()
-                if args.prune_layer_mode == "by_layer" :
-                    assert args.proxy_context_type != "l1reg_context_slimming" 
-                    context.model.proxy_ctx.prune(prune_unit)
-                elif args.prune_layer_mode == "global":
-                    assert args.proxy_context_type == "l1reg_context_slimming" 
-                    context.model.proxy_ctx.prune_global_smallest(prune_unit,mask_type=candle.prune.BatchNorm2DMask)
-             if args.show_network_strucutre_every_epoch:
+        if args.show_network_strucutre_every_epoch:
                  logging.info("current model:")
                  logging.info(repr(context.model))
        
@@ -670,7 +669,7 @@ def run(args, ensemble_test=False):
             else:
                 raise Exception("Unknown Scheduler")
 
-            if args.count_multiplies_every_cycle:
+        if args.count_multiplies_every_cycle:
                 if args.count_mult_override_img_dims:
                     img_h = args.count_mult_override_imgh
                     img_w = args.count_mult_override_imgw
@@ -685,16 +684,28 @@ def run(args, ensemble_test=False):
                 else:
                     raise Exception("dataset not supported for count_multiplies")
 
-            if args.weight_reset_enable and epoch_count == args.weight_reset_epoch_num :
+        if args.weight_reset_enable and epoch_count == args.weight_reset_epoch_num :
                 context.model.reset_weights()
            
-            if args.print_params_after_epoch:
+        if args.print_params_after_epoch:
                 logging.info("model_params:")
                 for param in context.model.proxy_ctx.list_model_params():
                    logging.info(str(param)) 
                 logging.info("mask_params")
                 for param in context.model.proxy_ctx.list_mask_params():
                     logging.info(str(param))
+        if args.enable_pruning: 
+             assert(args.report_unpruned)
+             if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> prune_target:
+                logging.info("pruning...")
+                #import pdb; pdb.set_trace()
+                if args.prune_layer_mode == "by_layer" :
+                    assert args.proxy_context_type != "l1reg_context_slimming" 
+                    context.model.proxy_ctx.prune(prune_unit)
+                elif args.prune_layer_mode == "global":
+                    assert args.proxy_context_type == "l1reg_context_slimming" 
+                    context.model.proxy_ctx.prune_global_smallest(prune_unit,mask_type=candle.prune.BatchNorm2DMask)
+
 
          # logging.info("Loading best model")
    #context.model.load(os.path.join( args.model_save_path,timestamp+ args.save_prefix +"_best_model"))
