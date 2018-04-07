@@ -413,7 +413,7 @@ def run(args, ensemble_test=False):
         if args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification == "cifar10":
            img_h=32
            img_w=32
-            channels=3
+           channels=3
         logging.info("multiplies performed by tested model "+ str(countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)))    
 
         return
