@@ -1,5 +1,5 @@
-ARGFILE=./sh/argfiles/resnet_164_no_first_last
-RESUME_FILENAME=
+ARGFILE=./sh/argfiles/resnet_164_slimming
+RESUME_FILENAME=06_April_2018_Friday_19_34_03resnet164_slimming_10_fixedmaxpool_most_recent
 SAVE_PREFIX=res_net_164_basic_prune_10_test_fixedmaxpool
 REPORT_FILENAME=./reports/res_net_basic_prune_10_test_fixedmaxpool
 
