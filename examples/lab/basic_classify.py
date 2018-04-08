@@ -567,11 +567,12 @@ def run(args, ensemble_test=False):
                 mult = 2 * mult - 1
                 
                 loss = torch.mean(torch.max( Variable(categories.data.new(1).fill_(0).float()), 1 - mult * scores ) ** 2)
+                import pdb; pdb.set_trace()
 
             if args.enable_l0reg:
                 l0l=context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 
                 loss += l0l
-                accumulated_l0l+=float(l0l)
+                accumulated_l0l += float(l0l)
             if args.enable_l1reg and ( (not args.disable_l1_reg_after_epoch) or  epoch_count<= args.l1_reg_final_epoch ) :
                 l1l = context.model.proxy_ctx.l1_loss_slimming(args.l1reg_lambda)
                 accumulated_l1l+=float(l1l)
