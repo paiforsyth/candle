@@ -423,7 +423,13 @@ class WeightMask(ProxyDecorator):
             return input * self.masks.clamp(0, 1).bernoulli()
         return input * self.masks
 
-    def condense(self, weights, num_c_groups,num_filts_to_kill):
+class CondenseMask(WeightMask):
+    def __init__(self, layer, child, init_value=1, stochastic=False):
+        super().__init__(self,layer,child,init_value,stochastic)
+        
+
+
+    def condense(self, weights ,num_c_groups, num_filts_to_kill):
         '''
         Added by Peter by analogy to condensenet.  Based on the official implementation
         '''

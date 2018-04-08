@@ -295,9 +295,6 @@ class ProxyConv2d(_ProxyConvNd):
         else:
             effective_out = self.effective_output_channels(unpruned=unpruned) 
               #img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3]/self.groups
-        if self.stride !=(1,1):
-            pass
-            #import pdb; pdb.set_trace()
         mults, out_channels, height, width = util.countmult_util.conv2d_mult_compute(img_h, img_w, in_channels=input_channels, out_channels=effective_out, groups=self.groups, stride=self.stride, padding=self.padding, kernel_size=self.kernel_size, dilation=self.dilation)
         logging.debug("number of mults is {}".format(mults))  #logging.debug("number of mults is {}*{}*{}*{}*{}*{} / {} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],self.groups,mults)  )
         return mults, out_channels, height, width
@@ -311,13 +308,49 @@ class ProxyConv2d(_ProxyConvNd):
 
     def reset_masks(self):
         from . import prune
-        if isinstance(self.weight_provider,prune. ExternChannel2DMask):
+        if isinstance(self.weight_provider, prune.ExternChannel2DMask):
             return
-        import pdb; pdb.set_trace()
         assert isinstance(self.weight_provider, prune.Channel2DMask)
+        assert not isinstance(self.weight_provider, IdentityProxy)
         assert not self.weight_provider.stochastic
         for param in self.weight_provider.parameters():
             param.data.fill_(1)
+
+
+class CondensingConv2d(_ProxyConvNd):
+    def __init__(self, weight_provider,num_c_groups, **kwargs):
+        super().__init__(weight_provider, F.Conv2d, **kwargs)
+        self.num_c_groups = num_c_groups
+        self.register_buffer("c_stage",torch.Tensor([0]))
+    
+    def reset_underlying_weights(self):
+        wparams = self.weight_provider.root.parameters()[0]
+        v=wparams.shape[1]*wparams.shape[2]*wparams.shape[3]
+        stdv = 1. / math.sqrt(v)
+        self.weight_provider.root.parameters()[0].data.uniform_(-stdv, stdv)
+        self.weight_provider.root.parameters()[1].data.uniform_(-stdv, stdv)
+
+    def reset_masks(self):
+        from . import prune
+        if isinstance(self.weight_provider, prune.ExternChannel2DMask):
+            return
+        assert not isinstance(self.weight_provider, IdentityProxy)
+        assert not self.weight_provider.stochastic
+        for param in self.weight_provider.parameters():
+            param.data.fill_(1)
+
+
+    def condense(self):
+        from . import prune
+        assert isinstance(self.weight_provider, prune.CondenseMask)
+        assert float(self.c_stage) < self.num_c_groups-2
+        weights = self.weight_provider.root.parameters()[0]
+        total_in_filts = weights.shape[1]
+        assert total_in_filts % self.num_c_groups == 0
+        num_filts_to_kill = total_in_filts // self.num_c_groups
+        self.weight_provider.condense(weights= weights, num_c_groups =self.num_c_groups, num_filts_to_kill = num_filts_to_kill    )
+
+
 
 
         

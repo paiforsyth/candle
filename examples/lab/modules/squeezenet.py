@@ -666,21 +666,34 @@ class DenseFireV2Section(serialmodule.SerializableModule):
     '''
     Based on the more efficient official implementation of Densenet
     https://github.com/pytorch/vision/blob/master/torchvision/models/densenet.py
+
+    Use a PruneContext to implement condensenet
     '''
-    def __init__(self, input_size, k, num_squeeze, dropout_rate, bottleneck ):
+    def __init__(self, input_size, k, num_squeeze, dropout_rate, bottleneck, proxy_ctx, proxy_mode ):
         super().__init__()
+        if proxy_mode == None or prox_mode == "no_context":
+            bn_w = lambda x: x
+            conv1_w = lambda x :x
+            conv2_w = lambda x :x
+        elif proxy_mode == "condense_context":
+            bn_wr = proxy_ctx.bypass
+            conv1_w = proxy_ctx.wrap
+            conv2_w = proxy_ctx.bypass
+        else:
+            raise Exception("Unsuported Proxy Mode!")
+
         layerdict = collections.OrderedDict()
         if bottleneck:
-            layerdict["batchnorm1"]=nn.BatchNorm2d(input_size)
+            layerdict["batchnorm1"]= bn_w(nn.BatchNorm2d(input_size))
             layerdict["relu1"]=nn.ReLU(inplace=True)
-            layerdict["conv1"]=nn.Conv2d(input_size, num_squeeze, kernel_size=1)
-            layerdict["batchnorm2"]=nn.BatchNorm2d(num_squeeze)
+            layerdict["conv1"]=conv1_w(nn.Conv2d(input_size, num_squeeze, kernel_size=1))
+            layerdict["batchnorm2"]=bn_w(nn.BatchNorm2d(num_squeeze))
             layerdict["relu2"]=nn.ReLU(inplace=True)
-            layerdict["conv2"]=nn.Conv2d(num_squeeze, k, kernel_size=3, padding=1)
+            layerdict["conv2"]=conv2_w(nn.Conv2d(num_squeeze, k, kernel_size=3, padding=1))
         else:
-            layerdict["batchnorm"]=nn.BatchNorm2d(input_size)
+            layerdict["batchnorm"]=bn_w(nn.BatchNorm2d(input_size))
             layerdict["relu"]=nn.ReLU(inplace=True)
-            layerdict["conv"]=nn.Conv2d(input_size, k, kernel_size=3, padding=1)
+            layerdict["conv"]=conv1_w(nn.Conv2d(input_size, k, kernel_size=3, padding=1))
         if dropout_rate>0:
             layerdict["droupout"]=nn.Dropout(p=dropout_rate)
         self.seq=nn.Sequential(layerdict)
