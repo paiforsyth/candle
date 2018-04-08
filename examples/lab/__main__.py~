@@ -105,6 +105,11 @@ def default_parser(parser=None):
     parser.add_argument("--enable_l0reg",action = "store_true")
     parser.add_argument("--l0reg_lambda", type=float, default =1.5 / 50000 )
 
+    parser.add_argument("--enable_l2reg_stochastic",action = "store_true")
+    parser.add_argument("--l2reg_stochastic_lambda", type=float, default =1.5 / 50000 )
+
+
+
     parser.add_argument("--enable_l1reg", action="store_true")
     parser.add_argument("--l1reg_lambda", type=float, default = 10**(-5))
 
