@@ -106,7 +106,7 @@ def default_parser(parser=None):
     parser.add_argument("--l0reg_lambda", type=float, default =1.5 / 50000 )
 
     parser.add_argument("--enable_l2reg_stochastic",action = "store_true")
-    parser.add_argument("--l2reg_stochastic_lambda", type=float, default =1.5 / 50000 )
+    parser.add_argument("--l2reg_stochastic_lambda", type=float, default =0.0005 / 0.7 )
 
 
 
@@ -170,6 +170,9 @@ def default_parser(parser=None):
     parser.add_argument("--plot_title")
 
     parser.add_argument("--print_params_after_epoch", action = "store_true")
+
+    parser.add_argument("--enable_clip_norm", action="store_true")
+    parser.add_argument("--clip_norm_val", type=int, default=50)
 
 
 
