@@ -576,6 +576,7 @@ def run(args, ensemble_test=False):
             if args.enable_l2reg_stochastic:
                 l2l_stochastic =context.model.proxy_ctx.l2_loss_stochastic(args.l2reg_stochastic_lambda) 
                 accumulated_l2l_stochastic+=float(l2l_stochastic)
+                import pdb; pdb.set_trace()
                 loss+=l2l_stochastic
             loss.backward()
 
