@@ -171,8 +171,6 @@ def default_parser(parser=None):
 
     parser.add_argument("--print_params_after_epoch", action = "store_true")
 
-    parser.add_argument("--enable_clip_norm", action="store_true")
-    parser.add_argument("--clip_norm_val", type=int, default=50)
 
 
 

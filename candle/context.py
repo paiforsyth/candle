@@ -107,6 +107,9 @@ class Context(object):
                         cfg["svd_rank"] = math.ceil(cfg.get("svd_rank_prop",1)*layer.weight.shape[0] )
                         
                     return factorize.StdFactorizeConv2d(provider,svd_rank=cfg["svd_rank"],use_factors=cfg['use_factors'],**kwargs) 
+                elif cfg.get("condense",False) == True:
+                    from . import proxy
+                    return proxy.CondensingConv2d(provider, num_c_groups = cfg["num_c_groups"], **kwargs)
                 return ProxyConv2d(provider, **kwargs)
             elif isinstance(layer, nn.Conv1d):
                 return ProxyConv1d(provider, **kwargs)
