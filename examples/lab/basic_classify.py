@@ -567,7 +567,6 @@ def run(args, ensemble_test=False):
                 mult = 2 * mult - 1
                 
                 loss = torch.mean(torch.max( Variable(categories.data.new(1).fill_(0).float()), 1 - mult * scores ) ** 2)
-            import pdb; pdb.set_trace()
 
             if args.enable_l0reg:
                 l0l=context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 
@@ -581,6 +580,8 @@ def run(args, ensemble_test=False):
                 l2l_stochastic =context.model.proxy_ctx.l2_loss_stochastic(args.l2reg_stochastic_lambda) 
                 accumulated_l2l_stochastic+=float(l2l_stochastic)
                 loss+=l2l_stochastic
+            if math.isnan(float(loss)):
+                import pdb; pdb.set_trace()
             loss.backward()
 
 
