@@ -299,7 +299,7 @@ class Channel2DMask(WeightMaskGroup):
         cdf_gt0 = self.concrete_fn.cdf_gt0()
         sizes = self.child.sizes.reify()[0]
         expanded_probs = cdf_gt0.reify()[0].expand(sizes[3], sizes[2], sizes[1], -1).permute(3, 2, 1, 0)
-        squared_weights=self.root.weight_provider().reify()[0]*self.root.weight_provider().reify()[0]
+        squared_weights=self.root.parameters()[0]*self.root.parameters()[0]
         return lambd*(squared_weights*expanded_probs).sum()
 
 
