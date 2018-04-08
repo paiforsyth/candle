@@ -82,6 +82,7 @@ class WeightMaskGroup(ProxyDecorator):
         cdf_gt0 = self.concrete_fn.cdf_gt0()
         return lambd * sum((self.n_groups * cdf_gt0).sum().reify(flat=True))
 
+   
     def l1_loss_slimming(self, lambd):
         if self.stochastic:
             raise ValueError("Mask group cannot be in stochastic mode")
@@ -288,6 +289,23 @@ class Channel2DMask(WeightMaskGroup):
         expand_weight = mask.expand(sizes[3], sizes[2], sizes[1], -1).permute(3, 2, 1, 0)
         expand_bias = mask
         return Package([expand_weight, expand_bias])
+
+    def l2_loss_stochastic(self,lambd):
+        '''
+        Added by Peter
+        '''
+        if not self.stochastic:
+            raise ValueError("Mask group must be in stochastic mode!") 
+        cdf_gt0 = self.concrete_fn.cdf_gt0()
+        sizes = self.child.sizes.reify()[0]
+        expanded_probs = cdf_gt0.reify()[0].expand(sizes[3], sizes[2], sizes[1], -1).permute(3, 2, 1, 0)
+        squared_weights=self.root.weight_provider().reify()[0]*self.root.weight_provider().reify()[0]
+        return lambd*(squared_weights*expanded_probs).sum()
+
+
+
+
+
 
 class Filter2DMask(WeightMaskGroup):
     def __init__(self, layer, child, **kwargs):
@@ -584,6 +602,16 @@ class GroupPruneContext(PruneContext):
         for mask in group_masks:
             loss = loss + mask.l0_loss(lambd)
         return loss
+
+    def l2_loss_stochastic(self, lambd):
+        group_masks = self.list_proxies("weight_hook", WeightMaskGroup)
+        loss = 0
+        for mask in group_masks:
+            loss = loss + mask.l2_loss_stochastic(lambd)
+        return loss
+
+
+
 
     def l1_loss_slimming(self, lambd):
         group_masks = self.list_proxies("weight_hook", WeightMaskGroup)

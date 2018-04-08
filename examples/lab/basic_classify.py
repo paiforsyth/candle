@@ -429,6 +429,9 @@ def run(args, ensemble_test=False):
    accumulated_loss=0 
    if args.enable_l1reg:
        accumulated_l1l=0
+   if args.enable_l2reg_stochastic:
+       accumulated_l2l_stochastic=0
+
    param_count=genutil_modules.count_trainable_params(context.model)
    if args.proxy_context_type == "no_context": 
         param_count = modules.count_trainable_params(context.model)
@@ -570,6 +573,10 @@ def run(args, ensemble_test=False):
                 l1l = context.model.proxy_ctx.l1_loss_slimming(args.l1reg_lambda)
                 accumulated_l1l+=l1l
                 loss += l1l
+            if args.enable_l2reg_stochastic:
+                l2l_stochastc =context.model.proxy_ctx.l2_loss_stochastic(args.l2reg_stochastic_lambda) 
+                acculumlated_l2l_stochastic+=l2l_stochastic
+                loss+=l2l_stochastic
             loss.backward()
 
 

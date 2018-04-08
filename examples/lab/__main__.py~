@@ -107,8 +107,9 @@ def default_parser(parser=None):
 
     parser.add_argument("--enable_l1reg", action="store_true")
     parser.add_argument("--l1reg_lambda", type=float, default = 10**(-5))
+
     parser.add_argument("--disable_l1_reg_after_epoch", action="store_true")
-    parser.add_argument("--l1_reg_final_epoch", action="store_true")
+    parser.add_argument("--l1_reg_final_epoch", type=int)
 
     parser.add_argument("--report_unpruned",action="store_true") 
     
