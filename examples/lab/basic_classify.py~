@@ -431,8 +431,6 @@ def run(args, ensemble_test=False):
        accumulated_l1l=0
    if args.enable_l2reg_stochastic:
        accumulated_l2l_stochastic=0
-   if args.enable_l0reg:
-       accumulated_l0l=0
 
    param_count=genutil_modules.count_trainable_params(context.model)
    if args.proxy_context_type == "no_context": 
@@ -569,19 +567,16 @@ def run(args, ensemble_test=False):
                 loss = torch.mean(torch.max( Variable(categories.data.new(1).fill_(0).float()), 1 - mult * scores ) ** 2)
 
             if args.enable_l0reg:
-                l0l=context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 
-                loss += l0l
-                accumulated_l0l += float(l0l)
+                loss += context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 
+
             if args.enable_l1reg and ( (not args.disable_l1_reg_after_epoch) or  epoch_count<= args.l1_reg_final_epoch ) :
                 l1l = context.model.proxy_ctx.l1_loss_slimming(args.l1reg_lambda)
-                accumulated_l1l+=float(l1l)
+                accumulated_l1l+=l1l
                 loss += l1l
             if args.enable_l2reg_stochastic:
                 l2l_stochastic =context.model.proxy_ctx.l2_loss_stochastic(args.l2reg_stochastic_lambda) 
                 accumulated_l2l_stochastic+=float(l2l_stochastic)
                 loss+=l2l_stochastic
-            if math.isnan(float(loss)):
-                import pdb; pdb.set_trace()
             loss.backward()
 
 
@@ -605,9 +600,6 @@ def run(args, ensemble_test=False):
                 if args.enable_l2reg_stochastic:
                     logging.info("avg l2 stochastic loss:{}".format(accumulated_l2l_stochastic/report_interval) )
                     accumulated_l2l_stochastic = 0
-                if args.enable_l0reg:
-                    logging.info("avg l0 loss:{}".format(accumulated_l0l/report_interval))
-
         #added tor try to clear computation graph after every eppoch
         del loss
         del scores
