@@ -576,7 +576,6 @@ def run(args, ensemble_test=False):
             if args.enable_l2reg_stochastic:
                 l2l_stochastic =context.model.proxy_ctx.l2_loss_stochastic(args.l2reg_stochastic_lambda) 
                 accumulated_l2l_stochastic+=float(l2l_stochastic)
-                import pdb; pdb.set_trace()
                 loss+=l2l_stochastic
             loss.backward()
 
@@ -600,7 +599,7 @@ def run(args, ensemble_test=False):
                     logging.info("l1_loss:{}".format(accumulated_l1l/report_interval))
                     accumulated_l1l = 0
                 if args.enable_l2reg_stochastic:
-                    logging.info("avg l2 stochastic loss:".format(accumulated_l2l_stochastic/report_interval) )
+                    logging.info("avg l2 stochastic loss:{}".format(accumulated_l2l_stochastic/report_interval) )
                     accumulated_l2l_stochastic = 0
         #added tor try to clear computation graph after every eppoch
         del loss

@@ -592,14 +592,13 @@ def run(args, ensemble_test=False):
             accumulated_loss+=float(loss)
             context.tb_writer.write_train_loss( float(loss)  )
             if step % report_interval == 0:
-                import pdb; pdb.set_trace()
                 reporting.report(epoch_start_time,step,len(context.train_loader), accumulated_loss / report_interval)
                 accumulated_loss = 0
                 if args.enable_l1reg:
                     logging.info("l1_loss:{}".format(accumulated_l1l/report_interval))
                     accumulated_l1l = 0
                 if args.enable_l2reg_stochastic:
-                    logging.info("avg l2 stochastic loss:".format(accumulated_l2l_stochastic/report_interval) )
+                    logging.info("avg l2 stochastic loss:{}".format(accumulated_l2l_stochastic/report_interval) )
                     accumulated_l2l_stochastic = 0
         #added tor try to clear computation graph after every eppoch
         del loss
