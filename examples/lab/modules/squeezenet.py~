@@ -418,8 +418,8 @@ class ZagFire(serialmodule.SerializableModule):
         elif self.in_channels == self.out_channels:
             out = out + x
         return out
-    def multiplies(self,img_h, img_w, input_channels):
-        mults, _,out_h,out_w =  count_approx_multiplies(layer = self.seq, img_h=img_h, img_w=img_w, input_channels=input_channels)        
+    def multiplies(self,img_h, img_w, input_channels, unpruned=False):
+        mults, _,out_h,out_w =  count_approx_multiplies(layer = self.seq, img_h=img_h, img_w=img_w, input_channels=input_channels,unpruned)        
         return mults, self.out_channels,out_h ,out_w #residual branch means that we get the full number of out_channels even if we pruned some
 
 class FinalZagBlockFire(serialmodule.SerializableModule):
