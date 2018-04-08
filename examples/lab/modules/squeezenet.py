@@ -1214,6 +1214,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                     props.append(pruned_mults / layer_mults)
                     difs.append(layer_mults - pruned_mults)
         return props, difs
+    
+
 
     def reset_weights(self):
         for chunk in self.layer_chunk_list:

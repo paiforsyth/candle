@@ -289,6 +289,37 @@ class Channel2DMask(WeightMaskGroup):
         expand_bias = mask
         return Package([expand_weight, expand_bias])
 
+class Filter2DMask(WeightMaskGroup):
+    def __init__(self, layer, child, **kwargs):
+        super().__init__(layer, child, **kwargs)
+
+    def __repr__(self):
+        s= super().__repr__()
+        mask_len = self._flattened_masks[0].size(0)
+        mask_nonzero= float((self._flattened_masks[0] != 0).long().sum())
+        s+= " Nonzero masks: {} / {}".format(mask_nonzero, mask_len)
+        return s
+
+    def build_masks(self, init_value):
+        return self._build_masks(init_value, self.child.sizes.reify()[0][1]) #number of masks equals number of input channels
+
+
+    def split(self, root):
+        param = root.parameters()[0]
+        split_root = param.permute(1,0).view(param.size(1),-1).permute(1,0)
+        return Package([split_root])
+
+    def expand_masks(self):
+        if self.stochastic:
+            mask = self.sample_concrete().singleton()
+        else:
+            mask =self._flattened_masks[0]
+        sizes = self.child.sizes.reify()[0]
+        expand_weight=maxk.expand(sizes[0],sizes[2],sizes[3],-1 ).permute(0,3,1,2) 
+        expand_bias = Variable(weights.data.new([1]))
+        return Package([expand_weight, expand_bias])
+
+    
 class Column2DMask(WeightMaskGroup):
     def __init__(self, layer, child, following_proxy_conv, **kwargs):
         super().__init__(layer, child, **kwargs)
@@ -372,9 +403,44 @@ class WeightMask(ProxyDecorator):
             return input * self.masks.clamp(0, 1).bernoulli()
         return input * self.masks
 
+    def condense(self, weights, num_c_groups,num_filts_to_kill):
+        '''
+        Added by Peter by analogy to condensenet.  Based on the official implementation
+        '''
+        out_channels = weights.shape[0]
+        in_filters = weights.shape[1]
+        assert out_channels == self.masks.shape[0]
+        assert in_filters == self.masks.shape[1]
+        assert weights.shape[2] == weights.shape[3] ==1
+        assert out_channels % num_condense_groups == 0
+        c_group_size = out_channels // num_condense_groups
+        rmasks = self.masks.view(self.masks.shape[0], self.masks.shape[1])
+
+        shuffle_weights = Variable(weights.data.clone()).view(out_channels, in_filters)
+        shuffle_weights[rmasks == 0] =float("inf")
+        shuffle_weights = shuffle_weights.view(c_group_size, num_c_groups,in_filters)
+        shuffle_weights = shuffle_weights.transpose(0,1).contiguous()
+        shuffle_weights = shuffle_weights.view(out_channels, in_filters)
+        for i in range(num_c_groups):
+            grp_i_weights= shuffle_weights[i*c_group_size:(i+1)*c_groups_size,: ]
+            grp_i_dex_to_drop = grp_i_weights.abs().sum(0).sort()[1][:num_filts_to_kill]
+            for filt in grp_i_dex_to_drop.data:
+                self.masks[i::num_c_groups, filt,:,:].fill_(0)
+
+    
+
+
+
+
+
 def _group_rank_norm(context, proxies, p=1):
    # import pdb; pdb.set_trace()
     return [proxy.split(proxy.root).norm(p, 0) for proxy in proxies]
+
+def _group_rank_random(context, proxies):
+    def replace_with_random(var): #given a variable matrix, return a random vector on the same device, with length equal to the number of columns of the matrix
+        return Variable(var.data.new(var.shape[1]).unform_()) 
+    return [ proxy.split(proxy.root).apply_fn(replace_with_random)   for proxy in proxies]
 
 def _group_rank_l1(context, proxies):
     return _group_rank_norm(context, proxies, p=1)
@@ -388,7 +454,7 @@ def _single_rank_magnitude(context, proxies):
     return ranks
 
 _single_rank_methods = dict(magnitude=_single_rank_magnitude)
-_group_rank_methods = dict(l1_norm=_group_rank_l1, l2_norm=_group_rank_l2)
+_group_rank_methods = dict(l1_norm=_group_rank_l1, l2_norm=_group_rank_l2, random=_group_rank_random)
 
 class PruneContext(Context):
     def __init__(self, stochastic=False, **kwargs):
@@ -430,6 +496,22 @@ class PruneContext(Context):
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
                 self._prune_one_mask(weight, mask, percentage)   
+
+    def prune_proxy_layer(self, layer, provider_type,  percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
+        '''
+        Given a ProxyLAyer, prunes the masks associated witha  provider of a given type by a given percentage using a given method
+        '''
+
+        rank_call = method_map[method]
+        assert isinstance(layer, ProxyLayer)
+        proxy_list = [layer.find_provider(provider_type)]#typically a list with one element
+        weights_list = rank_call(self, proxy_list)
+        for weights, proxy in zip(weights_list, proxy_list): #typically a loop wih one iteration
+            for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()): 
+                self._prune_one_mask(weight, mask, percentage)   
+
+
+    
 
     
     def prune_global_smallest(self, percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
@@ -559,3 +641,7 @@ class GroupPruneContext(PruneContext):
 
     def prune_global_smallest(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
         super().prune_global_smallest(percentage, method, method_map, mask_type)
+
+    def prune_proxy_layer(self, layer, provider_type,  percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
+        super().prune_proxy_layer(layer, provider_type, percentage, method, method_map, mask_type)
+

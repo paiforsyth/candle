@@ -97,6 +97,8 @@ def default_parser(parser=None):
     parser.add_argument("--prune_warmup_epochs", type=int, default=10)
     parser.add_argument("--prune_layer_mode", choices = ["by_layer", "global"], default= "by_layer")
     parser.add_argument("--prune_unit",type=int, default=1)
+    parser.add_argument("--group_prune_strategy",choices= ["standard","random"],default="standard")
+
     parser.add_argument("--autocalc_prune_unit",action="store_true")#overrided the above.  Uses as prune_unit what is neccesary to achieve the prune target in 10 epochs
 
 
@@ -105,6 +107,8 @@ def default_parser(parser=None):
 
     parser.add_argument("--enable_l1reg", action="store_true")
     parser.add_argument("--l1reg_lambda", type=float, default = 10**(-5))
+    parser.add_argument("--disable_l1_reg_after_epoch", action="store_true")
+    parser.add_argument("--l1_reg_final_epoch", action="store_true")
 
     parser.add_argument("--report_unpruned",action="store_true") 
     
@@ -210,6 +214,7 @@ def main():
 
 
          acc = basic_classification.score_report(args.validate_fr_reportfile, truth)
+
         print("ACCURACY ON GROUND TRUTH: ",acc ) 
         return
 

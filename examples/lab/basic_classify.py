@@ -566,7 +566,7 @@ def run(args, ensemble_test=False):
             if args.enable_l0reg:
                 loss += context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 
 
-            if args.enable_l1reg:
+            if args.enable_l1reg and ( (not args.disable_l1_reg_after_epoch) or  epoch_count<= args.l1_reg_final_epoch ) :
                 l1l = context.model.proxy_ctx.l1_loss_slimming(args.l1reg_lambda)
                 accumulated_l1l+=l1l
                 loss += l1l
@@ -699,9 +699,14 @@ def run(args, ensemble_test=False):
              if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> prune_target:
                 logging.info("pruning...")
                 #import pdb; pdb.set_trace()
-                if args.prune_layer_mode == "by_layer" :
+                if args.prune_layer_mode == "by_layer":
                     assert args.proxy_context_type != "l1reg_context_slimming" 
-                    context.model.proxy_ctx.prune(prune_unit)
+                    if args.group_prune_strategy == "random":
+                        logging.info("using random channel pruning")
+                        context.model.proxy_ctx.prune(prune_unit, method = "random")
+                    else:
+                        logging.info("using channel-based weight pruning")
+                        context.model.proxy_ctx.prune(prune_unit)
                 elif args.prune_layer_mode == "global":
                     assert args.proxy_context_type == "l1reg_context_slimming" 
                     context.model.proxy_ctx.prune_global_smallest(prune_unit,mask_type=candle.prune.BatchNorm2DMask)
@@ -717,3 +722,6 @@ def get_dims_from_dataset(dataset_for_classification):
            img_w=32
            channels=3
     return img_h, img_w, channels
+
+
+
