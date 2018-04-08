@@ -596,7 +596,7 @@ def run(args, ensemble_test=False):
                 accumulated_loss = 0
                 if args.enable_l1reg:
                     logging.info("l1_loss:{}".format(accumulated_l1l))
-                    accumulated_l1l=0
+                    accumulated_l1l = 0
                 if args.enable_l2reg_stochastic:
                     logging.info("l2 stochastic loss:".format(accumulated_l2l_stochastic) )
                     accumulated_l2l_stochastic = 0
