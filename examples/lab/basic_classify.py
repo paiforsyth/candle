@@ -496,7 +496,7 @@ def run(args, ensemble_test=False):
                 logging.info("relative prune unit is {}".format(prune_unit))
             elif args.prune_calc_type =="absolute":
                 assert args.sense_adaptive_pruning
-                prune_abs_unit = math.ceil( (1-args.prune_target_frace)/args.prune_phase_duration*100  )
+                prune_abs_unit = math.ceil( (1-args.prune_target_frac)/args.prune_phase_duration*100  )
                 logging.info("absolute prune unit is {}".format(prune_abs_unit))
         else:
             prune_unit = args.prune_unit
