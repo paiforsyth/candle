@@ -603,7 +603,7 @@ class GroupPruneContext(PruneContext):
         else:
             conv_group_size = -1
         import pdb; pdb.set_trace()
-        mask_type = self.find_mask_type(type(layer), kwargs.get("prune", "out") conv_group_size = conv_group_size, following_proxy_bn = kwargs.get("following_proxy_bn", None)) 
+        mask_type = self.find_mask_type( type(layer), kwargs.get("prune", "out"),conv_group_size = conv_group_size, following_proxy_bn = kwargs.get("following_proxy_bn", None)) 
         layer.hook_weight(mask_type, stochastic=self.stochastic)
         return layer
 
