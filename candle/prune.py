@@ -462,7 +462,7 @@ def _group_rank_norm(context, proxies, p=1):
 
 def _group_rank_random(context, proxies):
     def replace_with_random(var): #given a variable matrix, return a random vector on the same device, with length equal to the number of columns of the matrix
-        return Variable(var.data.new(var.shape[1]).unform_()) 
+        return Variable(var.data.new(var.shape[1]).uniform_()) 
     return [ proxy.split(proxy.root).apply_fn(replace_with_random)   for proxy in proxies]
 
 def _group_rank_l1(context, proxies):
