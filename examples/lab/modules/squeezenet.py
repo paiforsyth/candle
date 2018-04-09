@@ -326,9 +326,14 @@ class NextFire(serialmodule.SerializableModule):
 
     def apply_to_subproxies(self, func):
         import candle.proxy
+        return_list=[]
         for sublayer in self.seq:
             if isinstance(sublayer, candle.proxy.ProxyLayer):
-                func(sublayer)
+                return_list.append(func(sublayer))
+        return return_list
+
+    def submods(self):
+        return self.seq.named_children() 
 
 class MobileResFire(serialmodule.SerializableModule):
     def __init__(self, in_channels, out_channels, proxy_ctx, proxy_ctx_mode, activation):
@@ -1267,7 +1272,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 return
         _condense(self.layer_chunk_list)
 
-    def to_blocks():
+    def to_blocks(self):
         '''
          Converts a squeezenet into an OrderedDict
         '''
@@ -1277,7 +1282,23 @@ class SqueezeNet(serialmodule.SerializableModule):
                 blocks[name]=module
         return blocks
 
-                
+    def to_subblocks(self):
+        '''
+        as above, but if a module provides a method for breaking up into sublocks, use it
+        '''
+        sub_blocks = collections.OrderedDict()
+        for chunk in self.layer_chunk_list:
+            for name, module in chunk.named_children():                
+                if getattr(module,"submods",None) is not None:
+                    for subname, submod in module.submods():
+                        sub_blocks[name +"_"+subname]=submod
+                else:
+                    sub_blocks[name]=module
+
+
+        return sub_blocks
+
+       
 
 
             

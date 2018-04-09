@@ -95,7 +95,9 @@ def default_parser(parser=None):
     parser.add_argument("--prune_target_frac",type=float, default=None)# overrides above.,  target fraction of the original number of masks to keep 
     parser.add_argument("--prune_epoch_freq", type=int, default=1)
     parser.add_argument("--prune_warmup_epochs", type=int, default=10)
-    parser.add_argument("--prune_layer_mode", choices = ["by_layer", "global"], default= "by_layer")
+    parser.add_argument("--prune_layer_mode", choices = ["by_layer", "global", ], default= "by_layer")
+    parser.add_argument("--sense_adaptive_pruning",action="store_true")
+    parser.add_argument("--sense_adaptive_use_subblocks",action="store_true")
     parser.add_argument("--prune_unit",type=int, default=1)
     parser.add_argument("--group_prune_strategy",choices= ["standard","random"],default="standard")
 

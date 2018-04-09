@@ -737,27 +737,63 @@ def get_dims_from_dataset(dataset_for_classification):
     return img_h, img_w, channels
 
 
-def by_block_accuracies(context,args, percentage, pruning_func,prune_unit, loader=None) :
+def enact_adaptive_pruning(context, args, percentage, pruning_func, loader=None,  subblocks=True, reps=None):
+    '''
+    carry out adaptive pruning by calling by_block accuracies reps times
+    if reps is None, then calls by_block accuracies once, then calls it a number of times equal to the number of items in by_block accuracies -1
+    '''
+    if reps == None:
+        inital_dict= by_block_accuracies(context=context, args=args, percentage=percentage, pruning_func=pruning_func, load=loader, enact=True, subblocks=subblocks)
+        reps= max(len(initial_dict)-1,0)
+    for i in range(reps):
+        by_block_accuracies(context=context, args=args, percentage=percentage,pruning_func=pruning_func, load=loader, enact=True, subblocks=subblocks)
+
+
+def by_block_accuracies(context,args, percentage, pruning_func, loader=None, enact=False, subblocks=False) :
+    #setting enact=True will cause the function actually enact the pruning operation that yields the smallest decrease in accuracy
+    #pruning func should return True if the pruning operation suceeeded and False otherwise
     import candle.proxy
     if loader == None:
         loader = context.val_loader
-    blocks = context.model.to_blocks() 
+    blocks = context.model.to_subblocks() if subblocks else context.model.to_blocks() 
     block_accuracies = collections.OrderedDict()
-    context.model.save("./temp/tempmodel")
-    for name, block in blocks.items():
+    accuracy_blocks = {}
+    preprune_dict=copy.deepcopy(context.model.state_dict())
+    #context.model.save("./temp/tempmodel")
+    def doprune(targ_block):
         can_prune = False
-        if isinstance(block, candle.proxy.ProxyLayer):
-            can_prune=True
-            pruning_func(block)
-        elif  getattr(block,"apply_to_subproxies",None) is not None:
-            can_prune =True
-            block.apply_to_subproxies(pruning_func)
+        if isinstance(targ_block, candle.proxy.ProxyLayer):
+            can_prune = pruning_func(targ_block)
+        elif  getattr(targ_block,"apply_to_subproxies",None) is not None:
+            success_list= targ_block.apply_to_subproxies(pruning_func)
+            can_prune = all(success_list) 
+        return can_prune
+
+    for name, block in blocks.items():
+        can_prune = doprune(block)
         if can_prune:
-            block_accuracies[name] =  basic_classification.evaluate(context, loader, no_grad=args.use_nograd)
+            acc=  basic_classification.evaluate(context, loader, no_grad=args.use_nograd)
+            block_accuracies[name]=acc
+            accuracy_blocks[acc]=name
             logging.info("pruing{} yields accuracy of {}".format(name,block_accuracies[name]))
-            context.model.load("./temp/tempmodel" ) #reset model
+            context.model.load_state_dict(copy.deepcopy(preprune_dict)) #context.model.load("./temp/tempmodel" ) #reset model
+        if enact:
+            best_acc =max(accuracy_blocks.keys)
+            do_prune(blocks[accuracy_blocks[best_acc]] )
+
+    return block_accuracies
+
 
 def get_pruning_func(context, args):
+  if args.sense_adaptive_pruning:
+        def pfunc(prune_unit):
+            logging.info("using_adaptive_pruing")
+            one_layer_prune_func = get_one_layer_pruning_func(context, args, prune_unit)
+            enact_adaptive_pruning(context, args, prune_unit, one_layer_prune_func,  subblocks=args.sense_adaptive_use_subblocks)
+ 
+        return pfunc
+  else: 
+
     if args.prune_layer_mode == "by_layer":
         assert args.proxy_context_type != "l1reg_context_slimming" 
         if args.group_prune_strategy == "random":
@@ -773,14 +809,15 @@ def get_pruning_func(context, args):
         raise Exception("Cannot determine correct pruning function")
 
 def get_one_layer_pruning_func(context, args, prune_unit):
+    import candle.proxy
     if args.prune_layer_mode == "by_layer":
         assert args.proxy_context_type != "l1reg_context_slimming" 
         if args.group_prune_strategy == "random":
             logging.info("using layer_targeted random channel pruning. ")
-            return functools.partial(context.prune_proxy_layer, method="random",percentage=prune_unit  )
+            return functools.partial(context.model.proxy_ctx.prune_proxy_layer, method="random",percentage=prune_unit, provider_type =candle.proxy.ProxyDecorator  )
         else:
             logging.info("using layer_targeted channel-based weight pruning") 
-            return functools.partial(context.prune_proxy_layer, percentage=prune_unit  )
+            return functools.partial(context.model.proxy_ctx.prune_proxy_layer, percentage=prune_unit, provider_type =candle.proxy.ProxyDecorator  )
     elif args.prune_layer_mode == "global":
             raise Exception("not implemented")
             assert args.proxy_context_type == "l1reg_context_slimming" 

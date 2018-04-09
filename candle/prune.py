@@ -524,19 +524,21 @@ class PruneContext(Context):
                 self._prune_one_mask(weight, mask, percentage)   
 
 
-    def prune_proxy_layer(self, layer, provider_type=ProxyDecorator,  percentage=1, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
+    def prune_proxy_layer(self, layer, provider_type= ProxyDecorator,  percentage=1, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
         '''
-        Given a ProxyLAyer, prunes the masks associated witha  provider of a given type by a given percentage using a given method
+        Given a ProxyLAyer, prunes the masks associated witha  provider of a given type by a given(absolute) percentage using a given method
+        Returns true if was pruning was sucessful (i.e. there were  enough masks to prune)
         '''
 
         rank_call = method_map[method]
         assert isinstance(layer, ProxyLayer)
         proxy_list = [layer.find_provider(provider_type)]#typically a list with one element
         weights_list = rank_call(self, proxy_list)
+        success_list= []
         for weights, proxy in zip(weights_list, proxy_list): #typically a loop wih one iteration
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()): 
-                self._prune_one_mask(weight, mask, percentage)   
-
+                success_list.append(self._prune_one_mask_absolute_pct(weight, mask, percentage) )  
+        return all(success_list)
 
     
 
@@ -585,6 +587,27 @@ class PruneContext(Context):
                 indices = ne0_indices[:length]
                 if indices.size(0) > 0:
                     mask.data.view(-1)[indices.data] = 0
+
+
+    def _prune_one_mask_absolute_pct(self, weight,mask, percentage):
+                '''
+    given a tensor of magnitudes and a corresponding tensor of masks, prune the masks corresponding to the smallest magnitudes
+    The number of masks this version prunes is a percentage of the original number of masks, not a percentage of the currently active masks as above.
+    returns false if there are not enough masks to prune
+                '''
+                _, indices = torch.sort(weight.view(-1))
+                ne0_indices = indices[mask.view(-1)[indices] != 0]
+                if ne0_indices.size(0) <= 1:
+                    return False
+                length = math.ceil(indices.size(0) * percentage / 100)
+                if length +1> ne0_indices.size(0): #always leave one channel
+                    return False
+                indices = ne0_indices[:length]
+                if indices.size(0) > 0:
+                    mask.data.view(-1)[indices.data] = 0
+                    return True
+                return False
+
 
 class GroupPruneContext(PruneContext):
     def __init__(self, stochastic=False, frozen=False, **kwargs):
@@ -679,5 +702,5 @@ class GroupPruneContext(PruneContext):
         super().prune_global_smallest(percentage, method, method_map, mask_type)
 
     def prune_proxy_layer(self, layer, provider_type,  percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
-        super().prune_proxy_layer(layer, provider_type, percentage, method, method_map, mask_type)
+        return super().prune_proxy_layer(layer, provider_type, percentage, method, method_map, mask_type)
 
