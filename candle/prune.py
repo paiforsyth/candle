@@ -14,6 +14,7 @@ from .proxy import *
 
 class WeightMaskGroup(ProxyDecorator):
     def __init__(self, layer, child, init_value=1, stochastic=False, init_log_alpha=None):
+        self.init_log_alpha=init_log_alpha
         super().__init__(layer, child)
         self.stochastic = stochastic
         self.masks = self.build_masks(init_value)
@@ -21,7 +22,6 @@ class WeightMaskGroup(ProxyDecorator):
         self._flattened_masks = self.masks.reify(flat=True)
         self.cache = Memoizer()
         self._reset_buffers()
-        self.init_log_alpha=init_log_alpha
  
 
     def _reset_buffers(self):
