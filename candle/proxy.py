@@ -275,7 +275,6 @@ class _ProxyConvNd(ProxyLayer):
             assert isinstance(self.weight_provider.following_proxy_bn,  ProxyBatchNorm2d)
             return self.weight_provider.following_proxy_bn.effective_output_channels() 
         else:
-            import pdb; pdb.set_trace()
             raise Exception("unknown weight provider type")
 
 
