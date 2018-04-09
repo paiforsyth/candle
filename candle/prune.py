@@ -302,7 +302,6 @@ class Channel2DMask(WeightMaskGroup):
         squared_weights=self.root.parameters()[0]*self.root.parameters()[0]
         val= lambd*(squared_weights*expanded_probs).sum()
         if math.isnan(float(val)):
-            import pdb; pdb.set_trace()
         return val
 
 
@@ -460,7 +459,6 @@ class CondenseMask(WeightMask):
 
 
 def _group_rank_norm(context, proxies, p=1):
-   # import pdb; pdb.set_trace()
     return [proxy.split(proxy.root).norm(p, 0) for proxy in proxies]
 
 def _group_rank_random(context, proxies):
@@ -605,7 +603,9 @@ class GroupPruneContext(PruneContext):
                 conv_group_size = layer.weight_provider.sizes.reify()[0][0] / layer.groups
         else:
             conv_group_size = -1
-        layer.hook_weight(self.find_mask_type(type(layer), kwargs.get("prune", "out"), conv_group_size = conv_group_size, following_proxy_bn = kwargs.get("following_proxy_bn", None)) , stochastic=self.stochastic)
+        import pdb; pdb.set_trace()
+        mask_type = self.find_mask_type(type(layer)
+        layer.hook_weight(mask_type, kwargs.get("prune", "out"), conv_group_size = conv_group_size, following_proxy_bn = kwargs.get("following_proxy_bn", None)) , stochastic=self.stochastic)
         return layer
 
     def l0_loss(self, lambd):
@@ -645,7 +645,6 @@ class GroupPruneContext(PruneContext):
             mask.unfreeze()
 
     def find_mask_type(self, layer_type, prune="out", conv_group_size=-1, following_proxy_bn = None ):
-        #import pdb; pdb.set_trace()
         if layer_type == ProxyLinear and prune == "out":
             return LinearRowMask
         elif layer_type == ProxyLinear and prune == "in":
@@ -654,7 +653,6 @@ class GroupPruneContext(PruneContext):
             return Channel2DMask
         elif layer_type == ProxyConv2d  and prune == "out" and conv_group_size >= 1:
             logging.info("creating ConvGroupMask with conv_group_size="+str(conv_group_size))
-            #import pdb; pdb.set_trace()
             construct= functools.partial( ConvGroupChannel2DMask, conv_group_size =  conv_group_size )
             return construct
         elif layer_type == ProxyConv2d and prune == "slim":

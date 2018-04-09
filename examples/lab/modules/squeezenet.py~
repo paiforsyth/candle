@@ -328,6 +328,7 @@ class NextFire(serialmodule.SerializableModule):
         import candle.proxy
         for sublayer in self.seq:
             if isinstance(sublayer, candle.proxy.ProxyLayer):
+                func(sublayer)
 
 class MobileResFire(serialmodule.SerializableModule):
     def __init__(self, in_channels, out_channels, proxy_ctx, proxy_ctx_mode, activation):
