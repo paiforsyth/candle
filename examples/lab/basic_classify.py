@@ -119,7 +119,7 @@ def make_context(args):
        assert  args.enable_l0reg and args.proxy_context_type == "l0reg_context" 
    if args.enable_l1reg or args.proxy_context_type == "l1reg_context_slimming":
        assert args.enable_l1reg and args.proxy_context_type == "l1reg_context_slimming"
-  
+   assert args.save_prefix is not None 
    if args.dataset_for_classification == "simple":
         if args.save_prefix is None:
             args.save_prefix="simplification_classification"
@@ -316,7 +316,7 @@ def make_context(args):
        train_size= None
        train_loader = None
 
-
+   import pdb; pdb.set_trace()
    return Context(model, train_loader, val_loader, optimizer, indexer, category_names=category_names, tb_writer=tb_log.TBWriter("{}_"+args.save_prefix), train_size=train_size, data_type=data_type, scheduler=scheduler, test_loader=test_loader, cuda=args.cuda, holdout_loader= holdout_loader, num_categories = num_categories, model_parameters=model_parameters)
 
 
