@@ -1,6 +1,6 @@
 RUNTYPE=slimming
 PTARG=50
-NETTYPE=resnet29_slimming
+NETTYPE=resnet29
 LAMBDA=0001
 ARGFILE=./sh/argfiles/${NETTYPE}_${RUNTYPE}
 RESUME_FILENAME=08_April_2018_Sunday_16_23_05resnet29_slimming_50_lambda0.0001_fixedmaxpool_most_recent
