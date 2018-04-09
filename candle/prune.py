@@ -524,7 +524,7 @@ class PruneContext(Context):
                 self._prune_one_mask(weight, mask, percentage)   
 
 
-    def prune_proxy_layer(self, layer, provider_type,  percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
+    def prune_proxy_layer(self, layer, provider_type=ProxyDecorator,  percentage=1, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
         '''
         Given a ProxyLAyer, prunes the masks associated witha  provider of a given type by a given percentage using a given method
         '''

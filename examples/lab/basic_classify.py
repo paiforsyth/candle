@@ -502,8 +502,8 @@ def run(args, ensemble_test=False):
         logging.info("Target number of masks is : {}".format(prune_target))
 
    if args.sensitivity_report:
-        prune_func = get_pruning_func(context, args)
-        accs=  by_block_accuracies(context, args, prune_unit, pruning_func)
+        one_layer_prune_func = get_one_layer_pruning_func(context,args,prune_unit)
+        accs=  by_block_accuracies(context, args, prune_unit, one_layer_prune_func)
         logging.info(accs)
         return
 
@@ -738,7 +738,7 @@ def get_dims_from_dataset(dataset_for_classification):
     return img_h, img_w, channels
 
 
-def by_block_accuracies(context,args, percentage, pruning_func, loader=None) :
+def by_block_accuracies(context,args, percentage, pruning_func,prune_unit, loader=None) :
     import candle.proxy
     if loader == None:
         loader = context.val_loader
@@ -752,9 +752,10 @@ def by_block_accuracies(context,args, percentage, pruning_func, loader=None) :
             pruning_func(block)
         elif  getattr(block,"apply_to_subproxies",None) is not None:
             can_prune =True
-            block.apply_to_subproxies()
+            block.apply_to_subproxies(pruning_func)
         if can_prune:
             block_accuracies[name] =  basic_classification.evaluate(context, loader, no_grad=args.use_nograd)
+            logging.info("pruing{} yields accuracy of {}".format(name,block_accuracies[name]))
             context.model.load("./temp/tempmodel" ) #reset model
 
 def get_pruning_func(context, args):
@@ -771,5 +772,22 @@ def get_pruning_func(context, args):
             return functools.partial(context.model.proxy_ctx.prune_global_smallest, mask_type=candle.prune.BatchNorm2DMask)
     else:
         raise Exception("Cannot determine correct pruning function")
+
+def get_one_layer_pruning_func(context, args, prune_unit):
+    if args.prune_layer_mode == "by_layer":
+        assert args.proxy_context_type != "l1reg_context_slimming" 
+        if args.group_prune_strategy == "random":
+            logging.info("using layer_targeted random channel pruning. ")
+            return functools.partial(context.prune_proxy_layer, method="random",percentage=prune_unit  )
+        else:
+            logging.info("using layer_targeted channel-based weight pruning") 
+            return functools.partial(context.prune_proxy_layerpercentage=prune_unit  )
+    elif args.prune_layer_mode == "global":
+            raise Exception("not implemented")
+            assert args.proxy_context_type == "l1reg_context_slimming" 
+    else:
+        raise Exception("Cannot determine correct pruning function")
+
+
 
 
