@@ -139,6 +139,7 @@ class Context(object):
     def wrap(self, layer, **kwargs):
         cfg = self._cfg_kwargs.copy()
         cfg.update(kwargs)
+        #comment
         wrapped_layer = self.compose(layer, **cfg)
         self.layers.append(wrapped_layer) # TODO: insert per-layer hyperparams (mask decay, etc) here if needed
         return wrapped_layer
