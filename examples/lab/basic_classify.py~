@@ -189,7 +189,6 @@ def make_context(args):
                 squashed_images = np.concatenate((squashed_images, dictionary[b'data']),axis=0)
                 labels.extend(dictionary[b'labels'])
                 f.close()
-        #import pdb; pdb.set_trace()
 
         train_dataset, val_dataset = set_cifar_challenge.make_train_val_datasets(squashed_images, labels, args.validation_set_size, transform=None, shuf=args.cifar_shuffle_val_set) 
         train_dataset.transform = tr
