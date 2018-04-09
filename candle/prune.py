@@ -226,6 +226,7 @@ class ConvGroupChannel2DMask(WeightMaskGroup): #for zeroing entire groups. e.g. 
 
 class BatchNorm2DMask(WeightMaskGroup):
     def __init__(self, layer , child, **kwargs):
+        import pdb; pdb.set_trace()
         super().__init__(layer,child,**kwargs)
 
     def __repr__(self):
