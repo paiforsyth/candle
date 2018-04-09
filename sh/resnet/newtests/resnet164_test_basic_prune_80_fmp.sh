@@ -1,7 +1,7 @@
 RUNTYPE=basic_prune
 PTARG=80
 ARGFILE=./sh/argfiles/resnet_164_${RUNTYPE}
-RESUME_FILENAME=08_April_2018_Sunday_12_35_44_most_recen
+RESUME_FILENAME=08_April_2018_Sunday_12_35_44_most_recent
 SAVE_PREFIX=res_net_164_${RUNTYPE}_${PTARG}_test_fixedmaxpool
 REPORT_FILENAME=./reports/res_net_${RUNTYPE}_${PTARG}_test_fixedmaxpool
 
