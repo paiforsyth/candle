@@ -743,10 +743,10 @@ def enact_adaptive_pruning(context, args, percentage, pruning_func, loader=None,
     if reps is None, then calls by_block accuracies once, then calls it a number of times equal to the number of items in by_block accuracies -1
     '''
     if reps == None:
-        inital_dict= by_block_accuracies(context=context, args=args, percentage=percentage, pruning_func=pruning_func, load=loader, enact=True, subblocks=subblocks)
+        inital_dict= by_block_accuracies(context=context, args=args, percentage=percentage, pruning_func=pruning_func, loader=loader, enact=True, subblocks=subblocks)
         reps= max(len(initial_dict)-1,0)
     for i in range(reps):
-        by_block_accuracies(context=context, args=args, percentage=percentage,pruning_func=pruning_func, load=loader, enact=True, subblocks=subblocks)
+        by_block_accuracies(context=context, args=args, percentage=percentage,pruning_func=pruning_func, loader=loader, enact=True, subblocks=subblocks)
 
 
 def by_block_accuracies(context,args, percentage, pruning_func, loader=None, enact=False, subblocks=False) :
