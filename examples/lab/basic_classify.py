@@ -764,6 +764,7 @@ def by_block_accuracies(context,args, percentage, pruning_func, loader=None, ena
     #context.model.save("./temp/tempmodel")
     prunable_count=0 #number of potentially prunable blocks
     def doprune(targ_block):
+        nonlocal prunable_count
         can_prune = False
         if isinstance(targ_block, candle.proxy.ProxyLayer):
             prunable_count+=1
