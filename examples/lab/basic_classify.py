@@ -316,7 +316,6 @@ def make_context(args):
        train_size= None
        train_loader = None
 
-   import pdb; pdb.set_trace()
    return Context(model, train_loader, val_loader, optimizer, indexer, category_names=category_names, tb_writer=tb_log.TBWriter("{}_"+args.save_prefix), train_size=train_size, data_type=data_type, scheduler=scheduler, test_loader=test_loader, cuda=args.cuda, holdout_loader= holdout_loader, num_categories = num_categories, model_parameters=model_parameters)
 
 
