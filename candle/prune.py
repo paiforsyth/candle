@@ -301,7 +301,6 @@ class Channel2DMask(WeightMaskGroup):
         expanded_probs = cdf_gt0.reify()[0].expand(sizes[3], sizes[2], sizes[1], -1).permute(3, 2, 1, 0)
         squared_weights=self.root.parameters()[0]*self.root.parameters()[0]
         val= lambd*(squared_weights*expanded_probs).sum()
-        if math.isnan(float(val)):
         return val
 
 
