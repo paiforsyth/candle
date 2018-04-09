@@ -95,8 +95,9 @@ def add_args(parser):
     parser.add_argument("--squeezenet_final_act_mode", choices=["enable", "disable"], default="enable", help="should there be an activation with the final conv")
     parser.add_argument("--squeezenet_scale_layer",action="store_true")
 
-    parser.add_argument("--squeezenet_shuffle_fire_g1",default= 8)
-    parser.add_argument("--squeezenet_shuffle_fire_g2",default= 8)
+    parser.add_argument("--squeezenet_shuffle_fire_g1",type=int,default= 8)
+    parser.add_argument("--squeezenet_shuffle_fire_g2",type=int,default= 8)
+    parser.add_argument("--squeezenet_shuffle_fire_dont_wrap_sepconv", action="store_true")
 
 
     parser.add_argument("--squeezenet_bypass_first_last",action="store_true") #do not wrap first and last convolution in squeezenet`
@@ -195,7 +196,6 @@ class NextFire(serialmodule.SerializableModule):
              layer_dict = collections.OrderedDict()
              
 
-             import pdb; pdb.set_trace()
              layer_dict["bn1"] = bn_wrapper(nn.BatchNorm2d(in_channels))
              layer_dict["leaky_reu1" ] = nn.LeakyReLU(inplace=True)
 
@@ -401,7 +401,6 @@ class ZagFire(serialmodule.SerializableModule):
          layer_dict = collections.OrderedDict()
          layer_dict["bn1"]=bn_wrapper(nn.BatchNorm2d(in_channels))
          layer_dict["activation1"]=activation
-         #import pdb; pdb.set_trace()
          if proxy_mode != "l1reg_context_slimming":
             layer_dict["conv1"]=   first_wrapper(nn.Conv2d(in_channels=in_channels, out_channels= out_channels, kernel_size=3, padding=1) )
             layer_dict["dropout"]=nn.Dropout(p=dropout_rate,inplace=True)
@@ -419,7 +418,6 @@ class ZagFire(serialmodule.SerializableModule):
          self.seq=nn.Sequential(layer_dict)
 
     def forward(self,x):
-        #import pdb; pdb.set_trace()
         out = self.seq(x)
         if self.in_channels <self.out_channels:
             padding = Variable(out.data.new(out.data.shape[0],self.out_channels-self.in_channels,out.data.shape[2],out.data.shape[3]).fill_(0)) 
@@ -595,7 +593,7 @@ class ScaleLayer(serialmodule.SerializableModule):
         return self.scalar*x
 
 #observation: if groups are of size h in both first and final pointwise convolutions, then an output channel depends on h^2 input channels
-ShuffleFireSettings = collections.namedtuple("ShuffleFireSettings","in_chan, bottle_chan, out_chan, groups1, groups2,activation")
+ShuffleFireSettings = collections.namedtuple("ShuffleFireSettings","in_chan, bottle_chan, out_chan, groups1, groups2,activation, dont_wrap_sepconv")
 class ShuffleFire(serialmodule.SerializableModule):
 
     def __init__(self, settings, ctx = None):
@@ -606,11 +604,17 @@ class ShuffleFire(serialmodule.SerializableModule):
         assert(settings.out_chan % settings.groups2 == 0)
         wrap = ctx.wrap if ctx is not None else lambda w: w
         bypass = ctx.bypass if ctx is not None else lambda w: w
+        if ctx is None:
+            sep_wrap = lambda w : w
+        elif settings.dont_wrap_sepconv:
+            sep_wrap = ctx.bypass
+        else:
+            sep_wrap = ctx.wrap
 
         self.bn1 = bypass( nn.BatchNorm2d(settings.in_chan))
         self.gconv1 = wrap( nn.Conv2d(in_channels=settings.in_chan, out_channels=settings.bottle_chan, kernel_size=1, groups=settings.groups1) )
         self.bn2 = bypass( nn.BatchNorm2d(settings.bottle_chan))
-        self.sepconv = wrap(nn.Conv2d(in_channels=settings.bottle_chan, out_channels=settings.bottle_chan, kernel_size=3, padding=1, groups=settings.bottle_chan))
+        self.sepconv = sep_wrap(nn.Conv2d(in_channels=settings.bottle_chan, out_channels=settings.bottle_chan, kernel_size=3, padding=1, groups=settings.bottle_chan))
         self.bn3 = bypass(nn.BatchNorm2d(settings.bottle_chan))
         self.gconv2 = wrap(nn.Conv2d(in_channels=settings.bottle_chan, out_channels=settings.out_chan, kernel_size=1, groups=settings.groups2))
         
@@ -645,9 +649,9 @@ class ShuffleFire(serialmodule.SerializableModule):
         return out
 
 
-    def multiplies(self, img_h, img_w, input_channels ):
-        return count_approx_multiplies([self.gconv1, self.sepconv, self.gconv2 ], img_h=img_h, img_w=img_w, input_channels=input_channels)
-         
+    def multiplies(self, img_h, img_w, input_channels, unpruned ):
+        mult, _, img_h, img_w = count_approx_multiplies([self.gconv1, self.sepconv, self.gconv2 ], img_h=img_h, img_w=img_w, input_channels=input_channels)
+        return mult, input_channels, img_h, img_w #residual path restores number of output channels
      
 
 
@@ -741,7 +745,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride, densenet_no_bottleneck, allow_pooling_after_first_fire, freq_offset, condense_num_c_groups")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, shuffle_fire_dont_wrap_sepconv, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride, densenet_no_bottleneck, allow_pooling_after_first_fire, freq_offset, condense_num_c_groups")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -839,7 +843,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                 densenet_no_bottleneck = args.squeezenet_densenet_no_bottleneck,
                 allow_pooling_after_first_fire = args.squeezenet_allow_pooling_after_first_fire,
                 freq_offset = args.squeezenet_freq_offset,
-                condense_num_c_groups = args.squeezenet_condense_num_c_groups
+                condense_num_c_groups = args.squeezenet_condense_num_c_groups,
+                shuffle_fire_dont_wrap_sepconv = args.squeezenet_shuffle_fire_dont_wrap_sepconv
                 )
         return SqueezeNet(config)
 
@@ -930,7 +935,6 @@ class SqueezeNet(serialmodule.SerializableModule):
                 if config.pool_interval_mode == "add":
                     e = config.base+math.floor(config.incr*math.floor((i+config.freq_offset)/config.freq))
                 elif config.pool_interval_mode == "multiply":
-                    #import pdb; pdb.set_trace()
                     e=config.base* (config.multiplicative_incr ** math.floor((i+config.freq_offset)/config.freq)) 
                 if config.downsample_via_stride and i!=0 and (i+config.freq_offset) % stride_freq ==0:
                     do_stride_downsample = True
@@ -977,7 +981,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                         bnn_pool_here=True
                     to_add = BNNFire(binarize_ctx = proxy_ctx ,in_channels= self.channel_counts[i], out_channels = e, pool= bnn_pool_here, use_prelu = config.bnn_prelu) 
                 elif config.mode == "shuffle_fire":
-                    to_add = ShuffleFire(ShuffleFireSettings(in_chan = self.channel_counts[i], out_chan = e, groups1 = config.shuffle_fire_g1, groups2=config.shuffle_fire_g2, bottle_chan =num_squeeze   ,activation = F.leaky_relu ), proxy_ctx )  
+                    name="shuffle_fire{}".format(i+2)
+                    to_add = ShuffleFire(ShuffleFireSettings(in_chan = self.channel_counts[i], out_chan = e, groups1 = config.shuffle_fire_g1, groups2=config.shuffle_fire_g2, bottle_chan =num_squeeze   ,activation = F.leaky_relu, dont_wrap_sepconv =config.shuffle_fire_dont_wrap_sepconv ), proxy_ctx )  
                 else:
                     name="fire{}".format(i+2)
                     to_add=Fire.from_configure(FireConfig(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand1=num_expand1, num_expand3=num_expand3, skip=skip_here ))
@@ -1063,7 +1068,6 @@ class SqueezeNet(serialmodule.SerializableModule):
             
         for i in range( config.num_layer_chunks -1 ):
             to_add_to_chunk=list(layer_dict.items())[layer_splits[i]:layer_splits[i+1] ]
-           # import pdb; pdb.set_trace()
             if config.use_forking and i in config.fork_after_chunks:
                 if config.fork_module == "zag_fire":
                    last_layer_of_chunk = to_add_to_chunk[-1][1]
