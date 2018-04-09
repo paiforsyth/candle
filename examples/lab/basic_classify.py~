@@ -743,12 +743,14 @@ def enact_adaptive_pruning(context, args, percentage, pruning_func, loader=None,
     if reps is None, then calls by_block accuracies once, then calls it a number of times equal to the number of items in by_block accuracies -1
     '''
     if reps == None:
-        inital_dict= by_block_accuracies(context=context, args=args, percentage=percentage, pruning_func=pruning_func, loader=loader, enact=True, subblocks=subblocks)
-        reps= max(len(initial_dict)-1,0)
+        initial_dict, prunable_counts= by_block_accuracies(context=context, args=args, percentage=percentage, pruning_func=pruning_func, loader=loader, enact=True, subblocks=subblocks)
+        reps= max(prunable_count-1,0)
     for i in range(reps):
         by_block_accuracies(context=context, args=args, percentage=percentage,pruning_func=pruning_func, loader=loader, enact=True, subblocks=subblocks)
+    logging.info("Current block prune counts: {}".format(block_prune_counts))
 
 
+block_prune_counts = collections.Counter() #for counting which blocks are pruned by the adaptive method
 def by_block_accuracies(context,args, percentage, pruning_func, loader=None, enact=False, subblocks=False) :
     #setting enact=True will cause the function actually enact the pruning operation that yields the smallest decrease in accuracy
     #pruning func should return True if the pruning operation suceeeded and False otherwise
@@ -760,11 +762,14 @@ def by_block_accuracies(context,args, percentage, pruning_func, loader=None, ena
     accuracy_blocks = {}
     preprune_dict=copy.deepcopy(context.model.state_dict())
     #context.model.save("./temp/tempmodel")
+    prunable_count=0 #number of potentially prunable blocks
     def doprune(targ_block):
         can_prune = False
         if isinstance(targ_block, candle.proxy.ProxyLayer):
+            prunable_count+=1
             can_prune = pruning_func(targ_block)
         elif  getattr(targ_block,"apply_to_subproxies",None) is not None:
+            prunable_count+=1
             success_list= targ_block.apply_to_subproxies(pruning_func)
             can_prune = all(success_list) 
         return can_prune
@@ -775,15 +780,16 @@ def by_block_accuracies(context,args, percentage, pruning_func, loader=None, ena
             acc=  basic_classification.evaluate(context, loader, no_grad=args.use_nograd)
             block_accuracies[name]=acc
             accuracy_blocks[acc]=name
-            logging.info("pruing{} yields accuracy of {}".format(name,block_accuracies[name]))
+            logging.debug("pruing{} yields accuracy of {}".format(name,block_accuracies[name]))
             context.model.load_state_dict(copy.deepcopy(preprune_dict)) #context.model.load("./temp/tempmodel" ) #reset model
     if enact:
         best_acc =max(accuracy_blocks.keys())
         name_of_best=accuracy_blocks[best_acc]
-        logging.info("decided to prune:{}".format(name_of_best))
+        logging.debug("decided to prune:{}".format(name_of_best))
+        block_prune_counts[name_of_best]+=1
         doprune(blocks[name_of_best] )
 
-    return block_accuracies
+    return block_accuracies,prunable_count
 
 
 def get_pruning_func(context, args):
