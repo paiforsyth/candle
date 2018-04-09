@@ -195,7 +195,6 @@ class NextFire(serialmodule.SerializableModule):
              layer_dict = collections.OrderedDict()
              
 
-             import pdb; pdb.set_trace()
              layer_dict["bn1"] = bn_wrapper(nn.BatchNorm2d(in_channels))
              layer_dict["leaky_reu1" ] = nn.LeakyReLU(inplace=True)
 
@@ -401,7 +400,6 @@ class ZagFire(serialmodule.SerializableModule):
          layer_dict = collections.OrderedDict()
          layer_dict["bn1"]=bn_wrapper(nn.BatchNorm2d(in_channels))
          layer_dict["activation1"]=activation
-         #import pdb; pdb.set_trace()
          if proxy_mode != "l1reg_context_slimming":
             layer_dict["conv1"]=   first_wrapper(nn.Conv2d(in_channels=in_channels, out_channels= out_channels, kernel_size=3, padding=1) )
             layer_dict["dropout"]=nn.Dropout(p=dropout_rate,inplace=True)
@@ -419,7 +417,6 @@ class ZagFire(serialmodule.SerializableModule):
          self.seq=nn.Sequential(layer_dict)
 
     def forward(self,x):
-        #import pdb; pdb.set_trace()
         out = self.seq(x)
         if self.in_channels <self.out_channels:
             padding = Variable(out.data.new(out.data.shape[0],self.out_channels-self.in_channels,out.data.shape[2],out.data.shape[3]).fill_(0)) 
@@ -930,7 +927,6 @@ class SqueezeNet(serialmodule.SerializableModule):
                 if config.pool_interval_mode == "add":
                     e = config.base+math.floor(config.incr*math.floor((i+config.freq_offset)/config.freq))
                 elif config.pool_interval_mode == "multiply":
-                    #import pdb; pdb.set_trace()
                     e=config.base* (config.multiplicative_incr ** math.floor((i+config.freq_offset)/config.freq)) 
                 if config.downsample_via_stride and i!=0 and (i+config.freq_offset) % stride_freq ==0:
                     do_stride_downsample = True
@@ -1063,7 +1059,6 @@ class SqueezeNet(serialmodule.SerializableModule):
             
         for i in range( config.num_layer_chunks -1 ):
             to_add_to_chunk=list(layer_dict.items())[layer_splits[i]:layer_splits[i+1] ]
-           # import pdb; pdb.set_trace()
             if config.use_forking and i in config.fork_after_chunks:
                 if config.fork_module == "zag_fire":
                    last_layer_of_chunk = to_add_to_chunk[-1][1]

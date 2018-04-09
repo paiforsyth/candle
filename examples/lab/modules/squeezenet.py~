@@ -195,7 +195,7 @@ class NextFire(serialmodule.SerializableModule):
              layer_dict = collections.OrderedDict()
              
 
-
+             import pdb; pdb.set_trace()
              layer_dict["bn1"] = bn_wrapper(nn.BatchNorm2d(in_channels))
              layer_dict["leaky_reu1" ] = nn.LeakyReLU(inplace=True)
 
