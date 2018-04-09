@@ -13,7 +13,7 @@ from .nested import *
 from .proxy import *
 
 class WeightMaskGroup(ProxyDecorator):
-    def __init__(self, layer, child, init_value=1, stochastic=False):
+    def __init__(self, layer, child, init_value=1, stochastic=False, init_log_alpha=None):
         super().__init__(layer, child)
         self.stochastic = stochastic
         self.masks = self.build_masks(init_value)
@@ -21,7 +21,7 @@ class WeightMaskGroup(ProxyDecorator):
         self._flattened_masks = self.masks.reify(flat=True)
         self.cache = Memoizer()
         self._reset_buffers()
-
+        self.init_log_alpha=init_log_alpha
  
 
     def _reset_buffers(self):
@@ -30,7 +30,7 @@ class WeightMaskGroup(ProxyDecorator):
         self._frozen_samples = self.concrete_fn().clamp(0, 1).detach().data.reify(flat=True)
 
     def _build_masks(self, init_value, sizes, randomized_eval=False):
-        log_alpha_mean=0.5 #added by Peter
+        log_alpha_mean=0.5 if self.init_log_alpha == None else self.init_log_alpha #added by Peter
         if self.stochastic:
             self.concrete_fn = HardConcreteFunction.build(self.layer, sizes,log_alpha_mean, randomized_eval=randomized_eval)
             return self.concrete_fn.parameters()
@@ -504,7 +504,7 @@ class PruneContext(Context):
 
     def count_unpruned_masks(self):
         #this method will be inheritted, and allows
-        return sum( float(p.sum().cpu()) for p in self.list_mask_params())
+        return sum( float( (p!=0).long().sum().cpu()) for p in self.list_mask_params())
 
 
 
