@@ -116,9 +116,10 @@ def default_parser(parser=None):
     parser.add_argument("--disable_l1_reg_after_epoch", action="store_true")
     parser.add_argument("--l1_reg_final_epoch", type=int)
 
+
     parser.add_argument("--report_unpruned",action="store_true") 
     
-    parser.add_argument("--proxy_context_type", type=str, choices=["no_context","identity_context", "prune_context", "group_prune_context", "condensing_condext", "l0reg_context", "l1reg_context_slimming",  "tanhbinarize_context", "stdfactorize_context" ], default="no_context")
+    parser.add_argument("--proxy_context_type", type=str, choices=["no_context","identity_context", "prune_context", "group_prune_context", "condense_condext", "l0reg_context", "l1reg_context_slimming",  "tanhbinarize_context", "stdfactorize_context" ], default="no_context")
 
     parser.add_argument("--use_nograd",action="store_true") #use nograd instead of volatile 
 
@@ -170,6 +171,12 @@ def default_parser(parser=None):
     parser.add_argument("--plot_title")
 
     parser.add_argument("--print_params_after_epoch", action = "store_true")
+
+    parser.add_argument("--do_condense",action="store_true")
+    parser.add_argument("--condense_warmup",type=int,default=0)
+    parser.add_argument("--condense_interval",type=int, default=40)
+
+    parser.add_argument("--sensitivity_report", action="store_true")
 
 
 

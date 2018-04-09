@@ -343,7 +343,7 @@ class CondensingConv2d(_ProxyConvNd):
     def condense(self):
         from . import prune
         assert isinstance(self.weight_provider, prune.CondenseMask)
-        assert float(self.c_stage) < self.num_c_groups-2
+        assert float(self.c_stage) < self.num_c_groups-1
         weights = self.weight_provider.root.parameters()[0]
         total_in_filts = weights.shape[1]
         assert total_in_filts % self.num_c_groups == 0

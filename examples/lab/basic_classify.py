@@ -14,6 +14,7 @@ import torch.nn.functional as F
 import torch
 import torch.optim.lr_scheduler
 import numpy as np
+import functools
 from contextlib import suppress
 from torch.autograd import Variable
 
@@ -500,6 +501,15 @@ def run(args, ensemble_test=False):
         else:
             prune_target =args.prune_target
         logging.info("Target number of masks is : {}".format(prune_target))
+
+   if args.sensitivity_report:
+        prune_func = get_pruning_func(context, args)
+        accs=  by_block_accuracies(context, args, prune_unit, pruning_func)
+        logging.info(accs)
+        return
+
+   if args.do_condense:
+        conds_so_far=0
    
    best_eval_score=-float("inf")
    for epoch_count in range(args.num_epochs):
@@ -710,17 +720,11 @@ def run(args, ensemble_test=False):
              if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> prune_target:
                 logging.info("pruning...")
                 #import pdb; pdb.set_trace()
-                if args.prune_layer_mode == "by_layer":
-                    assert args.proxy_context_type != "l1reg_context_slimming" 
-                    if args.group_prune_strategy == "random":
-                        logging.info("using random channel pruning")
-                        context.model.proxy_ctx.prune(prune_unit, method = "random")
-                    else:
-                        logging.info("using channel-based weight pruning")
-                        context.model.proxy_ctx.prune(prune_unit)
-                elif args.prune_layer_mode == "global":
-                    assert args.proxy_context_type == "l1reg_context_slimming" 
-                    context.model.proxy_ctx.prune_global_smallest(prune_unit,mask_type=candle.prune.BatchNorm2DMask)
+                prunefunc = get_pruning_func(context, args)
+                prunefunc(prune_unit)
+        if args.do_condense and epoch_count >= args.condense_warmup and (epoch_count-args.condense_warmup) % args.condense_interval == 0 and conds_so_far<args.squeezenet_condense_num_c_groups-1:
+            context.model.condense()
+
 
 
          # logging.info("Loading best model")
@@ -734,5 +738,39 @@ def get_dims_from_dataset(dataset_for_classification):
            channels=3
     return img_h, img_w, channels
 
+
+def by_block_accuracies(context,args, percentage, pruning_func, loader=None) :
+    import candle.proxy
+    if loader == None:
+        loader = context.val_loader
+    blocks = context.model.to_blocks() 
+    block_accuracies = collections.OrderedDict()
+    context.model.save("./temp/tempmodel")
+    for name, block in blocks.items():
+        can_prune = False
+        if isinstance(block, candle.proxy.ProxyLayer):
+            can_prune=True
+            pruning_func(block)
+        elif  getattr(block,"apply_to_subproxies",None) is not None:
+            can_prune =True
+            block.apply_to_subproxies()
+        if can_prune:
+            block_accuracies[name] =  basic_classification.evaluate(context, loader, no_grad=args.use_nograd)
+            context.model.load("./temp/tempmodel" ) #reset model
+
+def get_pruning_func(context, args):
+    if args.prune_layer_mode == "by_layer":
+        assert args.proxy_context_type != "l1reg_context_slimming" 
+        if args.group_prune_strategy == "random":
+            logging.info("using random channel pruning")
+            return functools.partial(context.model.proxy_ctx.prune,  method = "random")
+        else:
+            logging.info("using channel-based weight pruning")
+            return model.proxy_ctx.prune
+    elif args.prune_layer_mode == "global":
+            assert args.proxy_context_type == "l1reg_context_slimming" 
+            return functools.partial(context.model.proxy_ctx.prune_global_smallest, mask_type=candle.prune.BatchNorm2DMask)
+    else:
+        raise Exception("Cannot determine correct pruning function")
 
 

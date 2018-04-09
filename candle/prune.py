@@ -489,8 +489,11 @@ class PruneContext(Context):
 
     def compose(self, layer, **kwargs):
         layer = super().compose(layer, **kwargs)
-        if kwargs.get("active"):
+        if kwargs.get("active") and not isinstance(layer, CondensingConv2d ):
             layer.hook_weight(WeightMask, stochastic=self.stochastic)
+        elif isinstance(layer, CondensingConv2d):
+            assert not self.stochastic
+            layer.hook_weight(CondenseMask, stochastic=False)
         return layer
 
     def list_mask_params(self, inverse=False):
@@ -509,7 +512,7 @@ class PruneContext(Context):
 
 
     def count_unpruned(self):
-        return sum( float(p.sum().cpu()) for p in self.list_mask_params())
+        return sum( float(((p!=0).long()).sum().cpu()) for p in self.list_mask_params())
 
     def clip_all_masks(self):
         for p in self.list_mask_params():
@@ -522,6 +525,7 @@ class PruneContext(Context):
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
                 self._prune_one_mask(weight, mask, percentage)   
+
 
     def prune_proxy_layer(self, layer, provider_type,  percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
         '''

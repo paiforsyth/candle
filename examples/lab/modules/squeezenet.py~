@@ -120,6 +120,8 @@ def add_args(parser):
     parser.add_argument("--squeezenet_downsample_stride_freq", default=None) #None means use the same freq as the channel increase
     parser.add_argument("--squeezenet_allow_pooling_after_first_fire",action="store_true")
 
+    parser.add_argument("--squeezenet_condense_num_c_groups",type=int, default=8)
+
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
 class Fire(serialmodule.SerializableModule):
@@ -321,6 +323,11 @@ class NextFire(serialmodule.SerializableModule):
         prop2 = self.seq.bn2.prop_nonzero_masks()
         prop3 = self.seq.bn3.prop_nonzero_masks()
         return prop1, prop2, prop3 
+
+    def apply_to_subproxies(self, func):
+        import candle.proxy
+        for sublayer in self.seq:
+            if isinstance(sublayer, candle.proxy.ProxyLayer):
 
 class MobileResFire(serialmodule.SerializableModule):
     def __init__(self, in_channels, out_channels, proxy_ctx, proxy_ctx_mode, activation):
@@ -733,7 +740,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride, densenet_no_bottleneck, allow_pooling_after_first_fire, freq_offset")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride, densenet_no_bottleneck, allow_pooling_after_first_fire, freq_offset, condense_num_c_groups")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -830,7 +837,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                 downsample_via_stride= args.squeezenet_downsample_via_stride,
                 densenet_no_bottleneck = args.squeezenet_densenet_no_bottleneck,
                 allow_pooling_after_first_fire = args.squeezenet_allow_pooling_after_first_fire,
-                freq_offset = args.squeezenet_freq_offset
+                freq_offset = args.squeezenet_freq_offset,
+                condense_num_c_groups = args.squeezenet_condense_num_c_groups
                 )
         return SqueezeNet(config)
 
@@ -878,6 +886,8 @@ class SqueezeNet(serialmodule.SerializableModule):
             proxy_ctx = candle.quantize.TanhBinarizeContext() 
         elif config.proxy_context_type == "stdfactorize_context":
             proxy_ctx = candle.factorize.StdFactorizeContext(svd_rank_prop=config.create_svd_rank_prop, use_factors=config.factorize_use_factors)
+        elif config.proxy_context_type == "condense_context":
+            proxy_ctxt = candle.prune.PruneContext(condense=True, num_c_grous =config.condense_num_c_groups )
         else:
             raise Exception("unknown proxy_context_type")
 
@@ -919,7 +929,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 if config.pool_interval_mode == "add":
                     e = config.base+math.floor(config.incr*math.floor((i+config.freq_offset)/config.freq))
                 elif config.pool_interval_mode == "multiply":
-                    import pdb; pdb.set_trace()
+                    #import pdb; pdb.set_trace()
                     e=config.base* (config.multiplicative_incr ** math.floor((i+config.freq_offset)/config.freq)) 
                 if config.downsample_via_stride and i!=0 and (i+config.freq_offset) % stride_freq ==0:
                     do_stride_downsample = True
@@ -1070,7 +1080,6 @@ class SqueezeNet(serialmodule.SerializableModule):
         layer_chunk=nn.Sequential( collections.OrderedDict(list(layer_dict.items())[ layer_splits[config.num_layer_chunks-1]:]) )
         self.add_module("layer_chunk_"+str(config.num_layer_chunks-1),layer_chunk )
         self.layer_chunk_list.append(layer_chunk)
-         
         #self.sequential=nn.Sequential(layer_dict)
         if config.proxy_context_type == "prune_context":
             assert len(proxy_ctx.list_proxies("weight_provider")) == len(proxy_ctx.list_proxies("weight_hook"))
@@ -1242,7 +1251,26 @@ class SqueezeNet(serialmodule.SerializableModule):
         for chunk in self.layer_chunk_list:
             reset_masks(chunk)
 
+    def condense(self):
+        def _condense(module):
+            if getattr(layer,"condense",None) is not None:
+                module.condense()
+            try:
+                for sublayer in module:
+                    _condense(sublayer)
+            except TypeError:
+                return
+        _condense(self.layer_chunk_list)
 
+    def to_blocks():
+        '''
+         Converts a squeezenet into an OrderedDict
+        '''
+        blocks = collections.OrderedDict()
+        for chunk in self.layer_chunk_list:
+            for name, module in chunk.named_children():                
+                blocks[name]=module
+        return blocks
 
                 
 
