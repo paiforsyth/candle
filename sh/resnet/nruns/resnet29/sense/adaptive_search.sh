@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-FRACS= '01 10 20 30 40 50 60 70 80 90 90'
+FRACS='01 10 20 30 40 50 60 70 80 90 90'
 RUNTYPE=sensitivity_adaptive_group_prune
 NETTYPE=resnet29
 ARGFILE=./sh/argfiles/${NETTYPE}_group
