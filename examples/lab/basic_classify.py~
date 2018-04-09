@@ -755,6 +755,7 @@ def by_block_accuracies(context,args, percentage, pruning_func,prune_unit, loade
             block.apply_to_subproxies(pruning_func)
         if can_prune:
             block_accuracies[name] =  basic_classification.evaluate(context, loader, no_grad=args.use_nograd)
+            logging.info("pruing{} yields accuracy of {}".format(name,block_accuracies[name]))
             context.model.load("./temp/tempmodel" ) #reset model
 
 def get_pruning_func(context, args):

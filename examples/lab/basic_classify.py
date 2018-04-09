@@ -781,7 +781,7 @@ def get_one_layer_pruning_func(context, args, prune_unit):
             return functools.partial(context.prune_proxy_layer, method="random",percentage=prune_unit  )
         else:
             logging.info("using layer_targeted channel-based weight pruning") 
-            return functools.partial(context.prune_proxy_layerpercentage=prune_unit  )
+            return functools.partial(context.prune_proxy_layer, percentage=prune_unit  )
     elif args.prune_layer_mode == "global":
             raise Exception("not implemented")
             assert args.proxy_context_type == "l1reg_context_slimming" 
