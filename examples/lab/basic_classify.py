@@ -490,10 +490,16 @@ def run(args, ensemble_test=False):
         init_mask_count = context.model.proxy_ctx.count_unpruned_masks()
         logging.info("Initial number of masks {}".format(init_mask_count))
         if args.autocalc_prune_unit:
-            prune_unit = math.ceil((1- (args.prune_target_frac)**(1/args.prune_phase_duration))*100)
+            if args.prune_calc_type =="relative":
+                assert not args.sense_adaptive_pruning  
+                prune_unit = math.ceil((1- (args.prune_target_frac)**(1/args.prune_phase_duration))*100)
+                logging.info("relative prune unit is {}".format(prune_unit))
+            elif args.prune_calc_type =="absolute":
+                assert args.sense_adaptive_pruning
+                prune_abs_unit = math.ceil( (1-args.prune_target_frace)/args.prune_phase_duration*100  )
+                logging.info("absolute prune unit is {}".format(prune_abs_unit))
         else:
             prune_unit = args.prune_unit
-        logging.info("prune unit is {}".format(prune_unit))
         if args.prune_target_frac is not None:
             prune_target = int(init_mask_count *args.prune_target_frac )
         else:
@@ -501,8 +507,8 @@ def run(args, ensemble_test=False):
         logging.info("Target number of masks is : {}".format(prune_target))
 
    if args.sensitivity_report:
-        one_layer_prune_func = get_one_layer_pruning_func(context,args,prune_unit)
-        accs=  by_block_accuracies(context, args, prune_unit, one_layer_prune_func)
+        one_layer_prune_func = get_one_layer_pruning_func(context,args,prune_abs_unit)
+        accs=  by_block_accuracies(context, args, prune_abs_unit, one_layer_prune_func)
         logging.info(accs)
         return
 
@@ -719,7 +725,12 @@ def run(args, ensemble_test=False):
                 logging.info("pruning...")
                 #import pdb; pdb.set_trace()
                 prunefunc = get_pruning_func(context, args)
-                prunefunc(prune_unit)
+                if args.prune_calc_type =="relative":
+                    pu = prune_unit
+                elif args.prune_calc_type =="absolute":
+                    pu=prune_abs_unit
+
+                prunefunc(pu)
         if args.do_condense and epoch_count >= args.condense_warmup and (epoch_count-args.condense_warmup) % args.condense_interval == 0 and conds_so_far<args.squeezenet_condense_num_c_groups-1:
             context.model.condense()
 
