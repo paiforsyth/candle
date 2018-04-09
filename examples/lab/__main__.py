@@ -99,8 +99,8 @@ def default_parser(parser=None):
     parser.add_argument("--prune_unit",type=int, default=1)
     parser.add_argument("--group_prune_strategy",choices= ["standard","random"],default="standard")
 
-    parser.add_argument("--autocalc_prune_unit",action="store_true")#overrided the above.  Uses as prune_unit what is neccesary to achieve the prune target in 10 epochs
-
+    parser.add_argument("--autocalc_prune_unit",action="store_true")#overrided the above.  Uses as prune_unit what is neccesary to achieve the prune target in default 10 epochs
+    parser.add_argument("--prune_phase_duration",type=int,default=10) #for use with autocalc_prune_unit
 
     parser.add_argument("--enable_l0reg",action = "store_true")
     parser.add_argument("--l0reg_lambda", type=float, default =1.5 / 50000 )
