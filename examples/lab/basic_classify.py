@@ -777,9 +777,11 @@ def by_block_accuracies(context,args, percentage, pruning_func, loader=None, ena
             accuracy_blocks[acc]=name
             logging.info("pruing{} yields accuracy of {}".format(name,block_accuracies[name]))
             context.model.load_state_dict(copy.deepcopy(preprune_dict)) #context.model.load("./temp/tempmodel" ) #reset model
-        if enact:
-            best_acc =max(accuracy_blocks.keys)
-            do_prune(blocks[accuracy_blocks[best_acc]] )
+    if enact:
+        best_acc =max(accuracy_blocks.keys())
+        name_of_best=accuracy_blocks[best_acc]
+        logging.info("decided to prune:{}".format(name_of_best))
+        do_prune(blocks[name_of_best] )
 
     return block_accuracies
 
