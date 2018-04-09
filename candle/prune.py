@@ -226,7 +226,6 @@ class ConvGroupChannel2DMask(WeightMaskGroup): #for zeroing entire groups. e.g. 
 
 class BatchNorm2DMask(WeightMaskGroup):
     def __init__(self, layer , child, **kwargs):
-        import pdb; pdb.set_trace()
         super().__init__(layer,child,**kwargs)
 
     def __repr__(self):
@@ -603,7 +602,6 @@ class GroupPruneContext(PruneContext):
                 conv_group_size = layer.weight_provider.sizes.reify()[0][0] / layer.groups
         else:
             conv_group_size = -1
-        import pdb; pdb.set_trace()
         mask_type = self.find_mask_type( type(layer), kwargs.get("prune", "out"),conv_group_size = conv_group_size, following_proxy_bn = kwargs.get("following_proxy_bn", None)) 
         layer.hook_weight(mask_type, stochastic=self.stochastic)
         return layer
