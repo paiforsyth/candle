@@ -781,7 +781,7 @@ def by_block_accuracies(context,args, percentage, pruning_func, loader=None, ena
         best_acc =max(accuracy_blocks.keys())
         name_of_best=accuracy_blocks[best_acc]
         logging.info("decided to prune:{}".format(name_of_best))
-        do_prune(blocks[name_of_best] )
+        doprune(blocks[name_of_best] )
 
     return block_accuracies
 
