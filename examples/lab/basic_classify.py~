@@ -821,7 +821,7 @@ def get_pruning_func(context, args):
             logging.info("using random channel pruning")
             return functools.partial(context.model.proxy_ctx.prune,  method = "random")
         else:
-            logging.info("using channel-based weight pruning")
+            logging.info("using  weight-norm pruning")
             return context.model.proxy_ctx.prune
     elif args.prune_layer_mode == "global":
             assert args.proxy_context_type == "l1reg_context_slimming" 
@@ -847,4 +847,23 @@ def get_one_layer_pruning_func(context, args, prune_unit):
 
 
 
+def hz_lasso_whole_model(context,args,num_samples, target_prune_prop):
+    #create a copy of the model
+    model_copy = copy.deepcopy(context.model)
+    subblocks = context.modelto_subblocks
+    subblocks_copy = model_copy.subblocks
+    for sb_real, sb_copy in zip(subblocks, subblocks_copy):
+        if not isinstance(sb_real, candle.proxy.ProxyLayer):
+            continue
+        sb_real.store_input= True
+        sb_copy.store_output = True
+        for batch_in, *other in context.val_loader: 
+             with torch.no_grad():
+                model(batch_in)
+                model_copy(batch_in)
+        candle.prune.hz_lasso_prune(sb_real, target_num_channels=None,target_prop=target_prune_prop, sample_inputs=sb_real.record_of_inputs, sample_outputs=sb_copy.record_of_outputs, solve_for_weights=False):
+        sb_real.store_input=False
+        sb_copy.store_output=False
+        sb_real.record_of_inputs=[]
+        sb_copy.record_of_outputs=[]
 

@@ -239,8 +239,8 @@ class _ProxyConvNd(ProxyLayer):
         self._conv_kwargs = dict(dilation=dilation, padding=padding, stride=stride,groups=groups)
         if not self.bias:
             self._conv_kwargs["bias"] = None
-        self.record_input=False
-        self.record_output=False #used with pruning methods that required samples of input and output
+        self.store_input=False
+        self.store_output=False #used with pruning methods that required samples of input and output
         self.record_of_input=[]
         self.record_of_output=[]
 
@@ -250,18 +250,20 @@ class _ProxyConvNd(ProxyLayer):
             return s
 
     def on_forward(self, x):
-        if self.record_input:
+        if self.store_input:
             assert not self.training
             self.record_of_input.append(x)
 
         weights = self.weight_provider().reify()
         out=  self.conv_fn(x, *weights, **self._conv_kwargs)
 
-        if self.record_output:
+        if self.store_output:
             assert not self.training
             self.record_of_output.append(out)
 
         return out
+
+
 
     #added by Peter 
     def effective_output_channels(self, unpruned=False):

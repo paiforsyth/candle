@@ -13,6 +13,7 @@ from . import shakedrop_func
 from .countmult import count_approx_multiplies
 from .reset_weights import reset_weights
 from .reset_masks import reset_masks
+from .sample_storage import *
 from . import shake_shake
 from . import msdnet
 from torch.autograd import Variable
@@ -354,6 +355,15 @@ class NextFire(serialmodule.SerializableModule):
 
     def submods(self):
         return self.seq.named_children() 
+
+    def change_store_input(self,val):
+        change_store_input(self.seq,val)
+        
+    def change_store_output(self,val):
+        change_store_output(self.seq,val)
+
+
+
 
 class MobileResFire(serialmodule.SerializableModule):
     def __init__(self, in_channels, out_channels, proxy_ctx, proxy_ctx_mode, activation):
@@ -1320,6 +1330,10 @@ class SqueezeNet(serialmodule.SerializableModule):
 
         return sub_blocks
 
+    def change_store_input(self,val):
+        change_store_input(self.layer_chunk_list)
+        
+
        
 
 
@@ -1347,4 +1361,7 @@ def forking_props_from_sample(squeezenet,  loader):
         assert batch.shape[0] == 1 #to do early exit we need to have batch sizes of one
         squeezenet(batch) 
     squeezenet.calc_exit_proportions()
+
+
+
 

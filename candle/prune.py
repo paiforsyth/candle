@@ -1,5 +1,6 @@
 #comment
 import math
+import numpy as np
 
 from torch.autograd import Variable
 import torch
@@ -549,15 +550,23 @@ class PruneContext(Context):
         return all(success_list)
 
     
-    def hz_lasso_prune(self, proxy_layer, target_num_channels, sample_inputs, sample_outputs):
+    def hz_lasso_prune(self, proxy_layer, target_num_channels,target_prop, sample_inputs, sample_outputs, solve_for_weights):
         '''
         sample_inputs: should be a list of batchsize * in_channels * h* w (h and w are img size not kernel size) sample input images to the proxy_layer
         sample_outputs: should be a list of batchsize* out_channels * h*w (h an dw are image isze not kernel size) sample output images.  Generally the advice is that the input images should take into account any prior pruning at earlier layers, but the `output images should not
         ''' 
+        assert isinstance(proxy_layer.weight_provider, Filter2DMask)
+        if target_num_channels is None:
+            target_num_channels = math.ceil(proxy_layer.weight_provider.root()().reify()[0].size(1)*target_prop )
+        if proxy_layer.weight_provider().reify()[0].is_cuda():
+            was_cuda=True
+            device=weights.get_device()
+        else:
+            was_cuda=False
 
         def process_input_img_batch(img_batch, weights ,**conv_kwargs):
             '''
-            given a batch of input images (as a tensor) and some convolutinal weights and paramers, returns a tesnor T with dimensions output channels by h by w by input_channels. where h and w are the height and width of the image.  the (q,a,b,c,d) entry of this tensor is the contribution of  input channeln d to output channel a at location (b,c) in image q in the batch
+            given a batch of input images (as a tensor) and some convolutinal weights and paramers, returns a tesnor T with dimensions output channels by h by w by input_channels+1. where h and w are the height and width of the image.  the (q,a,b,c,d) entry of this tensor is the contribution of  input channeln d to output channel a at location (b,c) in image q in the batch.  the final "input channel" is the contribution of the bias term
             '''
             input_channels = img_batch.shape[1]
             batch_size = img_batch.shape[0]
@@ -565,13 +574,49 @@ class PruneContext(Context):
             w= image_batch.shape[3]
             output_channels = weights[0].shape[0]
 
-            out_tensor = img_batch.new(batch_size, output_channels, h, w, input_channels).fill_(float("nan"))
+            
+
+            out_tensor = img_batch.data.new(batch_size, output_channels, h, w, input_channels+1).fill_(float("nan"))
             for i in range(input_channels):
-                cur_slice = img_batch[:,i,:,:].view(batch_size,1,h,w)
-                out_tensor[:,:,:,:,i]=  F.conv2d(cur_slice, **weights, **conv_kwargs  )
+                cur_slice = img_batch.data[:,i,:,:].view(batch_size,1,h,w)
+                out_tensor[:,:,:,:,i]=  F.conv2d(cur_slice, weights[0].data, bias=None, **conv_kwargs  )
+            out_tensor[:,:,:,:,-1]= weights[1].expand(-1,batch_size, h,w).transpose(1,0) #bias
             return out_tensor
+        Btensor = torch.cat([process_img_batch(img_batch,  proxy_layer.weight_provider.root()().reify(),**proxy_layer._conv_kwargs) for img_batch in sample_inputs ], dim=0 )#dimensions are (num_samples)*(output channels) by h by w by input_channels+1
+        Ytensor = torch.cat( sample_outputs, dim=0 ) #dimensions  are num_samples*output_channels by h by w
 
+        Yvec=Ttensor.contigous().view(-1)
+        Bmat =Btensor.contiguous().view(-1, input_channels+1)
+        
 
+        import sklearn
+        from sklearn.linear_model import lasso_path
+
+        np_Yvec= Yvec.numpy()
+        np_Bmat = Bmat.numpy()
+        alphas, coefs, _ =lasso_path(np_Bmat,np_Yvec)
+        nonzero_counts = (coefs!=0).sum(0)
+        assert nonzero_counts[0] ==0
+        cur_dex=0
+        while True:
+            cur_dex+=1
+            if nonzero_counts[cur_dex] >= target_num_channels:
+                cur_dex-=1
+                break
+        
+        beta_chosen =torch.Tensor( alphas[:,cur_dex])
+        if was_cuda:
+            beta_chosen =beta_chosen.cuda(device)
+
+        if not solve_for_weights:
+            proxy_layer.weight_provider.masks.reify()[0].data[beta_chosen[:-1]==0]=0
+            proxy_layer.weight_provider.root()()[0].data*=beta_chosen[:-1].view(1,-1,1,1)
+            proxy_layer.weight_provider.root()()[1].data*=beta_chosen[-1] #bias
+            return
+        else:
+            raise Exception("not implemented!")
+
+        
             
         
         
