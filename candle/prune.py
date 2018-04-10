@@ -565,7 +565,7 @@ class PruneContext(Context):
             w= image_batch.shape[3]
             output_channels = weights[0].shape[0]
 
-            out_tensor = img_batch.new(batch_size, output_channels, h, w, input_channels).fill_(float("nan")
+            out_tensor = img_batch.new(batch_size, output_channels, h, w, input_channels).fill_(float("nan"))
             for i in range(input_channels):
                 cur_slice = img_batch[:,i,:,:].view(batch_size,1,h,w)
                 out_tensor[:,:,:,:,i]=  F.conv2d(cur_slice, **weights, **conv_kwargs  )
