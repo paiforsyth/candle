@@ -821,7 +821,7 @@ def get_pruning_func(context, args):
             logging.info("using random channel pruning")
             return functools.partial(context.model.proxy_ctx.prune,  method = "random")
         else:
-            logging.info("using channel-based weight pruning")
+            logging.info("using  weight-norm pruning")
             return context.model.proxy_ctx.prune
     elif args.prune_layer_mode == "global":
             assert args.proxy_context_type == "l1reg_context_slimming" 
