@@ -215,6 +215,25 @@ class NextFire(serialmodule.SerializableModule):
 
              layer_dict["leaky_relu3"] = nn.LeakyReLU(inplace=True)
              layer_dict["expand_conv"] =  last_wrapper(nn.Conv2d(num_squeeze, num_expand, kernel_size=1,stride=stride))
+     elif proxy_mode == "filter_prune_context":
+             assert groups == 1
+             bn_wrapper = proxy_ctx.bypass
+             first_wrapper = proxy_ctx.wrap
+             group_wrapper = proxy_ctx.wrap
+             last_wrapper = proxy_ctx.wrap
+
+             last_conv = last_wrapper(nn.Conv2d(num_squeeze, num_expand, kernel_size=1, stride=stride))
+             group_conv = group_wrapper(nn.Conv2d(num_squeeze, num_squeeze, kernel_size=3,padding=1, groups=groups), following_proxy_conv=last_conv  )
+             squeeze_conv = first_wrapper(nn.Conv2d(in_channels, num_squeeze,(1,1)), following_proxy_conv=group_conv )
+             layer_dict = collections.OrderedDict()
+             layer_dict["bn1"] = bn_wrapper(nn.BatchNorm2d(in_channels))
+             layer_dict["leaky_reu1" ] = nn.LeakyReLU(inplace=True)
+             layer_dict["squeeze_conv"] = squeeze_conv 
+             layer_dict["bn2"] = bn_wrapper(nn.BatchNorm2d(num_squeeze))
+             layer_dict["leaky_relu2"] = nn.LeakyReLU(inplace=True)
+             layer_dict["group_conv"]=group_conv
+             layer_dict["bn3"] = bn_wrapper(nn.BatchNorm2d(num_squeeze))
+             layer_dict["leaky_relu3"] = nn.LeakyReLU(inplace=True)
 
      else:     
         if proxy_mode is not None and proxy_mode!="no_context":
@@ -898,7 +917,9 @@ class SqueezeNet(serialmodule.SerializableModule):
         elif config.proxy_context_type == "stdfactorize_context":
             proxy_ctx = candle.factorize.StdFactorizeContext(svd_rank_prop=config.create_svd_rank_prop, use_factors=config.factorize_use_factors)
         elif config.proxy_context_type == "condense_context":
-            proxy_ctxt = candle.prune.PruneContext(condense=True, num_c_grous =config.condense_num_c_groups )
+            proxy_ctx = candle.prune.PruneContext(condense=True, num_c_grous =config.condense_num_c_groups )
+        elif config.proxy_context_type == "filter_prune_context":
+            proxy_ctx = candle.prune.GroupPruneContext(stochastic =False, prune ="in")
         else:
             raise Exception("unknown proxy_context_type")
 
@@ -1290,7 +1311,7 @@ class SqueezeNet(serialmodule.SerializableModule):
         for chunk in self.layer_chunk_list:
             for name, module in chunk.named_children():                
                 if getattr(module,"submods",None) is not None:
-                    for sub_name, submod in module.submods():
+                    for subname, submod in module.submods():
                         sub_blocks[name +"_"+subname]=submod
                 else:
                     sub_blocks[name]=module

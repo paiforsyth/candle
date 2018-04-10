@@ -308,14 +308,22 @@ class Channel2DMask(WeightMaskGroup):
 
 
 class Filter2DMask(WeightMaskGroup):
-    def __init__(self, layer, child, **kwargs):
+    '''
+    For masking input filters (rows).  Optionall, a refernece to a following convolution can be included.  This allows the convolution making use of the current mask to take any input filter pruing performed by the following convolution into account when computing its output channels
+    '''
+    def __init__(self, layer, child, following_proxy_conv, **kwargs):
         super().__init__(layer, child, **kwargs)
+        self.following_proxy_conv= following_proxy_conv
 
     def __repr__(self):
         s= super().__repr__()
         mask_len = self._flattened_masks[0].size(0)
         mask_nonzero= float((self._flattened_masks[0] != 0).long().sum())
         s+= " Nonzero masks: {} / {}".format(mask_nonzero, mask_len)
+        if self.following_proxy_conv is None:
+            s+= " Following proxy conv is None"
+        else:
+            s+= "Following proxy conv is not None"
         return s
 
     def build_masks(self, init_value):
@@ -338,10 +346,10 @@ class Filter2DMask(WeightMaskGroup):
         return Package([expand_weight, expand_bias])
 
     
-class Column2DMask(WeightMaskGroup):
-    def __init__(self, layer, child, following_proxy_conv, **kwargs):
-        super().__init__(layer, child, **kwargs)
-        pass
+#class Column2DMask(WeightMaskGroup):
+#    def __init__(self, layer, child, following_proxy_conv, **kwargs):
+#        super().__init__(layer, child, **kwargs)
+#        pass
 
 
 class ExternChannel2DMask(WeightMaskGroup):
@@ -625,7 +633,7 @@ class GroupPruneContext(PruneContext):
                 conv_group_size = layer.weight_provider.sizes.reify()[0][0] / layer.groups
         else:
             conv_group_size = -1
-        mask_type = self.find_mask_type( type(layer), kwargs.get("prune", "out"),conv_group_size = conv_group_size, following_proxy_bn = kwargs.get("following_proxy_bn", None)) 
+        mask_type = self.find_mask_type( type(layer), kwargs.get("prune", "out"),conv_group_size = conv_group_size, following_proxy_bn = kwargs.get("following_proxy_bn", None), following_proxy_conv = kwargs.get("following_proxy_conv",None)) 
         layer.hook_weight(mask_type, stochastic=self.stochastic)
         return layer
 
@@ -665,7 +673,7 @@ class GroupPruneContext(PruneContext):
         for mask in group_masks:
             mask.unfreeze()
 
-    def find_mask_type(self, layer_type, prune="out", conv_group_size=-1, following_proxy_bn = None ):
+    def find_mask_type(self, layer_type, prune="out", conv_group_size=-1, following_proxy_bn = None, following_proxy_conv = None ):
         if layer_type == ProxyLinear and prune == "out":
             return LinearRowMask
         elif layer_type == ProxyLinear and prune == "in":
@@ -679,6 +687,8 @@ class GroupPruneContext(PruneContext):
         elif layer_type == ProxyConv2d and prune == "slim":
              assert following_proxy_bn is not None
              return  functools.partial(ExternChannel2DMask, following_proxy_bn = following_proxy_bn ) 
+        elif layer_type == ProxyConv2d and prune =="in":
+            return functools.partial(Filter2DMask, following_proxy_conv = following_proxy_conv)
         elif layer_type == ProxyBatchNorm2d and prune == "slim":
             return BatchNorm2DMask
         elif layer_type == ProxyRNN:

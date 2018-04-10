@@ -272,8 +272,19 @@ class _ProxyConvNd(ProxyLayer):
         elif isinstance(self.weight_provider, prune.ExternChannel2DMask):
             assert isinstance(self.weight_provider.following_proxy_bn,  ProxyBatchNorm2d)
             return self.weight_provider.following_proxy_bn.effective_output_channels() 
+        elif isinstance(self.weight_provider, prune.Filter2DMask):
+            if self.weight_provider.following_proxy_conv is None:
+                logging.debug("No following proxy. Using base output channels")
+                return base_output_channels
+            logging.debug("calculating output channels using following proxy")
+            return self.weight_provider.following_proxy_conv.unmasked_input_channels()
         else:
             raise Exception("unknown weight provider type")
+
+    def unmasked_input_channels(self):
+        from . import prune
+        assert isinstance(self.weight_provider, prune.Filter2DMask )
+        return self.weight_provider.mask_unpruned[0]
 
 
 class ProxyConv3d(_ProxyConvNd):
@@ -285,6 +296,7 @@ class ProxyConv2d(_ProxyConvNd):
         super().__init__(weight_provider, F.conv2d, **kwargs)
 
     def multiplies(self,img_h, img_w, input_channels, unpruned):
+        from . import prune
         w_dim = self.weight_provider.sizes.reify()[0]
         if self.groups == w_dim[0] and self.groups == w_dim[1]:
             logging.debug("depthwise convolution detected.  Input channels= output channels")
@@ -292,7 +304,11 @@ class ProxyConv2d(_ProxyConvNd):
         else:
             effective_out = self.effective_output_channels(unpruned=unpruned) 
               #img_h*img_w* effective_out * input_channels  *w_dim[2]*w_dim[3]/self.groups
-        mults, out_channels, height, width = util.countmult_util.conv2d_mult_compute(img_h, img_w, in_channels=input_channels, out_channels=effective_out, groups=self.groups, stride=self.stride, padding=self.padding, kernel_size=self.kernel_size, dilation=self.dilation)
+            if isinstance(self.weight_provider, prune.Filter2DMask):
+                effective_in = self.weight_provider.mask_unpruned[0]
+            else:
+                effective_in = input_channels
+        mults, out_channels, height, width = util.countmult_util.conv2d_mult_compute(img_h, img_w, in_channels=effective_in, out_channels=effective_out, groups=self.groups, stride=self.stride, padding=self.padding, kernel_size=self.kernel_size, dilation=self.dilation)
         logging.debug("number of mults is {}".format(mults))  #logging.debug("number of mults is {}*{}*{}*{}*{}*{} / {} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],self.groups,mults)  )
         return mults, out_channels, height, width
 
