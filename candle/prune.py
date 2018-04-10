@@ -332,7 +332,7 @@ class Filter2DMask(WeightMaskGroup):
 
     def split(self, root):
         param = root.parameters()[0]
-        split_root = param.transpose(1,0).view(param.size(1),-1).transpose(1,0)
+        split_root = param.transpose(1,0).contiguous().view(param.size(1),-1).transpose(1,0).contiguous()
         return Package([split_root])
 
     def expand_masks(self):
