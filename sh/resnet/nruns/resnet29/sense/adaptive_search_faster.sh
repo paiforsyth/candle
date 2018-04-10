@@ -3,7 +3,7 @@ echo 'process id'
 echo $$
 FRACS='95 90 80 70 60 30 20 10 1'
 #FRACS=01
-RUNTYPE=sensitivity_adaptive_group_prune
+RUNTYPE=sensitivity_adaptive_group_prune_faster
 NETTYPE=resnet29
 ARGFILE=./sh/argfiles/${NETTYPE}_group
 RESUME_FILENAME=09_April_2018_Monday_02_17_27_endofcycle_checkpoint_0 
