@@ -496,7 +496,7 @@ def run(args, ensemble_test=False):
                 logging.info("relative prune unit is {}".format(prune_unit))
             elif args.prune_calc_type =="absolute":
                 assert args.sense_adaptive_pruning
-                prune_abs_unit = math.ceil( (1-args.prune_target_frace)/args.prune_phase_duration*100  )
+                prune_abs_unit = math.ceil( (1-args.prune_target_frac)/args.prune_phase_duration*100  )
                 logging.info("absolute prune unit is {}".format(prune_abs_unit))
         else:
             prune_unit = args.prune_unit
@@ -795,11 +795,12 @@ def by_block_accuracies(context,args, percentage, pruning_func, loader=None, ena
             logging.debug("pruing{} yields accuracy of {}".format(name,block_accuracies[name]))
             context.model.load_state_dict(copy.deepcopy(preprune_dict)) #context.model.load("./temp/tempmodel" ) #reset model
     if enact:
-        best_acc =max(accuracy_blocks.keys())
-        name_of_best=accuracy_blocks[best_acc]
-        logging.debug("decided to prune:{}".format(name_of_best))
-        block_prune_counts[name_of_best]+=1
-        doprune(blocks[name_of_best] )
+        if len(accuracy_blocs.keys()) != 0: 
+            best_acc =max(accuracy_blocks.keys())
+            name_of_best=accuracy_blocks[best_acc]
+            logging.debug("decided to prune:{}".format(name_of_best))
+            block_prune_counts[name_of_best]+=1
+            doprune(blocks[name_of_best] )
 
     return block_accuracies,prunable_count
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+echo 'process id'
+echo $$
 FRACS='01 10 20 30 40 50 60 70 80 90 90'
 #FRACS=01
 RUNTYPE=sensitivity_adaptive_group_prune
