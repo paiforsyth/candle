@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 echo 'process id'
 echo $$
-FRACS='95 90 80 70 60 30 20 10 1'
+FRACS='95 70 30'
 #FRACS=01
 RUNTYPE=sensitivity_adaptive_group_prune_faster
 NETTYPE=resnet29
