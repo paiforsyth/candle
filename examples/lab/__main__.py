@@ -277,18 +277,17 @@ def show_params(input_size=(32,3,32,32)):
    parser=basic_classify.add_args(parser)
    args=parser.parse_known_args()[0]
    context=basic_classify.make_context(args)
-   if True: #args.proxy_context_type == "no_context": 
-       for name, param in context.model.named_parameters():
+   for name, param in context.model.named_parameters():
          print(name)
          print(param.shape)
          print(param.requires_grad)
          if param.is_cuda:
           print("device:")
           print(param.get_device())
-       param_count = modules.count_trainable_params(context.model)
-   else:
-        param_count = modules.count_elem(context.model.proxy_ctx.list_model_params() ) 
-   print("total trainable params:{}".format(param_count)) 
+   param_count = modules.count_trainable_params(context.model)
+   logging.info("total trainable params:{}".format(param_count)) 
+   if args.proxy_context_type != "no_context":
+       logging.info("Model Params: {}".format(modules.count_elem(context.model.proxy_ctx.list_model_params() )) )
 
 def show_proxies():
    logging.basicConfig(level=logging.DEBUG)
