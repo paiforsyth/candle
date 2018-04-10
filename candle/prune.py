@@ -342,7 +342,7 @@ class Filter2DMask(WeightMaskGroup):
             mask =self._flattened_masks[0]
         sizes = self.child.sizes.reify()[0]
         expand_weight=mask.expand(sizes[0],sizes[2],sizes[3],-1 ).permute(0,3,1,2) 
-        expand_bias = Variable(weights.data.new([1]))
+        expand_bias = Variable(expand_weight.data.new([1]))
         return Package([expand_weight, expand_bias])
 
     
