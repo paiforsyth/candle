@@ -682,7 +682,7 @@ class PruneContext(Context):
                     return False
                 length = math.ceil(indices.size(0) * percentage / 100)
                 if length > ne0_indices.size(0): #always leave one channel
-                    length= ne0_indicies.size(0)-1
+                    length= ne0_indices.size(0)-1
                 indices = ne0_indices[:length]
                 if indices.size(0) > 0:
                     mask.data.view(-1)[indices.data] = 0
