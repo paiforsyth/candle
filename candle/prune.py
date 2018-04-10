@@ -332,7 +332,7 @@ class Filter2DMask(WeightMaskGroup):
 
     def split(self, root):
         param = root.parameters()[0]
-        split_root = param.permute(1,0).view(param.size(1),-1).permute(1,0)
+        split_root = param.transpose(1,0).view(param.size(1),-1).transpose(1,0)
         return Package([split_root])
 
     def expand_masks(self):
@@ -549,6 +549,34 @@ class PruneContext(Context):
         return all(success_list)
 
     
+    def hz_lasso_prune(self, proxy_layer, target_num_channels, sample_inputs, sample_outputs):
+        '''
+        sample_inputs: should be a list of batchsize * in_channels * h* w (h and w are img size not kernel size) sample input images to the proxy_layer
+        sample_outputs: should be a list of batchsize* out_channels * h*w (h an dw are image isze not kernel size) sample output images.  Generally the advice is that the input images should take into account any prior pruning at earlier layers, but the `output images should not
+        ''' 
+
+        def process_input_img_batch(img_batch, weights ,**conv_kwargs):
+            '''
+            given a batch of input images (as a tensor) and some convolutinal weights and paramers, returns a tesnor T with dimensions output channels by h by w by input_channels. where h and w are the height and width of the image.  the (q,a,b,c,d) entry of this tensor is the contribution of  input channeln d to output channel a at location (b,c) in image q in the batch
+            '''
+            input_channels = img_batch.shape[1]
+            batch_size = img_batch.shape[0]
+            h = image_batch.shape[2]
+            w= image_batch.shape[3]
+            output_channels = weights[0].shape[0]
+
+            out_tensor = img_batch.new(batch_size, output_channels, h, w, input_channels).fill_(float("nan")
+            for i in range(input_channels):
+                cur_slice = img_batch[:,i,:,:].view(batch_size,1,h,w)
+                out_tensor[:,:,:,:,i]=  F.conv2d(cur_slice, **weights, **conv_kwargs  )
+            return out_tensor
+
+
+            
+        
+        
+        #Yvec= torch.cat([samp.transpose(1,0).view(-1) for samp in sample_outputs ],dim=0) #vector of length outchannels*batchsize*h*w
+
 
     
     def prune_global_smallest(self, percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
@@ -615,6 +643,7 @@ class PruneContext(Context):
                     mask.data.view(-1)[indices.data] = 0
                     return True
                 return False
+
 
 
 class GroupPruneContext(PruneContext):

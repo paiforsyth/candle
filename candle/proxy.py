@@ -239,14 +239,29 @@ class _ProxyConvNd(ProxyLayer):
         self._conv_kwargs = dict(dilation=dilation, padding=padding, stride=stride,groups=groups)
         if not self.bias:
             self._conv_kwargs["bias"] = None
+        self.record_input=False
+        self.record_output=False #used with pruning methods that required samples of input and output
+        self.record_of_input=[]
+        self.record_of_output=[]
+
 
     def __repr__(self):
             s= "{}(conv_fn = {}, stride = {}, padding ={}, dilation = {}, groups = {} ).  Weight provider ={}".format(self.__class__.__name__, self.conv_fn, self.stride, self.padding, self.dilation, self.groups, self.weight_provider )
             return s
 
     def on_forward(self, x):
+        if self.record_input:
+            assert not self.training
+            self.record_of_input.append(x)
+
         weights = self.weight_provider().reify()
-        return self.conv_fn(x, *weights, **self._conv_kwargs)
+        out=  self.conv_fn(x, *weights, **self._conv_kwargs)
+
+        if self.record_output:
+            assert not self.training
+            self.record_of_output.append(out)
+
+        return out
 
     #added by Peter 
     def effective_output_channels(self, unpruned=False):
@@ -294,7 +309,7 @@ class ProxyConv3d(_ProxyConvNd):
 class ProxyConv2d(_ProxyConvNd):
     def __init__(self, weight_provider, **kwargs):
         super().__init__(weight_provider, F.conv2d, **kwargs)
-
+        
     def multiplies(self,img_h, img_w, input_channels, unpruned):
         from . import prune
         w_dim = self.weight_provider.sizes.reify()[0]
