@@ -1,9 +1,9 @@
 RUNTYPE=group_prune_slow
-PTARG=90
+PTARG=40
 NETTYPE=resnet29
 LAMBDA=00001
 ARGFILE=./sh/argfiles/${NETTYPE}_group
-RESUME_FILENAME=10_April_2018_Tuesday_02_47_34resnet29_group_prune_slow_standard_90_fixedmaxpool_most_recent
+RESUME_FILENAME=10_April_2018_Tuesday_00_33_27resnet29_group_prune_slow_standard_40_fixedmaxpool_most_recent
 
 SAVE_PREFIX=${NETTYPE}_${RUNTYPE}_${PTARG}_lambda${LAMBDA}_test_fixedmaxpool
 REPORT_FILENAME=./reports/${NETTYPE}_${RUNTYPE}_${PTARG}_lambda${LAMBDA}_test_fixedmaxpool
