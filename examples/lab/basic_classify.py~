@@ -735,7 +735,7 @@ def run(args, ensemble_test=False):
             context.model.condense()
 
    if args.show_arch_on_completion:
-        logging.info(context.model.children())
+        logging.info(repr(context.model.children()))
 
          # logging.info("Loading best model")
    #context.model.load(os.path.join( args.model_save_path,timestamp+ args.save_prefix +"_best_model"))

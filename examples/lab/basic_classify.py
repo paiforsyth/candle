@@ -137,6 +137,7 @@ def make_context(args):
         category_names={0:"negative",1:"positive"}
         data_type=DataType.SEQUENCE
    elif args.dataset_for_classification == "mnist":
+        num_categories =10
         train_dataset = tvds.MNIST('../data/mnist', train=True, download=True, transform=transforms.Compose([transforms.ToTensor(),transforms.Normalize((0,), (1,))]))
         val_dataset = tvds.MNIST('../data/mnist', train=False, download=True, transform=transforms.Compose([transforms.ToTensor(),transforms.Normalize((0,), (1,))]))
         category_names={0:"1",1:"2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9"}
