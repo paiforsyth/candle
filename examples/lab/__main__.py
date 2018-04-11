@@ -110,6 +110,10 @@ def default_parser(parser=None):
     parser.add_argument("--l0reg_lambda_vary_by_layer", action="store_true" )
     parser.add_argument("--l0reg_lambda_vary_first", type=float )
     parser.add_argument("--l0reg_lambda_vary_last", type=float )
+    parser.add_argument("--l0reg_lambda_vary_by_sublayer_name", action="store_true" )
+    parser.add_argument("--l0reg_lambda_squeeze_conv", type=float )
+    parser.add_argument("--l0reg_lambda_group_conv", type=float )
+    parser.add_argument("--l0reg_lambda_expand_conv", type=float )
 
 
     parser.add_argument("--enable_l2reg_stochastic",action = "store_true")

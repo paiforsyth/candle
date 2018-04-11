@@ -105,7 +105,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_bypass_first_last",action="store_true") #do not wrap first and last convolution in squeezenet`
     parser.add_argument("--squeezenet_next_fire_bypass_first_last",action="store_true") #do not wrap first and last convolution in nextfile with proxy contextg`
 
-    parser.add_argument("--squeezenet_freeze_hard_concrete_for_testing",action="store_true")
+    #parser.add_argument("--squeezenet_freeze_hard_concrete_for_testing",action="store_true")
     parser.add_argument("--squeezenet_zag_fire_dropout",type=int, default=0.3)
     parser.add_argument("--squeezenet_zag_dont_bypass_last",action="store_true")
 
@@ -1259,11 +1259,11 @@ class SqueezeNet(serialmodule.SerializableModule):
 
     def train(self, mode=True):
         super().train(mode)
-        if isinstance(self.proxy_ctx, candle.prune.GroupPruneContext) and self.proxy_ctx.stochastic and self.freeze_hard_concrete_for_testing:
-            if mode == True:
-                self.proxy_ctx.unfreeze()
-            else:
-                self.proxy_ctx.freeze()
+      #  if isinstance(self.proxy_ctx, candle.prune.GroupPruneContext) and self.proxy_ctx.stochastic and self.freeze_hard_concrete_for_testing:
+      #      if mode == True:
+      #          self.proxy_ctx.unfreeze()
+      #      else:
+      #          self.proxy_ctx.freeze()
 
     
 
@@ -1408,6 +1408,15 @@ class SqueezeNet(serialmodule.SerializableModule):
         for i,sub in enumerate(sub_list):
             assert(isinstance(sub.weight_provider,candle.prune.WeightMaskGroup))
             sub.weight_provider.local_l0_lambd=lambd_first*a**i
+
+    def set_l0_lambda_by_name(self, name_dict):
+        import candle.proxy
+        sub_dict=self.to_subblocks()
+        for name, sb in sub_dict.items():
+            if isinstance(sb, candle.proxy.ProxyLayer):
+                for key, val in name_dict.items():
+                    if key in name:
+                        sb.weight_provider.local_l0_lambd=val
 
     def display_subblock_nonzero_masks(self):
         import candle.prune
