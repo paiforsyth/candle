@@ -1198,9 +1198,9 @@ class SqueezeNet(serialmodule.SerializableModule):
 
         x=torch.mean(x,dim=3)
         x=torch.mean(x,dim=2)
-        if self.final_fc:
-            raise Exception("fc currently bugged")
-            x=F.leaky_relu(self.final_fc_weights(x))
+        #if self.final_fc:
+        #    raise Exception("fc currently bugged")
+        #    x=F.leaky_relu(self.final_fc_weights(x))
         if self.use_forking and self.training:
             score_list.append(x)
             if score_list[0].is_cuda: #move all scores to the same device
