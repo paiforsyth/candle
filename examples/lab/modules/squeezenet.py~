@@ -792,9 +792,9 @@ class MnistMLP(serialmodule.SerializableModule):
             wrap =functools.partial(proxy_ctx.wrap, prune = "in" )
         layer_dict = collections.OrderedDict()
         layer_dict["fc1"]= wrap(nn.Linear(784, 300) )
-        layer_dict["relu1"]=nn.Leaky_ReLU()
+        layer_dict["relu1"]=nn.LeakyReLU()
         layer_dict["fc2"]=wrap(nn.Linear(300,100))
-        layer_dict["relu2`"]=nn.Leky_ReLU()
+        layer_dict["relu2`"]=nn.LeakyReLU()
         layer_dict["fc3"]=wrap(nn.Linear(100,10))
         self.seq= nn.Sequential(layer_dict)
 

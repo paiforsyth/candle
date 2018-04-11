@@ -798,7 +798,7 @@ class MnistMLP(serialmodule.SerializableModule):
         layer_dict["fc3"]=wrap(nn.Linear(100,10))
         self.seq= nn.Sequential(layer_dict)
 
-    def forward(x):
+    def forward(self,x):
         return self.seq(x.view(-1,784)).view(-1,10,1,1)
 
 
