@@ -251,7 +251,7 @@ def make_context(args):
        model=squeezenet.SqueezeNet.from_args(args)
        if args.l0reg_lambda_vary_by_layer:
            model.set_lambd_by_subblock(lambd_first=args.l0reg_lambda_vary_first, lambd_last=args.l0reg_lambda_vary_last)
-        if args.l0reg_lambda_vary_by_sublayer_name:
+       if args.l0reg_lambda_vary_by_sublayer_name:
             name_dict={}
             name_dict["squeeze_conv"]=args.l0reg_lambda_squeeze_conv
             name_dict["group_conv"]= args.l0reg_lambda_group_conv
@@ -591,7 +591,7 @@ def run(args, ensemble_test=False):
                 loss = torch.mean(torch.max( Variable(categories.data.new(1).fill_(0).float()), 1 - mult * scores ) ** 2)
 
             if args.enable_l0reg:
-                lamb_param = None if (args.l0reg_lambda_vary_by_layer or args.l0_reg_lambda_vary_by_sublayer_name) else args.l0reg_lambda
+                lamb_param = None if (args.l0reg_lambda_vary_by_layer or args.l0_reglambda_vary_by_sublayer_name) else args.l0reg_lambda
                 loss += context.model.proxy_ctx.l0_loss(lamb_param) 
 
             if args.enable_l1reg and ( (not args.disable_l1_reg_after_epoch) or  epoch_count<= args.l1_reg_final_epoch ) :

@@ -591,7 +591,7 @@ def run(args, ensemble_test=False):
                 loss = torch.mean(torch.max( Variable(categories.data.new(1).fill_(0).float()), 1 - mult * scores ) ** 2)
 
             if args.enable_l0reg:
-                lamb_param = None if (args.l0reg_lambda_vary_by_layer or args.l0_reg_lambda_vary_by_sublayer_name) else args.l0reg_lambda
+                lamb_param = None if (args.l0reg_lambda_vary_by_layer or args.l0reg_lambda_vary_by_sublayer_name) else args.l0reg_lambda
                 loss += context.model.proxy_ctx.l0_loss(lamb_param) 
 
             if args.enable_l1reg and ( (not args.disable_l1_reg_after_epoch) or  epoch_count<= args.l1_reg_final_epoch ) :
