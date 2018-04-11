@@ -4,6 +4,7 @@ import logging
 import random
 import copy
 from enum import Enum
+import functools
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
@@ -47,7 +48,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_sr",type=float, default=0.125)
     parser.add_argument("--squeezenet_out_dim",type=int)
 
-    parser.add_argument("--squeezenet_mode",type=str, choices=["msd_fire","zag_fire","shuffle_fire", "bnnfire", "resfire","wide_resfire","dense_fire","dense_fire_v2","next_fire","normal"], default="normal")
+    parser.add_argument("--squeezenet_mode",type=str, choices=["msd_fire","zag_fire","shuffle_fire", "bnnfire", "resfire","wide_resfire","dense_fire","dense_fire_v2","next_fire","normal",'mnist_mlp'], default="normal")
 
     parser.add_argument("--squeezenet_dropout_rate",type=float,default=0)
     parser.add_argument("--squeezenet_densenet_dropout_rate",type=float,default=0)
@@ -124,7 +125,7 @@ def add_args(parser):
 
     parser.add_argument("--squeezenet_condense_num_c_groups",type=int, default=8)
 
-    parser.add_argument("--use_mnist_mlp", action="store")
+    parser.add_argument("--squeezenet_use_mnist_mlp", action="store_true")
 
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
@@ -789,11 +790,11 @@ class MnistMLP(serialmodule.SerializableModule):
             wrap= lambda x : x
         else:
             wrap =functools.partial(proxy_ctx.wrap, prune = "in" )
-        layer_dict = colletions.OrderedDict()
+        layer_dict = collections.OrderedDict()
         layer_dict["fc1"]= wrap(nn.Linear(784, 300) )
-        layer_dict["relu1"]=F.leaky_relu()
+        layer_dict["relu1"]=nn.LeakyReLU()
         layer_dict["fc2"]=wrap(nn.Linear(300,100))
-        layer_dict["relu2`"]=F.leaky_relu()
+        layer_dict["relu2`"]=nn.LeakyReLU()
         layer_dict["fc3"]=wrap(nn.Linear(100,10))
         self.seq= nn.Sequential(layer_dict)
 
@@ -804,7 +805,7 @@ class MnistMLP(serialmodule.SerializableModule):
 
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, shuffle_fire_dont_wrap_sepconv, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride, densenet_no_bottleneck, allow_pooling_after_first_fire, freq_offset, condense_num_c_groups")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, shuffle_fire_dont_wrap_sepconv, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride, densenet_no_bottleneck, allow_pooling_after_first_fire, freq_offset, condense_num_c_groups, use_mnist_mlp")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -903,7 +904,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                 allow_pooling_after_first_fire = args.squeezenet_allow_pooling_after_first_fire,
                 freq_offset = args.squeezenet_freq_offset,
                 condense_num_c_groups = args.squeezenet_condense_num_c_groups,
-                shuffle_fire_dont_wrap_sepconv = args.squeezenet_shuffle_fire_dont_wrap_sepconv
+                shuffle_fire_dont_wrap_sepconv = args.squeezenet_shuffle_fire_dont_wrap_sepconv,
+                use_mnist_mlp = args.squeezenet_use_mnist_mlp
                 )
         return SqueezeNet(config)
 
@@ -959,6 +961,13 @@ class SqueezeNet(serialmodule.SerializableModule):
             raise Exception("unknown proxy_context_type")
 
         self.proxy_ctx=proxy_ctx
+        if config.use_mnist_mlp:
+         self.mlp = MnistMLP(proxy_ctx)
+         self.layer_chunk_list=[]
+         self.layer_chunk_list.append(self.mlp)
+         return
+
+   
         num_fires=config.num_fires #8
         first_layer_num_convs=config.num_conv1_filters
         first_layer_conv_width=config.conv1_size

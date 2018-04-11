@@ -269,7 +269,8 @@ class Channel2DMask(WeightMaskGroup):
     def __repr__(self):
         s= super().__repr__()
         mask_len = self._flattened_masks[0].size(0)
-        mask_nonzero= float((self._flattened_masks[0] != 0).long().sum())
+        mask_nonzero = self.mask_unpruned()[0]
+       # mask_nonzero= float((self._flattened_masks[0] != 0).long().sum())
         s+= " Nonzero masks: {} / {}".format(mask_nonzero, mask_len)
         return s
 
@@ -390,6 +391,13 @@ class LinearRowMask(WeightMaskGroup):
         return Package([expand_weight, expand_bias])
 
 
+    def __repr__(self):
+        s= super().__repr__()
+        mask_len = self._flattened_masks[0].size(0)
+        mask_nonzero = self.mask_unpruned()[0]
+       # mask_nonzero= float((self._flattened_masks[0] != 0).long().sum())
+        s+= " Nonzero masks: {} / {}".format(mask_nonzero, mask_len)
+        return s
 
 class LinearColMask(WeightMaskGroup):
     def __init__(self, layer, child, **kwargs):
@@ -511,10 +519,9 @@ class PruneContext(Context):
         return self.list_mask_params(inverse=True)
 
 
+    #added by Peter
     def count_unpruned_masks(self):
-        #this method will be inheritted, and allows
         return sum( float( (p!=0).long().sum().cpu()) for p in self.list_mask_params())
-
 
 
     def count_unpruned(self):
@@ -774,6 +781,16 @@ class GroupPruneContext(PruneContext):
         if inverse:
             return super().list_params(lambda proxy: not isinstance(proxy, WeightMaskGroup))
         return super().list_params(lambda proxy: isinstance(proxy, WeightMaskGroup))
+
+
+     #added by Peter
+    def count_unpruned_masks(self):
+        group_masks = self.list_proxies("weight_hook", WeightMaskGroup)
+        return sum(  sum(m.mask_unpruned())  for m in group_masks )
+
+
+
+
 
     def count_unpruned(self):
         group_masks = self.list_proxies("weight_hook", WeightMaskGroup)
