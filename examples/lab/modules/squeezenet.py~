@@ -124,6 +124,8 @@ def add_args(parser):
 
     parser.add_argument("--squeezenet_condense_num_c_groups",type=int, default=8)
 
+    parser.add_argument("--use_mnist_mlp", action="store")
+
 
 FireConfig=collections.namedtuple("FireConfig","in_channels,num_squeeze, num_expand1, num_expand3, skip")
 class Fire(serialmodule.SerializableModule):

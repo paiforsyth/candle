@@ -782,7 +782,7 @@ class DenseFireV2Transition(serialmodule.SerializableModule):
         return self.seq(x)
 
 
-class MnistMLP(serialmodule.SerializableModule)
+class MnistMLP(serialmodule.SerializableModule):
     def __init__(self, proxy_ctx):
         super().__init__()
         if proxy_ctx == None:
