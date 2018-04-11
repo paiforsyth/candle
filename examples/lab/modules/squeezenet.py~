@@ -1418,7 +1418,7 @@ class SqueezeNet(serialmodule.SerializableModule):
             mask_len = sb.weight_provider._flattened_masks[0].size(0)
             mask_nonzero = sb.weight_provider.mask_unpruned[0]
 
-            logging.inf0("name:{} Unpruned Masks:{} / {} ".format(name, mask_nonzero, mask_len))
+            logging.info("name:{} Unpruned Masks:{} / {} ".format(name, mask_nonzero, mask_len))
 
 
        
