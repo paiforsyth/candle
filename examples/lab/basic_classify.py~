@@ -744,8 +744,11 @@ def run(args, ensemble_test=False):
             context.model.condense()
 
         if args.hz_lasso_enable and epoch_count == args.hz_lasso_at_epoch:
+             logging.info("accuracy before hz_lasso: {} ".format(eval_score ) )
              hz_loader = context.train_loader if args.hz_lasso_use_train_loader else context.val_loader
              hz_lasso_whole_model(context, args,num_samples= args.hz_lasso_num_samples,target_prop= args.hz_lasso_target_prop, loader=hz_loader,solve_for_weights =args.hz_lasso_solve_for_weights)
+             after_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
+             logging.info("accuracy after hz_lasso{}".format(after_score))
 
 
 
@@ -891,7 +894,6 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
              if i >= num_samples-1:
                 break
         context.model.proxy_ctx.hz_lasso_prune(sb_real, target_num_channels=None,target_prop=target_prop, sample_inputs=sb_real.record_of_input, sample_outputs=sb_copy.record_of_output, solve_for_weights=solve_for_weights)
-        import pdb; pdb.set_trace()
         sb_real.store_input=False
         sb_copy.store_output=False
         sb_real.record_of_input=[]
