@@ -635,8 +635,8 @@ class PruneContext(Context):
         import sklearn
         from sklearn.linear_model import lasso_path
 
-        np_Yvec= Yvec.numpy()
-        np_Bmat = Bmat.detach().numpy()
+        np_Yvec= Yvec.cpu().numpy()
+        np_Bmat = Bmat.cpu().detach().numpy()
         alphas, coefs, _ =lasso_path(np_Bmat,np_Yvec)
         nonzero_counts = (coefs!=0).sum(0)
         assert nonzero_counts[0] ==0
@@ -670,8 +670,10 @@ class PruneContext(Context):
             optimizer=torch.optim.Adam(proxy_layer.weight_provider.root().reify(),lr=0.01)
             from tqdm import tqdm
             optimizer.zero_grad()
-            for i in tqdm(range(iterations)):
+            bar=tqdm(range(iterations))
+            for i in bar:
                 ls_loss = least_squares_loss(proxy_layer,Atensor,Ytensor)
+                bar.set_description("loss={}".format(float(ls_loss)))
                 ls_loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()
