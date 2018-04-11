@@ -834,7 +834,7 @@ class MnistLEnet(serialmodule.SerializableModule):
 
 
 
-SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, shuffle_fire_dont_wrap_sepconv, bypass_first_last,next_fire_bypass_first_last, freeze_hard_concrete_for_testing,zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride, densenet_no_bottleneck, allow_pooling_after_first_fire, freq_offset, condense_num_c_groups, use_mnist_mlp ")
+SqueezeNetConfig=collections.namedtuple("SqueezeNetConfig","in_channels, base, incr, prop3, freq, sr, out_dim, skipmode,  dropout_rate, num_fires, pool_interval, conv1_stride, conv1_size, pooling_count_offset, num_conv1_filters,  dense_fire_k,  dense_fire_depth_list, dense_fire_compression_level, mode, use_excitation, excitation_r, pool_interval_mode, multiplicative_incr, local_dropout_rate, num_layer_chunks, chunk_across_devices, layer_chunk_devices, next_fire_groups, max_pool_size,densenet_dropout_rate, disable_pooling, next_fire_final_bn, next_fire_stochastic_depth, use_non_default_layer_splits, layer_splits, next_fire_shakedrop, final_fc, final_size, next_fire_shake_shake,excitation_shake_shake, proxy_context_type,bnn_pooling, final_act_mode, scale_layer,bnn_prelu, shuffle_fire_g1, shuffle_fire_g2, shuffle_fire_dont_wrap_sepconv, bypass_first_last,next_fire_bypass_first_last, zag_fire_dropout, create_svd_rank_prop, factorize_use_factors, zag_dont_bypass_last, use_forking, fork_after_chunks, fork_module, fork_early_exit, fork_entropy_threshold, msd_growth_rate, msd_num_scales, skip_conv1, downsample_via_stride, densenet_no_bottleneck, allow_pooling_after_first_fire, freq_offset, condense_num_c_groups, use_mnist_mlp ")
 class SqueezeNet(serialmodule.SerializableModule):
     '''
         Used ideas from
@@ -915,7 +915,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 shuffle_fire_g2 = args.squeezenet_shuffle_fire_g2,
                 bypass_first_last = args.squeezenet_bypass_first_last,
                 next_fire_bypass_first_last=args.squeezenet_next_fire_bypass_first_last,
-                freeze_hard_concrete_for_testing=args.squeezenet_freeze_hard_concrete_for_testing,
+                #freeze_hard_concrete_for_testing=args.squeezenet_freeze_hard_concrete_for_testing,
                 zag_fire_dropout = args.squeezenet_zag_fire_dropout,
                 create_svd_rank_prop = args.create_svd_rank_prop,
                 factorize_use_factors = args.factorize_use_factors,
@@ -941,7 +941,7 @@ class SqueezeNet(serialmodule.SerializableModule):
     def __init__(self, config):
         super().__init__()
         self.mode =config.mode
-        self.freeze_hard_concrete_for_testing = config.freeze_hard_concrete_for_testing
+        #self.freeze_hard_concrete_for_testing = config.freeze_hard_concrete_for_testing
         self.chunk_across_devices=config.chunk_across_devices
         self.use_forking =config.use_forking
         self.fork_after_chunks=config.fork_after_chunks

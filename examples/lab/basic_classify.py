@@ -251,7 +251,7 @@ def make_context(args):
        model=squeezenet.SqueezeNet.from_args(args)
        if args.l0reg_lambda_vary_by_layer:
            model.set_lambd_by_subblock(lambd_first=args.l0reg_lambda_vary_first, lambd_last=args.l0reg_lambda_vary_last)
-        if args.l0reg_lambda_vary_by_sublayer_name:
+       if args.l0reg_lambda_vary_by_sublayer_name:
             name_dict={}
             name_dict["squeeze_conv"]=args.l0reg_lambda_squeeze_conv
             name_dict["group_conv"]= args.l0reg_lambda_group_conv
