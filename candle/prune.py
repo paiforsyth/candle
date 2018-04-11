@@ -591,9 +591,9 @@ class PruneContext(Context):
             logging.info("no channels to prune.  returning")
             return
 
-        if proxy_layer.weight_provider().reify()[0].is_cuda:
+        if proxy_layer.weight_provider.root().reify()[0].is_cuda:
             was_cuda=True
-            device=weights.get_device()
+            device=proxy_layer.weight_provider.root().reify()[0].get_device()
         else:
             was_cuda=False
 
