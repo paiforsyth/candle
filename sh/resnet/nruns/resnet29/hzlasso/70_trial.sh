@@ -1,5 +1,5 @@
 #!/bin/bash
-PRUNE_TARG_DECIMAL=50
+PRUNE_TARG_DECIMAL=70
 RUNTYPE=hz_lasso
 NETNAME=resnet29
 PRUNE_STRAT=standard
