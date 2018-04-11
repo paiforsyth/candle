@@ -819,7 +819,7 @@ class MnistLEnet(serialmodule.SerializableModule):
         layer_dict["pool2"]=nn.MaxPool2d(kernel_size=2,stride=2)
         self.seq1=nn.Sequential(layer_dict1)
 
-        layer_dict2["fc1"]= wrap(nn.Linear(49, 800) )\
+        layer_dict2["fc1"]= wrap(nn.Linear(49, 800) )
         layer_dict2["relu1"]=nn.LeakyReLU()
         layer_dict2["fc2"]=wrap(nn.Linear(800,500))
         layer_dict2["relu2`"]=nn.LeakyReLU()

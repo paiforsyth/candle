@@ -1404,10 +1404,10 @@ class SqueezeNet(serialmodule.SerializableModule):
         sub_list=list(filter(lambda x:isinstance(x, candle.prune.ProxyLayer),  self.to_subblocks().values()))
         num= len(sub_list)
         assert(num>1)
-        a=(lambd_last/lambd_first)^(1/(num-1))
+        a=(lambd_last/lambd_first)**(1/(num-1))
         for i,sub in enumerate(sub_list):
             assert(isinstance(sub.weight_provider,candle.prune.WeightMaskGroup))
-            sub.weigisinstanht
+            sub.weight_provider.local_l0_lambd=lambd_first*a**i
 
 
        
