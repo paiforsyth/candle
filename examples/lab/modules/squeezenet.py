@@ -48,7 +48,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_sr",type=float, default=0.125)
     parser.add_argument("--squeezenet_out_dim",type=int)
 
-    parser.add_argument("--squeezenet_mode",type=str, choices=["msd_fire","zag_fire","shuffle_fire", "bnnfire", "resfire","wide_resfire","dense_fire","dense_fire_v2","next_fire","normal",'mnist_mlp',"mnist_lenet"], default="normal")
+    parser.add_argument("--squeezenet_mode",type=str, choices=["msd_fire","zag_fire","shuffle_fire", "bnnfire", "resfire","wide_resfire","dense_fire","dense_fire_v2","next_fire","normal",'mnist_mlp',"mnist_lenet", "mnist_lenet_simp"], default="normal")
 
     parser.add_argument("--squeezenet_dropout_rate",type=float,default=0)
     parser.add_argument("--squeezenet_densenet_dropout_rate",type=float,default=0)
@@ -801,6 +801,10 @@ class MnistMLP(serialmodule.SerializableModule):
     def forward(self,x):
         return self.seq(x.view(-1,784)).view(-1,10,1,1)
 
+    def submods(self):
+        return self.seq.named_children() 
+
+
 
 class MnistLEnet(serialmodule.SerializableModule):
     def __init__(self, proxy_ctx):
@@ -811,12 +815,12 @@ class MnistLEnet(serialmodule.SerializableModule):
             wrap =functools.partial(proxy_ctx.wrap )
         layer_dict1 = collections.OrderedDict()
         layer_dict2 = collections.OrderedDict()
-        layer_dict["conv1"]=wrap(nn.Conv2d(1,20,kernel_size=5,padding=4 ))
-        layer_dict["relu1"]=nn.LeakyReLU()
-        layer_dict["pool1"]=nn.MaxPool2d(kernel_size=2,stride=2)
-        layer_dict["conv2"]=wrap(nn.Conv2d(20,50,kernel_size=5,padding=4 ))
-        layer_dict["relu2`"]=nn.LeakyReLU()
-        layer_dict["pool2"]=nn.MaxPool2d(kernel_size=2,stride=2)
+        layer_dict1["conv1"]=wrap(nn.Conv2d(1,20,kernel_size=5,padding=2 ))
+        layer_dict1["relu1"]=nn.LeakyReLU()
+        layer_dict1["pool1"]=nn.MaxPool2d(kernel_size=2,stride=2)
+        layer_dict1["conv2"]=wrap(nn.Conv2d(20,50,kernel_size=5,padding=2 ))
+        layer_dict1["relu2`"]=nn.LeakyReLU()
+        layer_dict1["pool2"]=nn.MaxPool2d(kernel_size=2,stride=2)
         self.seq1=nn.Sequential(layer_dict1)
 
         layer_dict2["fc1"]= wrap(nn.Linear(49, 800) )
@@ -827,9 +831,47 @@ class MnistLEnet(serialmodule.SerializableModule):
         self.seq2= nn.Sequential(layer_dict2)
 
     def forward(self,x):
+        raise Exception("Not finished")
         x=self.seq1(x)
         x=x.view(49)
         x=self.seq2(x).view(-1,10,1,1)
+
+
+class MnistLEnetSimp(serialmodule.SerializableModule):
+    def __init__(self, proxy_ctx):
+        super().__init__()
+        if proxy_ctx == None:
+            wrap= lambda x : x
+        else:
+            wrap =functools.partial(proxy_ctx.wrap )
+        layer_dict1 = collections.OrderedDict()
+        layer_dict2 = collections.OrderedDict()
+        layer_dict1["conv1"]=wrap(nn.Conv2d(1,6,kernel_size=5,padding=2 )) #output 28 by 28
+        layer_dict1["relu1"]=nn.LeakyReLU()
+        layer_dict1["pool1"]=nn.MaxPool2d(kernel_size=2,stride=2) #output 14 by 14
+        layer_dict1["conv2"]=wrap(nn.Conv2d(6,16,kernel_size=5,padding=0 )) #output 10 by 10
+        layer_dict1["relu2`"]=nn.LeakyReLU()
+        layer_dict1["pool2"]=nn.MaxPool2d(kernel_size=2,stride=2) #output 5 by 5
+        self.seq1=nn.Sequential(layer_dict1)
+
+
+        layer_dict2["fc1"]= wrap(nn.Linear(400, 120) )
+        layer_dict2["relu1"]=nn.LeakyReLU()
+        layer_dict2["fc2"]=wrap(nn.Linear(120,84))
+        layer_dict2["relu2`"]=nn.LeakyReLU()
+        layer_dict2["fc3"]=wrap(nn.Linear(84,10))
+        self.seq2= nn.Sequential(layer_dict2)
+
+    def forward(self,x):
+        x=self.seq1(x)
+        x=x.view(-1,400)
+        x=self.seq2(x).view(-1,10,1,1)
+        return x
+
+    def submods(self):
+        import itertools
+        return itertools.chain(self.seq1.named_children(), self.seq2.named_children())
+
 
 
 
@@ -991,16 +1033,33 @@ class SqueezeNet(serialmodule.SerializableModule):
 
         self.proxy_ctx=proxy_ctx
         if config.use_mnist_mlp or config.mode == "mnist_mlp":
-         self.mlp = MnistMLP(proxy_ctx)
+         self.layer_chunk_1 =nn.Sequential( 
+                 collections.OrderedDict([
+                 ("mlp",MnistMLP(proxy_ctx))
+                 ]))
          self.layer_chunk_list=[]
-         self.layer_chunk_list.append(self.mlp)
+         self.layer_chunk_list.append(self.layer_chunk_1)
          return
-        if config.mode == "lenet":
-         self.lenet= MnistLEnet(proxy_ctx)
+        if config.mode == "mnist_lenet":
+         logging.info("building lenet")
+         self.layer_chunk_1= nn.Sequential(
+         collections.OrderedDict([
+         ("lenet",MnistLEnet(proxy_ctx))
+         ]))
          self.layer_chunk_list=[]
-         self.layer_chunk_list.append(self.lenet)
+         self.layer_chunk_list.append(self.layer_chunk_1)
+         return
+        if config.mode == "mnist_lenet_simp":
+         logging.info("building lenet simp")
+         self.layer_chunk_1= nn.Sequential(
+         collections.OrderedDict([
+         ("lenet_simp",MnistLEnetSimp(proxy_ctx))
+         ]))
+         self.layer_chunk_list=[]
+         self.layer_chunk_list.append(self.layer_chunk_1)
+         return
 
-   
+
         num_fires=config.num_fires #8
         first_layer_num_convs=config.num_conv1_filters
         first_layer_conv_width=config.conv1_size

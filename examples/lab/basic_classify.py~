@@ -591,7 +591,7 @@ def run(args, ensemble_test=False):
                 loss = torch.mean(torch.max( Variable(categories.data.new(1).fill_(0).float()), 1 - mult * scores ) ** 2)
 
             if args.enable_l0reg:
-                lamb_param = None if (args.l0reg_lambda_vary_by_layer or args.l0_reglambda_vary_by_sublayer_name) else args.l0reg_lambda
+                lamb_param = None if (args.l0reg_lambda_vary_by_layer or args.l0reg_lambda_vary_by_sublayer_name) else args.l0reg_lambda
                 loss += context.model.proxy_ctx.l0_loss(lamb_param) 
 
             if args.enable_l1reg and ( (not args.disable_l1_reg_after_epoch) or  epoch_count<= args.l1_reg_final_epoch ) :
@@ -743,6 +743,13 @@ def run(args, ensemble_test=False):
         if args.do_condense and epoch_count >= args.condense_warmup and (epoch_count-args.condense_warmup) % args.condense_interval == 0 and conds_so_far<args.squeezenet_condense_num_c_groups-1:
             context.model.condense()
 
+        if args.hz_lasso_enable and epoch_count == args.hz_lasso_at_epoch:
+             hz_loader = context.train_loader if args.hz_lasso_use_train_loader else context.val_loader
+             hz_lasso_whole_model(context, args,num_samples= args.hz_lasso_num_samples,target_prop= args.hz_lasso_target_prop, loader=hz_loader,solve_for_weights =args.hz_lasso_solve_for_weights)
+
+
+
+
    if args.show_arch_on_completion:
         logging.info(repr(context.model.children()))
 
@@ -863,23 +870,30 @@ def get_one_layer_pruning_func(context, args, prune_unit):
 
 
 
-def hz_lasso_whole_model(context,args,num_samples, target_prune_prop):
+def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for_weights):
     #create a copy of the model
+    logging.info("initiating hz_lasso pruning")
     model_copy = copy.deepcopy(context.model)
-    subblocks = context.modelto_subblocks
-    subblocks_copy = model_copy.subblocks
-    for sb_real, sb_copy in zip(subblocks, subblocks_copy):
-        if not isinstance(sb_real, candle.proxy.ProxyLayer):
+    subblocks = context.model.to_subblocks()
+    subblocks_copy = model_copy.to_subblocks()
+    for sb_name in subblocks.keys():
+        sb_real = subblocks[sb_name]
+        sb_copy = subblocks_copy[sb_name]
+        if not isinstance(sb_real, candle.proxy.ProxyConv2d):
             continue
+        logging.info("pruning {}".format(sb_name))
         sb_real.store_input= True
         sb_copy.store_output = True
-        for batch_in, *other in context.val_loader: 
+        for i,(batch_in, *other) in enumerate(loader): 
              with torch.no_grad():
-                model(batch_in)
+                context.model(batch_in)
                 model_copy(batch_in)
-        candle.prune.hz_lasso_prune(sb_real, target_num_channels=None,target_prop=target_prune_prop, sample_inputs=sb_real.record_of_inputs, sample_outputs=sb_copy.record_of_outputs, solve_for_weights=False)
+             if i >= num_samples-1:
+                break
+        context.model.proxy_ctx.hz_lasso_prune(sb_real, target_num_channels=None,target_prop=target_prop, sample_inputs=sb_real.record_of_input, sample_outputs=sb_copy.record_of_output, solve_for_weights=solve_for_weights)
+        import pdb; pdb.set_trace()
         sb_real.store_input=False
         sb_copy.store_output=False
-        sb_real.record_of_inputs=[]
-        sb_copy.record_of_outputs=[]
+        sb_real.record_of_input=[]
+        sb_copy.record_of_output=[]
 

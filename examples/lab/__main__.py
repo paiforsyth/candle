@@ -167,6 +167,14 @@ def default_parser(parser=None):
     parser.add_argument("--create_svd_rank_prop",type=float, default=1)#this is the svd rank prop for newly created models.  The above is the svd_rank_prop for models we are factorizing
     parser.add_argument("--factorize_use_factors", action="store_true", help="use factorize matricies rather than originals")
 
+    parser.add_argument("--hz_lasso_enable", action="store_true")
+    parser.add_argument("--hz_lasso_at_epoch",type=int)
+    parser.add_argument("--hz_lasso_num_samples",type=int)
+    parser.add_argument("--hz_lasso_target_prop",type=float)
+    parser.add_argument("--hz_lasso_use_train_loader", action="store_true")
+    parser.add_argument("--hz_lasso_solve_for_weights", action="store_true")
+
+
 
     parser.add_argument("--get_forking_props_on_val", action="store_true")
 
