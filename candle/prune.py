@@ -24,6 +24,12 @@ class WeightMaskGroup(ProxyDecorator):
         self.cache = Memoizer()
         self._reset_buffers()
         self.local_l0_lambd=None #for giving different layers different weights
+
+    #added by Peter
+    def __repr__(self):
+        s=super().__repr__()
+        s+="stochastic={}, local_l0_lambd={}".format(self.stochastic,self.local_l0_lambd)
+        return s
  
 
     def _reset_buffers(self):

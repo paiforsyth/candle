@@ -1399,7 +1399,7 @@ class SqueezeNet(serialmodule.SerializableModule):
     def change_store_input(self,val):
         change_store_input(self.layer_chunk_list)
         
-    def set_lambd_by_sublock(self,lambd_first,lambd_last):
+    def set_lambd_by_subblock(self,lambd_first,lambd_last):
         import candle.prune
         sub_list=list(filter(lambda x:isinstance(x, candle.prune.ProxyLayer),  self.to_subblocks().values()))
         num= len(sub_list)
@@ -1408,6 +1408,17 @@ class SqueezeNet(serialmodule.SerializableModule):
         for i,sub in enumerate(sub_list):
             assert(isinstance(sub.weight_provider,candle.prune.WeightMaskGroup))
             sub.weight_provider.local_l0_lambd=lambd_first*a**i
+
+    def display_subblock_nonzero_masks(self):
+        import candle.prune
+        sub_dict=self.to_subblocks()
+        for name, sb in sub_dict:
+            if not isinstance(sb, candle.prune.ProxyLayer):
+                continue
+            mask_len = sb.weight_provider._flattened_masks[0].size(0)
+            mask_nonzero = sb.weight_provider.mask_unpruned[0]
+
+            logging.inf0("name:{} Unpruned Masks:{} / {} ".format(name, mask_nonzero, mask_len))
 
 
        

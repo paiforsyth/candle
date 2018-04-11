@@ -249,8 +249,11 @@ def make_context(args):
        model=kim_cnn.KimCNN.from_args(embedding,args) 
    elif args.model_type == "squeezenet":
        model=squeezenet.SqueezeNet.from_args(args)
+       if args.l0reg_lambda_vary_by_layer:
+           model.set_lambd_by_subblock(lambd_first=args.l0reg_lambda_vary_first, lambd_last=args.l0reg_lambda_vary_last)
    else:
        raise Exception("Unknown model")
+
 
    if args.cuda and not args.data_par_enable:
        model=model.cuda()
@@ -582,7 +585,8 @@ def run(args, ensemble_test=False):
                 loss = torch.mean(torch.max( Variable(categories.data.new(1).fill_(0).float()), 1 - mult * scores ) ** 2)
 
             if args.enable_l0reg:
-                loss += context.model.proxy_ctx.l0_loss(args.l0reg_lambda) 
+                lamb_param = None if args.l0reg_lambda_vary_by_layer else args.l0reg_lambda
+                loss += context.model.proxy_ctx.l0_loss(lamb_param) 
 
             if args.enable_l1reg and ( (not args.disable_l1_reg_after_epoch) or  epoch_count<= args.l1_reg_final_epoch ) :
                 l1l = context.model.proxy_ctx.l1_loss_slimming(args.l1reg_lambda)
@@ -637,6 +641,8 @@ def run(args, ensemble_test=False):
         if args.show_network_strucutre_every_epoch:
                  logging.info("current model:")
                  logging.info(repr(context.model))
+        if args.show_nonzero_masks_every_epoch:
+            context.model.display_subblock_nonzero_masks()
        
         if args.save_every_epoch:
             context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_most_recent" )  )

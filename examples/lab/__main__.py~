@@ -107,6 +107,10 @@ def default_parser(parser=None):
 
     parser.add_argument("--enable_l0reg",action = "store_true")
     parser.add_argument("--l0reg_lambda", type=float, default =1.5 / 50000 )
+    parser.add_argument("--l0reg_lambda_vary_by_layer", action="store_true" )
+    parser.add_argument("--l0reg_lambda_vary_first", type=float )
+    parser.add_argument("--l0reg_lambda_vary_last", type=float )
+
 
     parser.add_argument("--enable_l2reg_stochastic",action = "store_true")
     parser.add_argument("--l2reg_stochastic_lambda", type=float, default =0.0005 / 0.7 )
@@ -180,6 +184,8 @@ def default_parser(parser=None):
     parser.add_argument("--condense_interval",type=int, default=40)
 
     parser.add_argument("--sensitivity_report", action="store_true")
+
+    parser.add_argument("--show_arch_on_completion",action="store_true")
 
 
 

@@ -107,6 +107,10 @@ def default_parser(parser=None):
 
     parser.add_argument("--enable_l0reg",action = "store_true")
     parser.add_argument("--l0reg_lambda", type=float, default =1.5 / 50000 )
+    parser.add_argument("--l0reg_lambda_vary_by_layer", action="store_true" )
+    parser.add_argument("--l0reg_lambda_vary_first", type=float )
+    parser.add_argument("--l0reg_lambda_vary_last", type=float )
+
 
     parser.add_argument("--enable_l2reg_stochastic",action = "store_true")
     parser.add_argument("--l2reg_stochastic_lambda", type=float, default =0.0005 / 0.7 )
@@ -167,6 +171,7 @@ def default_parser(parser=None):
 
 
     parser.add_argument("--show_network_strucutre_every_epoch",action="store_true")
+    parser.add_argument("--show_nonzero_masks_every_epoch",action="store_true")
     parser.add_argument("--print_model",action="store_true")
     parser.add_argument("--plot_unpruned_masks", action="store_true") #create a plot of the unpruned masks by layer in a pruned model
     parser.add_argument("--plot_flop_reduction_by_layer", action="store_true") #create a plot of the proportionate flop reduction 
