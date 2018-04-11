@@ -286,7 +286,7 @@ def show_params(input_size=(32,3,32,32)):
           print(param.get_device())
    param_count = modules.count_trainable_params(context.model)
    logging.info("total trainable params:{}".format(param_count)) 
-   if args.proxy_ctx_type != "no_context":
+   if args.proxy_context_type != "no_context":
        logging.info("Model Params: {}".format(modules.count_elem(context.model.proxy_ctx.list_model_params() )) )
 
 def show_proxies():

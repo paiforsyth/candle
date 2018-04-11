@@ -734,7 +734,8 @@ def run(args, ensemble_test=False):
         if args.do_condense and epoch_count >= args.condense_warmup and (epoch_count-args.condense_warmup) % args.condense_interval == 0 and conds_so_far<args.squeezenet_condense_num_c_groups-1:
             context.model.condense()
 
-
+   if args.show_arch_on_completion:
+        logging.info(repr(context.model.children()))
 
          # logging.info("Loading best model")
    #context.model.load(os.path.join( args.model_save_path,timestamp+ args.save_prefix +"_best_model"))

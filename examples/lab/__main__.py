@@ -181,6 +181,8 @@ def default_parser(parser=None):
 
     parser.add_argument("--sensitivity_report", action="store_true")
 
+    parser.add_argument("--show_arch_on_completion",action="store_true")
+
 
 
 
