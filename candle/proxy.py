@@ -408,6 +408,10 @@ class ProxyLinear(ProxyLayer):
         else:
             raise Exception("unknown weight provider type")
 
+    def __repr__(self):
+        s=super().__repr__()
+        s+= " outdim={}, indim={}. Weight_provider{}".format(self.weight_provider.root()[0].shape[0], self.weight_provider.root()[0].shape[1],self.weight_provider )
+
 
 
     def multiplies(self, effective_input_dim): 
