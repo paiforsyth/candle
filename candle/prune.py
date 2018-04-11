@@ -269,7 +269,7 @@ class Channel2DMask(WeightMaskGroup):
     def __repr__(self):
         s= super().__repr__()
         mask_len = self._flattened_masks[0].size(0)
-        mask_nonzero = self.mask_unpruned()[0]
+        mask_nonzero = self.mask_unpruned[0]
        # mask_nonzero= float((self._flattened_masks[0] != 0).long().sum())
         s+= " Nonzero masks: {} / {}".format(mask_nonzero, mask_len)
         return s
@@ -394,7 +394,7 @@ class LinearRowMask(WeightMaskGroup):
     def __repr__(self):
         s= super().__repr__()
         mask_len = self._flattened_masks[0].size(0)
-        mask_nonzero = self.mask_unpruned()[0]
+        mask_nonzero = self.mask_unpruned[0]
        # mask_nonzero= float((self._flattened_masks[0] != 0).long().sum())
         s+= " Nonzero masks: {} / {}".format(mask_nonzero, mask_len)
         return s
@@ -786,7 +786,7 @@ class GroupPruneContext(PruneContext):
      #added by Peter
     def count_unpruned_masks(self):
         group_masks = self.list_proxies("weight_hook", WeightMaskGroup)
-        return sum(  sum(m.mask_unpruned())  for m in group_masks )
+        return sum(  sum(m.mask_unpruned)  for m in group_masks )
 
 
 
