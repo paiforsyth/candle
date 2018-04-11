@@ -411,7 +411,7 @@ class ProxyLinear(ProxyLayer):
     def __repr__(self):
         s=super().__repr__()
         import pdb; pdb.set_trace()
-        s+= " outdim={}, indim={}. Weight_provider{}".format(self.weight_provider.root()[0].shape[0], self.weight_provider.root()[0].shape[1],self.weight_provider )
+        s+= " outdim={}, indim={}. Weight_provider{}".format(self.weight_provider.root().reify()[0].shape[0], self.weight_provider.root().reify()[0].shape[1],self.weight_provider )
 
 
 

@@ -417,6 +417,16 @@ class LinearColMask(WeightMaskGroup):
         expand_bias = self._dummy
         return Package([expand_weight, expand_bias])
 
+    def __repr__(self):
+        s= super().__repr__()
+        mask_len = self._flattened_masks[0].size(0)
+        mask_nonzero = self.mask_unpruned[0]
+       # mask_nonzero= float((self._flattened_masks[0] != 0).long().sum())
+        s+= " Nonzero masks: {} / {}".format(mask_nonzero, mask_len)
+        return s
+
+
+
 class WeightMask(ProxyDecorator):
     def __init__(self, layer, child, init_value=1, stochastic=False):
         super().__init__(layer, child)
@@ -564,7 +574,7 @@ class PruneContext(Context):
         ''' 
         assert isinstance(proxy_layer.weight_provider, Filter2DMask)
         if target_num_channels is None:
-            target_num_channels = math.ceil(proxy_layer.weight_provider.root()().reify()[0].size(1)*target_prop )
+            target_num_channels = math.ceil(proxy_layer.weight_provider.root().reify()[0].size(1)*target_prop )
         if proxy_layer.weight_provider().reify()[0].is_cuda():
             was_cuda=True
             device=weights.get_device()
@@ -589,7 +599,7 @@ class PruneContext(Context):
                 out_tensor[:,:,:,:,i]=  F.conv2d(cur_slice, weights[0].data, bias=None, **conv_kwargs  )
             out_tensor[:,:,:,:,-1]= weights[1].expand(-1,batch_size, h,w).transpose(1,0) #bias
             return out_tensor
-        Btensor = torch.cat([process_img_batch(img_batch,  proxy_layer.weight_provider.root()().reify(),**proxy_layer._conv_kwargs) for img_batch in sample_inputs ], dim=0 )#dimensions are (num_samples)*(output channels) by h by w by input_channels+1
+        Btensor = torch.cat([process_img_batch(img_batch,  proxy_layer.weight_provider.root().reify(),**proxy_layer._conv_kwargs) for img_batch in sample_inputs ], dim=0 )#dimensions are (num_samples)*(output channels) by h by w by input_channels+1
         Ytensor = torch.cat( sample_outputs, dim=0 ) #dimensions  are num_samples*output_channels by h by w
 
         Yvec=Ttensor.contigous().view(-1)
@@ -617,8 +627,8 @@ class PruneContext(Context):
 
         if not solve_for_weights:
             proxy_layer.weight_provider.masks.reify()[0].data[beta_chosen[:-1]==0]=0
-            proxy_layer.weight_provider.root()()[0].data*=beta_chosen[:-1].view(1,-1,1,1)
-            proxy_layer.weight_provider.root()()[1].data*=beta_chosen[-1] #bias
+            proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen[:-1].view(1,-1,1,1)
+            proxy_layer.weight_provider.root().reify()[1].data*=beta_chosen[-1] #bias
             return
         else:
             raise Exception("not implemented!")
