@@ -671,12 +671,15 @@ class PruneContext(Context):
             from tqdm import tqdm
             optimizer.zero_grad()
             bar=tqdm(range(iterations))
+            ls_loss=float("inf")
             for i in bar:
+                oldloss=float(ls_loss)
                 ls_loss = least_squares_loss(proxy_layer,Atensor,Ytensor)
-                bar.set_description("loss={}".format(float(ls_loss)))
                 ls_loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()
+                dif=oldloss_float(ls_loss)
+                bar.set_description("loss={}. dif={}".format(float(ls_loss,dif)))
             logging.info("final least squares loss: {}".format(least_squares_loss(proxy_layer,Atensor,Ytensor ) ))
 
 
