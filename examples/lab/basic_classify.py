@@ -705,8 +705,6 @@ def run(args, ensemble_test=False):
                 mults = countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)
                 logging.info("Approx number of multiplies: "+str(mults) )    
                 context.tb_writer.write_multiplies(mults)
-                else:
-                    raise Exception("dataset not supported for count_multiplies")
 
         if args.weight_reset_enable and epoch_count == args.weight_reset_epoch_num :
                 context.model.reset_weights()
@@ -749,6 +747,8 @@ def get_dims_from_dataset(dataset_for_classification):
         img_h=28
         img_w=28
         channels=1
+    else:
+        raise Exception("dataset not supported for count_multiplies")
     return img_h, img_w, channels
 
 
