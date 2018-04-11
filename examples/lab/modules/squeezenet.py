@@ -817,17 +817,19 @@ class MnistLEnet(serialmodule.SerializableModule):
         layer_dict["conv2"]=wrap(nn.Conv2d(20,50,kernel_size=5,padding=4 ))
         layer_dict["relu2`"]=nn.LeakyReLU()
         layer_dict["pool2"]=nn.MaxPool2d(kernel_size=2,stride=2)
+        self.seq1=nn.Sequential(layer_dict1)
 
-        layer_dict2["fc1"]= wrap(nn.Linear(784, 300) )\
+        layer_dict2["fc1"]= wrap(nn.Linear(49, 800) )\
         layer_dict2["relu1"]=nn.LeakyReLU()
-        layer_dict2["fc2"]=wrap(nn.Linear(300,100))
+        layer_dict2["fc2"]=wrap(nn.Linear(800,500))
         layer_dict2["relu2`"]=nn.LeakyReLU()
-        layer_dict2["fc3"]=wrap(nn.Linear(100,10))
-        self.seq= nn.Sequential(layer_dict)
+        layer_dict2["fc3"]=wrap(nn.Linear(500,10))
+        self.seq2= nn.Sequential(layer_dict2)
 
     def forward(self,x):
-        return self.seq(x.view(-1,784)).view(-1,10,1,1)
-
+        x=self.seq1(x)
+        x=x.view(49)
+        x=self.seq2(x).view(-1,10,1,1)
 
 
 
@@ -993,6 +995,10 @@ class SqueezeNet(serialmodule.SerializableModule):
          self.layer_chunk_list=[]
          self.layer_chunk_list.append(self.mlp)
          return
+        if config.mode == "lenet":
+         self.lenet= MnistLEnet(proxy_ctx)
+         self.layer_chunk_list=[]
+         self.layer_chunk_list.append(self.lenet)
 
    
         num_fires=config.num_fires #8
@@ -1393,6 +1399,16 @@ class SqueezeNet(serialmodule.SerializableModule):
     def change_store_input(self,val):
         change_store_input(self.layer_chunk_list)
         
+    def set_lambd_by_sublock(self,lambd_first,lambd_last):
+        import candle.prune
+        sub_list=list(filter(lambda x:isinstance(x, candle.prune.ProxyLayer),  self.to_subblocks().values()))
+        num= len(sub_list)
+        assert(num>1)
+        a=(lambd_last/lambd_first)**(1/(num-1))
+        for i,sub in enumerate(sub_list):
+            assert(isinstance(sub.weight_provider,candle.prune.WeightMaskGroup))
+            sub.weight_provider.local_l0_lambd=lambd_first*a**i
+
 
        
 

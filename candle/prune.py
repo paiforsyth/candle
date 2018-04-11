@@ -23,6 +23,7 @@ class WeightMaskGroup(ProxyDecorator):
         self._flattened_masks = self.masks.reify(flat=True)
         self.cache = Memoizer()
         self._reset_buffers()
+        self.local_l0_lambd=None #for giving different layers different weights
  
 
     def _reset_buffers(self):
@@ -81,6 +82,8 @@ class WeightMaskGroup(ProxyDecorator):
         if not self.stochastic:
             raise ValueError("Mask group must be in stochastic mode!")
         cdf_gt0 = self.concrete_fn.cdf_gt0()
+        if lambd= None:
+            lambd= self.local_l0_lambd
         return lambd * sum((self.n_groups * cdf_gt0).sum().reify(flat=True))
 
    
