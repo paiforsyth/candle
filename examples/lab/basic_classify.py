@@ -358,7 +358,7 @@ def run(args, ensemble_test=False):
        for param in previous_incarnation_context.model.parameters():
             param.requires_grad = False
    if args.print_model:
-        logging.info(repr(context.model.childre()))
+        logging.info(repr(context.model))
         return
 
    if args.reset_masks_after_loading:
