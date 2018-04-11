@@ -137,6 +137,7 @@ def make_context(args):
         category_names={0:"negative",1:"positive"}
         data_type=DataType.SEQUENCE
    elif args.dataset_for_classification == "mnist":
+        num_categories =10
         train_dataset = tvds.MNIST('../data/mnist', train=True, download=True, transform=transforms.Compose([transforms.ToTensor(),transforms.Normalize((0,), (1,))]))
         val_dataset = tvds.MNIST('../data/mnist', train=False, download=True, transform=transforms.Compose([transforms.ToTensor(),transforms.Normalize((0,), (1,))]))
         category_names={0:"1",1:"2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9"}
@@ -703,9 +704,11 @@ def run(args, ensemble_test=False):
                     img_h=32
                     img_w=32
                     channels=3
-                    mults = countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)
-                    logging.info("Approx number of multiplies: "+str(mults) )    
-                    context.tb_writer.write_multiplies(mults)
+                elif args.dataset_for_classification == "mnist":
+                    img_h=
+                mults = countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)
+                logging.info("Approx number of multiplies: "+str(mults) )    
+                context.tb_writer.write_multiplies(mults)
                 else:
                     raise Exception("dataset not supported for count_multiplies")
 
@@ -746,6 +749,10 @@ def get_dims_from_dataset(dataset_for_classification):
            img_h=32
            img_w=32
            channels=3
+    elif dataset_for_classification == "mnist":
+        img_h=28
+        img_w=28
+        channels=1
     return img_h, img_w, channels
 
 

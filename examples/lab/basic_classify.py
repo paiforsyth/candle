@@ -700,13 +700,11 @@ def run(args, ensemble_test=False):
                     img_h = args.count_mult_override_imgh
                     img_w = args.count_mult_override_imgw
                     channels=3
-                elif args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification == "cifar10":
-                    img_h=32
-                    img_w=32
-                    channels=3
-                    mults = countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)
-                    logging.info("Approx number of multiplies: "+str(mults) )    
-                    context.tb_writer.write_multiplies(mults)
+                else:
+                    img_h, img_w, channels=get_dims_from_dataset(args.dataset_for_classification)
+                mults = countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)
+                logging.info("Approx number of multiplies: "+str(mults) )    
+                context.tb_writer.write_multiplies(mults)
                 else:
                     raise Exception("dataset not supported for count_multiplies")
 
@@ -747,6 +745,10 @@ def get_dims_from_dataset(dataset_for_classification):
            img_h=32
            img_w=32
            channels=3
+    elif dataset_for_classification == "mnist":
+        img_h=28
+        img_w=28
+        channels=1
     return img_h, img_w, channels
 
 
