@@ -82,7 +82,7 @@ class WeightMaskGroup(ProxyDecorator):
         if not self.stochastic:
             raise ValueError("Mask group must be in stochastic mode!")
         cdf_gt0 = self.concrete_fn.cdf_gt0()
-        if lambd= None:
+        if lambd== None:
             lambd= self.local_l0_lambd
         return lambd * sum((self.n_groups * cdf_gt0).sum().reify(flat=True))
 
