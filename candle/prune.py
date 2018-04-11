@@ -678,7 +678,7 @@ class PruneContext(Context):
                 ls_loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()
-                dif=oldloss_float(ls_loss)
+                dif=oldloss-float(ls_loss)
                 bar.set_description("loss={}. dif={}".format(float(ls_loss,dif)))
             logging.info("final least squares loss: {}".format(least_squares_loss(proxy_layer,Atensor,Ytensor ) ))
 
