@@ -1412,7 +1412,7 @@ class SqueezeNet(serialmodule.SerializableModule):
     def display_subblock_nonzero_masks(self):
         import candle.prune
         sub_dict=self.to_subblocks()
-        for name, sb in sub_dict:
+        for name, sb in sub_dict.items():
             if not isinstance(sb, candle.prune.ProxyLayer):
                 continue
             mask_len = sb.weight_provider._flattened_masks[0].size(0)
