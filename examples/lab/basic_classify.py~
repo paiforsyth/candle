@@ -512,7 +512,7 @@ def run(args, ensemble_test=False):
    if args.prune_trained:
     if args.prune_trained_hz:
              assert args.hz_lasso_target_prop is None #use prune_trained_pct 
-             beforer_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
+             before_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
              logging.info("accuracy before hz_lasso: {} ".format(before_score ) )
              hz_loader = context.train_loader if args.hz_lasso_use_train_loader else context.val_loader
              prop =(100 -args.prune_trained_pct)/100
