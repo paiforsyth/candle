@@ -515,7 +515,6 @@ def run(args, ensemble_test=False):
       #      pu = prune_unit
       # elif args.prune_calc_type =="absolute":
       #      pu=prune_abs_unit
-       import pdb; pdb.set_trace()
        prunefunc(args.prune_trained_pct)
 
        context.model.proxy_ctx.prune(args.prune_trained_pct)
