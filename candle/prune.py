@@ -703,6 +703,7 @@ class PruneContext(Context):
          (i.e. network slimming)
         '''
         rank_call = method_map[method]
+        import pdb; pdb.set_trace()
         proxies = self.list_proxies("weight_hook", mask_type)
         weights_list = rank_call(self, proxies)
         global_weights = None
