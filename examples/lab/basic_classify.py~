@@ -451,7 +451,7 @@ def run(args, ensemble_test=False):
    context.tb_writer.write_num_trainable_params(param_count)
 
 
-      if args.factorize_trained:
+   if args.factorize_trained:
        context.model.eval()
        if args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification == "cifar10":
            img_h=32
