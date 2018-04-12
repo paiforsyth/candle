@@ -1,8 +1,8 @@
-ARGFILE=./sh/argfiles/resnet_164
-RESUME_FILENAME=04_April_2018_Wednesday_13_00_36resnet164_endofcycle_checkpoint_0
-SAVE_PREFIX=res_net_164_prune
+ARGFILE=./sh/argfiles/resnet_164_slimming
+RESUME_FILENAME=7_April_2018_Saturday_13_33_42resnet164_slimming_90_fixedmaxpool_endofcycle_checkpoint_0
+SAVE_PREFIX=res_net_164_prune_slimming
 PRUNE_PCT=5
-REPORT_FILENAME=./reports/medium_res_net_164_naive_prune_$PRUNE_PCT
+REPORT_FILENAME=./reports/medium_res_net_164_naive_prune_slimming_$PRUNE_PCT
 
 python -m examples.lab $(cat $ARGFILE) --save_prefix=$SAVE_PREFIX  --resume_mode=standard  --res_file=$RESUME_FILENAME   --prune_trained --prune_trained_pct=$PRUNE_PCT --cuda
 
