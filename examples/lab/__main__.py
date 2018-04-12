@@ -73,7 +73,7 @@ def default_parser(parser=None):
 
 
     parser.add_argument("--grad_norm_clip",type=float, default=None)
-    parser.add_argument("--output_level", type=str, choices=["info", "debug"], default="info") 
+    parser.add_argument("--output_level", type=str, choices=["info", "debug","warning"], default="info") 
     parser.add_argument("--ensemble_args_files", type=str, nargs="+")
     
     parser.add_argument("--ensemble_autogen_args", action="store_true")# for the autogen case  
@@ -284,6 +284,8 @@ def main():
        return
    if args.output_level == "debug":
         logging.getLogger().setLevel(logging.DEBUG)
+   elif args.output_level =="warning":
+       logging.getLogger().setLevel(logging.WARNING)
    basic_classify.run(args)
 
 
