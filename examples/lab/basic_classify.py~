@@ -516,7 +516,7 @@ def run(args, ensemble_test=False):
              logging.info("accuracy before hz_lasso: {} ".format(before_score ) )
              hz_loader = context.train_loader if args.hz_lasso_use_train_loader else context.val_loader
              prop =(100 -args.prune_trained_pct)/100
-             hz_lasso_whole_model(context, args,num_samples= args.hz_lasso_num_samples,target_prop= args.hz_lasso_target_prop, loader=hz_loader,solve_for_weights =args.hz_lasso_solve_for_weights)
+             hz_lasso_whole_model(context, args,num_samples= args.hz_lasso_num_samples,target_prop= prop, loader=hz_loader,solve_for_weights =args.hz_lasso_solve_for_weights)
              after_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
              logging.info("accuracy after hz_lasso{}".format(after_score))
              context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
