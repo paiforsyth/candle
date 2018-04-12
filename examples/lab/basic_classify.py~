@@ -256,6 +256,7 @@ def make_context(args):
             name_dict["squeeze_conv"]=args.l0reg_lambda_squeeze_conv
             name_dict["group_conv"]= args.l0reg_lambda_group_conv
             name_dict["expand_conv"]=args.l0reg_lambda_expand_conv
+            model.set_l0_lambda_by_name
 
    else:
        raise Exception("Unknown model")
@@ -534,7 +535,7 @@ def run(args, ensemble_test=False):
        n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
        logging.info("Unpruned masks: "+str(n_unpruned))
        context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
-       context.model.display_subblock_nonzero_masks()
+       #context.model.display_subblock_nonzero_masks()
        return
 
 

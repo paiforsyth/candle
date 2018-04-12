@@ -256,6 +256,7 @@ def make_context(args):
             name_dict["squeeze_conv"]=args.l0reg_lambda_squeeze_conv
             name_dict["group_conv"]= args.l0reg_lambda_group_conv
             name_dict["expand_conv"]=args.l0reg_lambda_expand_conv
+            model.set_l0_lambda_by_name(name_dict)
 
    else:
        raise Exception("Unknown model")
