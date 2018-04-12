@@ -233,7 +233,7 @@ def main():
         logging.info(" ".join(sys.argv))
    else:
         logging.basicConfig(level=logging.INFO)
-      if initial_args.paradigm == "classification":
+   if initial_args.paradigm == "classification":
     parser=default_parser()
     parser=basic_classify.add_args(parser)
     args = parser.parse_args(remaining_vargs)
