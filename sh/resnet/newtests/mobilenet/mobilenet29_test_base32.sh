@@ -1,5 +1,5 @@
 RUNTYPE=moblenet29
-NETTYPE=mobilenet29_baze32
+NETTYPE=mobilenet29_base32
 ARGFILE=./sh/argfiles/${NETTYPE}
 RESUME_FILENAME=12_April_2018_Thursday_02_57_18mobile_resnet29_group_prune_base32_fixedmaxpool_most_recent
 SAVE_PREFIX=${NETTYPE}_${RUNTYPE}_test_fixedmaxpool
