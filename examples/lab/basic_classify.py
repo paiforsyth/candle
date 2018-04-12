@@ -666,12 +666,11 @@ def run(args, ensemble_test=False):
             n_unpruned = float(context.model.proxy_ctx.count_unpruned_masks())
             logging.info("Unpruned masks: "+str(n_unpruned))
             context.tb_writer.write_unpruned_params(n_unpruned)
-           
         if args.show_network_strucutre_every_epoch:
                  logging.info("current model:")
                  logging.info(repr(context.model))
         if args.show_nonzero_masks_every_epoch:
-            context.model.display_subblock_nonzero_masks()
+            context.model.display_subblock_nonzero_masks(warning=False)
        
         if args.save_every_epoch:
             context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_most_recent" )  )
