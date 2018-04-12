@@ -1,5 +1,5 @@
-ARGFILE=./sh/argfiles/resnet_164
-RESUME_FILENAME=04_April_2018_Wednesday_13_00_36resnet164_endofcycle_checkpoint_0
+ARGFILE=./sh/argfiles/resnet_164_basic_prune
+RESUME_FILENAME=07_April_2018_Saturday_13_31_11_endofcycle_checkpoint_0   #04_April_2018_Wednesday_13_00_36resnet164_endofcycle_checkpoint_0
 SAVE_PREFIX=res_net_164_prune
 PRUNE_PCT=5
 REPORT_FILENAME=./reports/medium_res_net_164_naive_prune_$PRUNE_PCT
