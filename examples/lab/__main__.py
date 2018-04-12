@@ -137,6 +137,7 @@ def default_parser(parser=None):
     #prune trained model
     parser.add_argument("--prune_trained", action="store_true", help= "Prune a trained model, then resave it ")
     parser.add_argument("--prune_trained_pct", type=int, help="pct of weights to prune")
+    parser.add_argument("--prune_trained_hz", action="store_true", help="use hz_lasso in pruning of trained model")
 
     parser.add_argument("--validate_fr", action="store_true",help="get accuracy of a result report using ground truth")
     parser.add_argument("--validate_fr_reportfile",help="report file to validate")
@@ -169,8 +170,8 @@ def default_parser(parser=None):
 
     parser.add_argument("--hz_lasso_enable", action="store_true")
     parser.add_argument("--hz_lasso_at_epoch",type=int)
-    parser.add_argument("--hz_lasso_num_samples",type=int)
-    parser.add_argument("--hz_lasso_target_prop",type=float)
+    parser.add_argument("--hz_lasso_num_samples",type=int, default=10)
+    parser.add_argument("--hz_lasso_target_prop",type=float, default=None)
     parser.add_argument("--hz_lasso_use_train_loader", action="store_true")
     parser.add_argument("--hz_lasso_solve_for_weights", action="store_true")
 

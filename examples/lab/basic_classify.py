@@ -510,6 +510,17 @@ def run(args, ensemble_test=False):
         logging.info("Target number of masks is : {}".format(prune_target))
 
    if args.prune_trained:
+    if args.prune_trained_hz:
+             assert args.hz_lasso_target_prop is None #use prune_trained_pct 
+             beforer_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
+             logging.info("accuracy before hz_lasso: {} ".format(before_score ) )
+             hz_loader = context.train_loader if args.hz_lasso_use_train_loader else context.val_loader
+             prop =(100 -args.prune_trained_pct)/100
+             hz_lasso_whole_model(context, args,num_samples= args.hz_lasso_num_samples,target_prop= prop, loader=hz_loader,solve_for_weights =args.hz_lasso_solve_for_weights)
+             after_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
+             logging.info("accuracy after hz_lasso{}".format(after_score))
+             context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
+    else:
        prunefunc = get_pruning_func(context, args)
      #  if args.prune_calc_type =="relative":
       #      pu = prune_unit
