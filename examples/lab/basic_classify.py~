@@ -452,6 +452,14 @@ def run(args, ensemble_test=False):
 
 
    if args.prune_trained:
+        prunefunc = get_pruning_func(context, args)
+        if args.prune_calc_type =="relative":
+            pu = prune_unit
+        elif args.prune_calc_type =="absolute":
+            pu=prune_abs_unit
+
+        prunefunc(pu)
+
        context.model.proxy_ctx.prune(args.prune_trained_pct)
        n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
        logging.info("Unpruned masks: "+str(n_unpruned))
@@ -745,10 +753,12 @@ def run(args, ensemble_test=False):
 
         if args.hz_lasso_enable and epoch_count == args.hz_lasso_at_epoch:
              logging.info("accuracy before hz_lasso: {} ".format(eval_score ) )
+             context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_before_hz_lasso"  )  )
              hz_loader = context.train_loader if args.hz_lasso_use_train_loader else context.val_loader
              hz_lasso_whole_model(context, args,num_samples= args.hz_lasso_num_samples,target_prop= args.hz_lasso_target_prop, loader=hz_loader,solve_for_weights =args.hz_lasso_solve_for_weights)
              after_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
              logging.info("accuracy after hz_lasso{}".format(after_score))
+             context.model.save(os.path.join(args.model_save_path,timestamp+args.save_prefix +"_after_hz_lasso"  )  )
 
 
 

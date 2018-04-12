@@ -452,6 +452,14 @@ def run(args, ensemble_test=False):
 
 
    if args.prune_trained:
+       prunefunc = get_pruning_func(context, args)
+       if args.prune_calc_type =="relative":
+            pu = prune_unit
+       elif args.prune_calc_type =="absolute":
+            pu=prune_abs_unit
+
+       prunefunc(pu)
+
        context.model.proxy_ctx.prune(args.prune_trained_pct)
        n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
        logging.info("Unpruned masks: "+str(n_unpruned))
