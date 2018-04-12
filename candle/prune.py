@@ -637,13 +637,13 @@ class PruneContext(Context):
 
         np_Yvec= Yvec.cpu().numpy()
         np_Bmat = Bmat.cpu().detach().numpy()
-        alphas, coefs, _ =lasso_path(np_Bmat,np_Yvec)
+        alphas, coefs, _ =lasso_path(np_Bmat,np_Yvec, n_alphass=500)
         nonzero_counts = (coefs!=0).sum(0)
         assert nonzero_counts[0] ==0
         cur_dex=0
         while True:
             cur_dex+=1
-            if nonzero_counts[cur_dex] > target_num_channels+1: #include bias in count
+            if (cur_dex >= len(nonzero_counts)) or ( nonzero_counts[cur_dex] > target_num_channels+1): #include bias in count
                 cur_dex-=1
                 break
         
