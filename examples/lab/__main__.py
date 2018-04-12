@@ -229,11 +229,11 @@ def main():
    [initial_args, remaining_vargs ] = iparser.parse_known_args()
    if initial_args.log_to_file:    
         logging.basicConfig(level=logging.INFO, filename = initial_args.log_file_name)
+        logging.info("command line options:"  )
+        logging.info(" ".join(sys.argv))
    else:
         logging.basicConfig(level=logging.INFO)
-   logging.info("command line options:"  )
-   logging.info(" ".join(sys.argv))
-   if initial_args.paradigm == "classification":
+      if initial_args.paradigm == "classification":
     parser=default_parser()
     parser=basic_classify.add_args(parser)
     args = parser.parse_args(remaining_vargs)
