@@ -577,7 +577,7 @@ class PruneContext(Context):
         return all(success_list)
 
     
-    def hz_lasso_prune(self, proxy_layer, target_num_channels,target_prop, sample_inputs, sample_outputs, solve_for_weights):
+    def hz_lasso_prune(self, proxy_layer, target_num_channels,target_prop, sample_inputs, sample_outputs, solve_for_weights,display=False):
         '''
         sample_inputs: should be a list of batchsize * in_channels * h* w (h and w are img size not kernel size) sample input images to the proxy_layer
         sample_outputs: should be a list of batchsize* out_channels * h*w (h an dw are image isze not kernel size) sample output images.  Generally the advice is that the input images should take into account any prior pruning at earlier layers, but the `output images should not
@@ -670,7 +670,7 @@ class PruneContext(Context):
             optimizer=torch.optim.Adam(proxy_layer.weight_provider.root().reify(),lr=0.01)
             from tqdm import tqdm
             optimizer.zero_grad()
-            bar=tqdm(range(iterations))
+            bar=tqdm(range(iterations)) if display else range(iterations)
             ls_loss=float("inf")
             for i in bar:
                 oldloss=float(ls_loss)
@@ -679,7 +679,8 @@ class PruneContext(Context):
                 optimizer.step()
                 optimizer.zero_grad()
                 dif=oldloss-float(ls_loss)
-                bar.set_description("loss={}. dif={}".format(float(ls_loss),dif))
+                if display:
+                    bar.set_description("loss={}. dif={}".format(float(ls_loss),dif))
             logging.info("final least squares loss: {}".format(least_squares_loss(proxy_layer,Atensor,Ytensor ) ))
 
 

@@ -520,6 +520,7 @@ def run(args, ensemble_test=False):
              after_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
              logging.info("accuracy after hz_lasso{}".format(after_score))
              context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
+             return
     else:
        prunefunc = get_pruning_func(context, args)
      #  if args.prune_calc_type =="relative":
