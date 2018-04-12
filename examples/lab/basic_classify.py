@@ -451,22 +451,7 @@ def run(args, ensemble_test=False):
    context.tb_writer.write_num_trainable_params(param_count)
 
 
-   if args.prune_trained:
-       prunefunc = get_pruning_func(context, args)
-       if args.prune_calc_type =="relative":
-            pu = prune_unit
-       elif args.prune_calc_type =="absolute":
-            pu=prune_abs_unit
-
-       prunefunc(pu)
-
-       context.model.proxy_ctx.prune(args.prune_trained_pct)
-       n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
-       logging.info("Unpruned masks: "+str(n_unpruned))
-       context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
-       return
-
-   if args.factorize_trained:
+      if args.factorize_trained:
        context.model.eval()
        if args.dataset_for_classification == "cifar_challenge" or args.dataset_for_classification == "cifar10":
            img_h=32
@@ -523,6 +508,22 @@ def run(args, ensemble_test=False):
         else:
             prune_target =args.prune_target
         logging.info("Target number of masks is : {}".format(prune_target))
+
+   if args.prune_trained:
+       prunefunc = get_pruning_func(context, args)
+       if args.prune_calc_type =="relative":
+            pu = prune_unit
+       elif args.prune_calc_type =="absolute":
+            pu=prune_abs_unit
+
+       prunefunc(pu)
+
+       context.model.proxy_ctx.prune(args.prune_trained_pct)
+       n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
+       logging.info("Unpruned masks: "+str(n_unpruned))
+       context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
+       return
+
 
    if args.sensitivity_report:
         one_layer_prune_func = get_one_layer_pruning_func(context,args,prune_abs_unit)
