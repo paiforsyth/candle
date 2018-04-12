@@ -516,7 +516,7 @@ def run(args, ensemble_test=False):
       # elif args.prune_calc_type =="absolute":
       #      pu=prune_abs_unit
 
-       prunefunc(prune_trained_pct)
+       prunefunc(args.prune_trained_pct)
 
        context.model.proxy_ctx.prune(args.prune_trained_pct)
        n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
