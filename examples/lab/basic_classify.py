@@ -322,11 +322,11 @@ def make_context(args):
 
    if args.mode =="train":
        pass
-       # train_size=len(train_dataset)
+       train_size=len(train_dataset)
        # test_loader = None
    elif args.mode=="test":
        pass
-       # train_size= None
+       train_size= None
        # train_loader = None
 
    return Context(model, train_loader, val_loader, optimizer, indexer, category_names=category_names, tb_writer=tb_log.TBWriter("{}_"+args.save_prefix), train_size=train_size, data_type=data_type, scheduler=scheduler, test_loader=test_loader, cuda=args.cuda, holdout_loader= holdout_loader, num_categories = num_categories, model_parameters=model_parameters)
