@@ -604,7 +604,6 @@ class PruneContext(Context):
             '''
             given a batch of input images (as a tensor) and some convolutinal weights and paramers, returns a tesnor T with  dimensions batches by output channels by h by w by input_channels+1. where h and w are the height and width of the image.  the (q,a,b,c,d) entry of this tensor is the contribution of  input channeln d to output channel a at location (b,c) in output image q in the batch.  the final "input channel" is the contribution of the bias term
             '''
-            #import pdb; pdb.set_trace()
             nonlocal output_h
             nonlocal output_w
             nonlocal input_channels
@@ -625,7 +624,6 @@ class PruneContext(Context):
             out_tensor[:,:,:,:,-1]= weights[1].view(output_channels,1,1,1).expand(output_channels,batch_size, output_h,output_w).transpose(1,0) #bias
             assert not (out_tensor ==float("nan")).any()
             return out_tensor
-        #import pdb; pdb.set_trace()
         Btensor = torch.cat([process_input_img_batch(img_batch,  proxy_layer.weight_provider.root().reify(),**proxy_layer._conv_kwargs) for img_batch in sample_inputs ], dim=0 )#dimensions are (num_samples)*(output channels) by h by w by input_channels+1
         Ytensor = torch.cat( sample_outputs, dim=0 ) #dimensions  are num_samples*output_channels by h by w
 
@@ -704,7 +702,6 @@ class PruneContext(Context):
          (i.e. network slimming)
         '''
         rank_call = method_map[method]
-        import pdb; pdb.set_trace()
         proxies = self.list_proxies("weight_hook", mask_type)
         weights_list = rank_call(self, proxies)
         global_weights = None
