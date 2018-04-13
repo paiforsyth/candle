@@ -321,11 +321,13 @@ def make_context(args):
 
 
    if args.mode =="train":
-       train_size=len(train_dataset)
-       test_loader = None
+       pass
+       # train_size=len(train_dataset)
+       # test_loader = None
    elif args.mode=="test":
-       train_size= None
-       train_loader = None
+       pass
+       # train_size= None
+       # train_loader = None
 
    return Context(model, train_loader, val_loader, optimizer, indexer, category_names=category_names, tb_writer=tb_log.TBWriter("{}_"+args.save_prefix), train_size=train_size, data_type=data_type, scheduler=scheduler, test_loader=test_loader, cuda=args.cuda, holdout_loader= holdout_loader, num_categories = num_categories, model_parameters=model_parameters)
 
@@ -547,6 +549,13 @@ def run(args, ensemble_test=False):
 
    if args.do_condense:
         conds_so_far=0
+
+    if args.report_test_error_before_start:
+        test_acc = basic_classification.evaluate(context, context.test_loader,no_grad=args.use_nograd)
+        logging.info("INIITIAL TEST ACCURACY:{}".format(test_acc))
+        print("INIITIAL TEST ACCURACY:{}".format(test_acc))
+
+
    
    best_eval_score=-float("inf")
    for epoch_count in range(args.num_epochs):
@@ -782,8 +791,8 @@ def run(args, ensemble_test=False):
    
    if args.report_test_error_at_end:
         test_acc = basic_classification.evaluate(context, context.test_loader,no_grad=args.use_nograd)
-        logging.info("TEST ACCURACY:{}".format(test_acc))
-        print("TEST ACCURACY:{}".format(test_acc))
+        logging.info("FINAL TEST ACCURACY:{}".format(test_acc))
+        print("FINAL TEST ACCURACY:{}".format(test_acc))
 
 
          # logging.info("Loading best model")

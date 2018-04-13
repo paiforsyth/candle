@@ -203,6 +203,7 @@ def default_parser(parser=None):
 
 
     parser.add_argument("--report_test_error_at_end", action="store_true")
+    parser.add_argument("--report_test_error_before_start", action="store_true")
 
 
 
