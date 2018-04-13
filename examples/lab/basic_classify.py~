@@ -792,7 +792,7 @@ def run(args, ensemble_test=False):
    if args.report_test_error_at_end:
         test_acc = basic_classification.evaluate(context, context.test_loader,no_grad=args.use_nograd)
         logging.info("FINAL TEST ACCURACY:{}".format(test_acc))
-        print("TEST ACCURACY:{}".format(test_acc))
+        print("FINAL TEST ACCURACY:{}".format(test_acc))
 
 
          # logging.info("Loading best model")

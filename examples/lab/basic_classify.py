@@ -550,7 +550,7 @@ def run(args, ensemble_test=False):
    if args.do_condense:
         conds_so_far=0
 
-    if args.report_test_error_before_start:
+   if args.report_test_error_before_start:
         test_acc = basic_classification.evaluate(context, context.test_loader,no_grad=args.use_nograd)
         logging.info("INIITIAL TEST ACCURACY:{}".format(test_acc))
         print("INIITIAL TEST ACCURACY:{}".format(test_acc))
