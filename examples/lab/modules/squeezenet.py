@@ -192,7 +192,7 @@ class ResFire(serialmodule.SerializableModule):
 
 class NextFire(serialmodule.SerializableModule):
 
-    def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None,proxy_mode = None, bypass_first_last=True, bypass_first=False, bypass_second=False, bypass_third=False  stride=1):
+    def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None,proxy_mode = None, bypass_first_last=True, bypass_first=False, bypass_second=False, bypass_third=False,  stride=1):
      super().__init__()
      if bypass_first_last:
          assert not bypass_first and not bypass_second and not bypass_third

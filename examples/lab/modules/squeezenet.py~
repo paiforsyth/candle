@@ -106,7 +106,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_next_fire_bypass_first_last",action="store_true") #do not wrap first and last convolution in nextfile with proxy contextg`
     parser.add_argument("--squeezenet_next_fire_bypass_first",action="store_true") #do not wrap first  convolution in nextfile with proxy contextg`
     parser.add_argument("--squeezenet_next_fire_bypass_second",action="store_true") #do not wrap second  convolution in nextfile with proxy contextg`
-    parser.add_argument("--squeezenet_next_fire_bypass_third",action="store_true") #do not wrap second  convolution in nextfile with proxy contextg`
+    parser.add_argument("--squeezenet_next_fire_bypass_third",action="store_true") #do not wrap third  convolution in nextfile with proxy contextg`
 
     #parser.add_argument("--squeezenet_freeze_hard_concrete_for_testing",action="store_true")
     parser.add_argument("--squeezenet_zag_fire_dropout",type=int, default=0.3)
