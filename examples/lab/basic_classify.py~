@@ -666,7 +666,6 @@ def run(args, ensemble_test=False):
             n_unpruned = float(context.model.proxy_ctx.count_unpruned_masks())
             logging.info("Unpruned masks: "+str(n_unpruned))
             context.tb_writer.write_unpruned_params(n_unpruned)
-        import pdb; pdb.set_trace() 
         if args.show_network_strucutre_every_epoch:
                  logging.info("current model:")
                  logging.info(repr(context.model))
@@ -780,6 +779,11 @@ def run(args, ensemble_test=False):
 
    if args.show_arch_on_completion:
         logging.info(repr(context.model.children()))
+   
+   if args.report_test_error_at_end:
+        test_acc = basic_classification.evaluate(context, context.test_loader,no_grad=args.use_nograd)
+        logging.info("TEST ACCURACY:{}".format(test_acc))
+
 
          # logging.info("Loading best model")
    #context.model.load(os.path.join( args.model_save_path,timestamp+ args.save_prefix +"_best_model"))

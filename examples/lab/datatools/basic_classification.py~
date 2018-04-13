@@ -142,7 +142,7 @@ def ensemble_predict(contexts, loader, meta_model=None):
             scores=F.log_softmax(scores,dim=1)
             scores=scores.unsqueeze(2)
             score_list_2d[i].append(scores.data)
-       context.model.train()
+    #   context.model.train()
        context.stash_model()
     
    batch_mean_scores=[]

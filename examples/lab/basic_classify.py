@@ -779,6 +779,12 @@ def run(args, ensemble_test=False):
 
    if args.show_arch_on_completion:
         logging.info(repr(context.model.children()))
+   
+   if args.report_test_error_at_end:
+        test_acc = basic_classification.evaluate(context, context.test_loader,no_grad=args.use_nograd)
+        logging.info("TEST ACCURACY:{}".format(test_acc))
+        print("TEST ACCURACY:{}".format(test_acc))
+
 
          # logging.info("Loading best model")
    #context.model.load(os.path.join( args.model_save_path,timestamp+ args.save_prefix +"_best_model"))
