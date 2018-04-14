@@ -557,6 +557,10 @@ def run(args, ensemble_test=False):
         logging.info("INIITIAL TEST ACCURACY:{}".format(test_acc))
         print("INIITIAL TEST ACCURACY:{}".format(test_acc))
 
+   if args.reset_weights_before_start:
+       loggin.info("resetting weights")
+       context.model.reset_weights()
+
 
    
    best_eval_score=-float("inf")

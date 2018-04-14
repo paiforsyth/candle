@@ -1,9 +1,11 @@
+import logging
 import torch
 import torch.nn as nn
 def reset_weights(module):
     import torch
     if isinstance(module, nn.Conv2d):
         # https://github.com/pytorch/pytorch/blob/master/torch/nn/modules/conv.py
+        logging.info("resetting convolutional weights")
         n = module.in_channels
         for k in module.kernel_size:
             n *= k
@@ -13,6 +15,7 @@ def reset_weights(module):
             module.bias.data.uniform_(-stdv, stdv)
         return
     elif isinstance(module, nn.BatchNorm2d):
+        logging.info("reseting batch norm weights")
         module.running_mean.zero_()
         module.running_var.fill_(1)
         module.weight.data.uniform_()

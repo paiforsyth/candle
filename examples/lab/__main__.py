@@ -181,6 +181,7 @@ def default_parser(parser=None):
 
     parser.add_argument("--weight_reset_enable", action = "store_true")
     parser.add_argument("--weight_reset_epoch_num", type=int,  default =0)
+    parser.add_argument("--reset_weights_before_start", action="store_true")
 
 
     parser.add_argument("--show_network_strucutre_every_epoch",action="store_true")

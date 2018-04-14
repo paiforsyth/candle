@@ -230,7 +230,7 @@ def make_context(args):
         val_loader= data.DataLoader(val_dataset,batch_size = args.batch_size, shuffle = False, collate_fn = sequence_classification.make_collater(args))
    elif data_type == DataType.IMAGE:
        indexer= None
-       if args.mode == "train":
+       if args.mode == "train": #can probably remove this if block.  Now we have all loaders availible in all modes
             train_loader=data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle= True, collate_fn=basic_classification.make_var_wrap_collater(args))
             val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True ))
             test_loader = data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args, volatile=True))
@@ -556,6 +556,9 @@ def run(args, ensemble_test=False):
         test_acc = basic_classification.evaluate(context, context.test_loader,no_grad=args.use_nograd)
         logging.info("INIITIAL TEST ACCURACY:{}".format(test_acc))
         print("INIITIAL TEST ACCURACY:{}".format(test_acc))
+
+   if args.reset_weights_before_start:
+       context.model.reset_weights()
 
 
    
