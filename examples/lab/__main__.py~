@@ -260,7 +260,7 @@ def main():
          acc = basic_classification.score_report(args.validate_fr_reportfile, truth)
 
         if args.short_test_report:
-            print(acc, end='')
+            print(acc, end=',')
         else
             print("ACCURACY ON GROUND TRUTH: ",acc ) 
         return

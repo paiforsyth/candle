@@ -261,7 +261,7 @@ def main():
 
         if args.short_test_report:
             print(acc, end=',')
-        else
+        else:
             print("ACCURACY ON GROUND TRUTH: ",acc ) 
         return
 
