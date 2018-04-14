@@ -243,6 +243,7 @@ class _ProxyConvNd(ProxyLayer):
         self.store_output=False #used with pruning methods that required samples of input and output
         self.record_of_input=[]
         self.record_of_output=[]
+        self.record_of_output_grad=[] #used by the NVIDIA pruning method
 
 
     def __repr__(self):
@@ -258,10 +259,12 @@ class _ProxyConvNd(ProxyLayer):
         out=  self.conv_fn(x, *weights, **self._conv_kwargs)
 
         if self.store_output:
-            assert not self.training
             self.record_of_output.append(out)
 
         return out
+
+    def store_output_grad(self):
+        record_of_output_grad.append(record_of_output[-1].grad)
 
 
 

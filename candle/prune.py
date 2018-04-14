@@ -497,8 +497,14 @@ class CondenseMask(WeightMask):
     
 
 
-def _group_rank_taylor(context, proxies):
-    pass
+def _group_rank_abs_taylor_normalized_output_channel(context, proxies):
+    outi_scores=[]
+    for proxy in proxies:
+        this_proxy_out_scores=0
+        for output, grad in zip(proxy.layer.record_of_output, proxy.layer_recorod_of_output_grad):
+            this_proxy_out_scores+=(output.data*grad.data).abs().mean(dim=3).mean(dim=2).mean(dim=0)
+        out_scores.append(this_proxy_out_scores)
+    return out_scores
 
 
 def _group_rank_norm(context, proxies, p=1):
