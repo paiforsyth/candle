@@ -558,7 +558,7 @@ def run(args, ensemble_test=False):
         print("INIITIAL TEST ACCURACY:{}".format(test_acc))
 
    if args.reset_weights_before_start:
-       loggin.info("resetting weights")
+       logging.info("resetting weights")
        context.model.reset_weights()
 
 
