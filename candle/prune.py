@@ -296,6 +296,8 @@ class Channel2DMask(WeightMaskGroup):
         param = root.parameters()[0]
         param_grad = root.parameters()[0].grad
 
+
+
     def expand_masks(self):
         if self.stochastic:
             mask = self.sample_concrete().singleton()
@@ -496,7 +498,7 @@ class CondenseMask(WeightMask):
 
 
 def _group_rank_taylor(context, proxies):
-
+    pass
 
 
 def _group_rank_norm(context, proxies, p=1):
