@@ -492,7 +492,11 @@ def run(args, ensemble_test=False):
            img_h=32
            img_w=32
            channels=3
-       print("Approx number of multiplies: ", countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels))    
+       cm = countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)
+       if  args.short_test_report:
+           print(cm)
+       else:
+           print("Approx number of multiplies: ",cm )    
        return
    if args.enable_pruning:
         init_mask_count = context.model.proxy_ctx.count_unpruned_masks()

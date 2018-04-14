@@ -206,6 +206,8 @@ def default_parser(parser=None):
     parser.add_argument("--report_test_error_at_end", action="store_true")
     parser.add_argument("--report_test_error_before_start", action="store_true")
 
+    parser.add_argument("--short_test_report", action="store_true")
+
 
 
 
@@ -257,7 +259,10 @@ def main():
 
          acc = basic_classification.score_report(args.validate_fr_reportfile, truth)
 
-        print("ACCURACY ON GROUND TRUTH: ",acc ) 
+        if args.short_test_report:
+            print(acc, end=',')
+        else
+            print("ACCURACY ON GROUND TRUTH: ",acc ) 
         return
 
     if args.resume_mode == "ensemble":
