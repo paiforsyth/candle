@@ -292,6 +292,10 @@ class Channel2DMask(WeightMaskGroup):
         split_root = param.view(param.size(0), -1).permute(1, 0)
         return Package([split_root])
 
+    def split_taylor(self, root):
+        param = root.parameters()[0]
+        param_grad = root.parameters()[0].grad
+
     def expand_masks(self):
         if self.stochastic:
             mask = self.sample_concrete().singleton()
@@ -491,12 +495,14 @@ class CondenseMask(WeightMask):
     
 
 
+def _group_rank_taylor(context, proxies):
 
 
 
 def _group_rank_norm(context, proxies, p=1):
     return [proxy.split(proxy.root).norm(p, 0) for proxy in proxies]
 
+#added by Peter
 def _group_rank_random(context, proxies):
     def replace_with_random(var): #given a variable matrix, return a random vector on the same device, with length equal to the number of columns of the matrix
         return Variable(var.data.new(var.shape[1]).uniform_()) 

@@ -1316,6 +1316,12 @@ class SqueezeNet(serialmodule.SerializableModule):
             self.total_exits+=1
         return x
 
+    def adjust_out_dim(self, new_out_dim):
+        #replaces the final convolutional layer.  assumes we want to bypass it with the proxy ctx.
+        assert "final_conv" in self.layer_chunk_list[-1].keys()
+        layer_chunk_list[-1]["final_conv"] = self.proxy_ctx.bypass(nn.Conv2d(self.channel_counts[-1], new_out_dim, kernel_size=1) )
+        #how to register?
+
 
     def cuda(self,*params,**params2):
         if not self.chunk_across_devices:

@@ -192,7 +192,7 @@ class ResFire(serialmodule.SerializableModule):
 
 class NextFire(serialmodule.SerializableModule):
 
-    def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None,proxy_mode = None, bypass_first_last=True, bypass_first=False, bypass_second=False, bypass_third=False  stride=1):
+    def __init__(self, in_channels, num_squeeze, num_expand,skip,skipmode, groups=32, final_bn=False,stochastic_depth=False, survival_prob=1, shakedrop=False, shake_shake=False, shake_shake_mode= shake_shake.ShakeMode.IMAGE, proxy_ctx=None,proxy_mode = None, bypass_first_last=True, bypass_first=False, bypass_second=False, bypass_third=False,  stride=1):
      super().__init__()
      if bypass_first_last:
          assert not bypass_first and not bypass_second and not bypass_third
@@ -1315,6 +1315,11 @@ class SqueezeNet(serialmodule.SerializableModule):
         if not self.training and self.fork_early_exit and self.calculating_exit_proportions:
             self.total_exits+=1
         return x
+
+    def adjust_out_dim(self, new_out_dim):
+        assert "final_conv" in self.layer_chunk_list[-1].keys()
+        layer_chunk_list[-1]["final_conv"] = self.proxy_ctx.bypass(nn.Conv2d(self.channel_counts[-1], new_out_dim, kernel_size=1) )
+        #how to register?
 
 
     def cuda(self,*params,**params2):
