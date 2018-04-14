@@ -292,9 +292,6 @@ class Channel2DMask(WeightMaskGroup):
         split_root = param.view(param.size(0), -1).permute(1, 0)
         return Package([split_root])
 
-    def split_taylor(self, root):
-        param = root.parameters()[0]
-        param_grad = root.parameters()[0].grad
 
 
 
@@ -497,12 +494,14 @@ class CondenseMask(WeightMask):
     
 
 
-def _group_rank_abs_taylor_normalized_output_channel(context, proxies):
+def _group_rank_abs_taylor(context, proxies):
     outi_scores=[]
     for proxy in proxies:
         this_proxy_out_scores=0
-        for output, grad in zip(proxy.layer.record_of_output, proxy.layer_recorod_of_output_grad):
-            this_proxy_out_scores+=(output.data*grad.data).abs().mean(dim=3).mean(dim=2).mean(dim=0)
+        for output in proxy.layer.record_of_output:
+            this_proxy_out_scores+= (output.data*output.grad.data).abs().mean(dim=3).mean(dim=2).mean(dim=0)
+        #for output, grad in zip(proxy.layer.record_of_output, proxy.layer_record_of_output_grad):
+        #    this_proxy_out_scores+=(output.data*grad.data).abs().mean(dim=3).mean(dim=2).mean(dim=0)
         out_scores.append(this_proxy_out_scores)
     return out_scores
 
@@ -528,7 +527,7 @@ def _single_rank_magnitude(context, proxies):
     return ranks
 
 _single_rank_methods = dict(magnitude=_single_rank_magnitude)
-_group_rank_methods = dict(l1_norm=_group_rank_l1, l2_norm=_group_rank_l2, random=_group_rank_random)
+_group_rank_methods = dict(l1_norm=_group_rank_l1, l2_norm=_group_rank_l2, random=_group_rank_random, taylor=_group_rank_abs_taylor)
 
 class PruneContext(Context):
     def __init__(self, stochastic=False, **kwargs):

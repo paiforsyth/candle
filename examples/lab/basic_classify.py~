@@ -495,7 +495,8 @@ def run(args, ensemble_test=False):
        cm = countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)
        if  args.short_test_report:
            print(cm)
-       print("Approx number of multiplies: ", )    
+       else:
+           print("Approx number of multiplies: ",cm )    
        return
    if args.enable_pruning:
         init_mask_count = context.model.proxy_ctx.count_unpruned_masks()
@@ -530,6 +531,10 @@ def run(args, ensemble_test=False):
              context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
              context.model.display_subblock_nonzero_masks()
              return
+    elif args.group_prune_strategy == "taylor":
+        taylor_sample_batches(context,args)
+        prunefunc = get_pruning_func(context, args)
+         
     else:
        prunefunc = get_pruning_func(context, args)
      #  if args.prune_calc_type =="relative":
@@ -782,6 +787,8 @@ def run(args, ensemble_test=False):
                     pu = prune_unit
                 elif args.prune_calc_type =="absolute":
                     pu=prune_abs_unit
+                if args.group_prune_strategy ==  "taylor":
+                    pass #get some sample data
 
                 prunefunc(pu)
         if args.do_condense and epoch_count >= args.condense_warmup and (epoch_count-args.condense_warmup) % args.condense_interval == 0 and conds_so_far<args.squeezenet_condense_num_c_groups-1:
@@ -898,6 +905,9 @@ def get_pruning_func(context, args):
         if args.group_prune_strategy == "random":
             logging.info("using random channel pruning")
             return functools.partial(context.model.proxy_ctx.prune,  method = "random")
+        elif args.group_prune_strategy == "taylor": 
+            logging.info("using taylor channel pruning")
+            return functools.partial(context.model.proxy_ctx.prune,  method = "taylor")
         else:
             logging.info("using  weight-norm pruning")
             return context.model.proxy_ctx.prune
@@ -914,6 +924,9 @@ def get_one_layer_pruning_func(context, args, prune_unit):
         if args.group_prune_strategy == "random":
             logging.info("using layer_targeted random channel pruning. ")
             return functools.partial(context.model.proxy_ctx.prune_proxy_layer, method="random",percentage=prune_unit, provider_type =candle.proxy.ProxyDecorator  )
+        elif args.group_prune_strategy == "taylor"
+            logging.info("using taylor channel pruning")
+            return functools.partial(context.model.proxy_ctx.prune_proxy_layer, method="taylor",percentage=prune_unit, provider_type =candle.proxy.ProxyDecorator  )
         else:
             logging.info("using layer_targeted channel-based weight pruning") 
             return functools.partial(context.model.proxy_ctx.prune_proxy_layer, percentage=prune_unit, provider_type =candle.proxy.ProxyDecorator  )
@@ -950,4 +963,30 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
         sb_copy.store_output=False
         sb_real.record_of_input=[]
         sb_copy.record_of_output=[]
+
+def taylor_sample_batches(context, args):
+   assert args.group_prune_strategy == "taylor" 
+   loader=context.train_loader
+   subblocks = context.model.to_subblocks()
+   subblocks = filter(lambda x: isinstance(x,candle.proxy.ProxyConv2d), subblocks)
+   for name, layer in subblocks.items():
+       layer.store_output=True
+   for i, (batch_in,*other) in enumerate(loader)
+            categories = other[0]
+            scores = context.model(batch_in):
+            loss=  F.cross_entropy(scores,categories) 
+            loss.backward()
+            context.model.zero_grad()
+            #for name, layer in subblocks.items():
+         #    layer.store_output=True  
+            if i >= num_samples -1:
+                break
+
+def taylor_sample_clear(context_args):
+   subblocks = context.model.to_subblocks()
+   subblocks = filter(lambda x: isinstance(x,candle.proxy.ProxyConv2d), subblocks)
+   for name, layer in subblocks.items():
+       layer.store_output=False
+       layer.record_of_output=[]
+       layer.record_of_output_grad=[]
 
