@@ -330,6 +330,7 @@ class ProxyConv2d(_ProxyConvNd):
         return mults, out_channels, height, width
 
     def reset_underlying_weights(self):
+        logging.info("reseting ProxyConv2D weights")
         wparams = self.weight_provider.root.parameters()[0]
         v=wparams.shape[1]*wparams.shape[2]*wparams.shape[3]
         stdv = 1. / math.sqrt(v)
