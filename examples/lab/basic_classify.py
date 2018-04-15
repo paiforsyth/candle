@@ -980,7 +980,7 @@ def taylor_sample_batches(context, args):
   #     layer.store_output=True
    for i, (batch_in,*other) in enumerate(loader):
             #categories = other[0]
-            scores = context.model(batch_in)
+            #scores = context.model(batch_in)
             #loss=  F.cross_entropy(scores,categories) 
             #loss.backward()
             #context.model.zero_grad()
