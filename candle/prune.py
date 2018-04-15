@@ -735,7 +735,7 @@ class PruneContext(Context):
 
                 indices = indices[(mask.view(-1)[indices] != 0) & (weight.view(-1)[indices] <=thresh) ] 
 
-                if indiices.size(0) == sum(mask.view(-1)): # we are about to prune them all
+                if indices.size(0) == sum(mask.view(-1)): # we are about to prune them all
                     indicies =indicies[:-1] #leave one 
 
                 if indices.size(0) > 0:
