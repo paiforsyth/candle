@@ -924,7 +924,7 @@ def get_one_layer_pruning_func(context, args, prune_unit):
         if args.group_prune_strategy == "random":
             logging.info("using layer_targeted random channel pruning. ")
             return functools.partial(context.model.proxy_ctx.prune_proxy_layer, method="random",percentage=prune_unit, provider_type =candle.proxy.ProxyDecorator  )
-        elif args.group_prune_strategy == "taylor"
+        elif args.group_prune_strategy == "taylor":
             logging.info("using taylor channel pruning")
             return functools.partial(context.model.proxy_ctx.prune_proxy_layer, method="taylor",percentage=prune_unit, provider_type =candle.proxy.ProxyDecorator  )
         else:
