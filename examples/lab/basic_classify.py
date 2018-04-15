@@ -597,8 +597,6 @@ def run(args, ensemble_test=False):
 
             context.optimizer.zero_grad()
             
-            if args.group_prune_strategy ==  "taylor" and args.maintain_abs_deriv_sum :
-                    clear_abs_deriv_sum(context.model)
 
 
 
@@ -702,7 +700,12 @@ def run(args, ensemble_test=False):
             new_param_tensors=genutil_modules.get_named_trainable_param_tensors(context.model)
             context.tb_writer.write_param_change(new_param_tensors, param_tensors)
             param_tensors=new_param_tensors
+        if args.maintain_abs_deriv_sum:
+            disable_grad_storage(context.model)
         eval_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
+        if args.maintain_abs_deriv_sum:
+            enable_grad_storage(context.model)
+
         context.tb_writer.write_accuracy(eval_score)
         logging.info("Finished epoch number "+ str(epoch_count+1) +  " of " +str(args.num_epochs)+".  Accuracy is "+ str(eval_score) +".")
         if args.report_unpruned:
@@ -809,6 +812,7 @@ def run(args, ensemble_test=False):
                 prunefunc(pu)
         if args.group_prune_strategy ==  "taylor" and args.maintain_abs_deriv_sum :
                     clear_abs_deriv_sum(context.model)
+                    clear_record_of_output(context.model) #neccesary because evaluating the model may have caused additional output to be stored
 
 
         if args.do_condense and epoch_count >= args.condense_warmup and (epoch_count-args.condense_warmup) % args.condense_interval == 0 and conds_so_far<args.squeezenet_condense_num_c_groups-1:
@@ -1001,6 +1005,17 @@ def enable_grad_storage(model):
        layer.store_output=True
        layer.store_output_grad=True
 
+def disable_grad_storage(model):
+   subblocks = model.to_subblocks()
+   for name, layer in subblocks.items():
+       if not isinstance(layer, candle.proxy.ProxyConv2d):
+           continue
+       layer.store_output=False
+       layer.store_output_grad=False
+
+
+
+
 def update_abs_deriv_sum(model):
     subblocks = model.to_subblocks()
     for _, layer in subblocks.items():
@@ -1015,6 +1030,15 @@ def clear_abs_deriv_sum(model):
                     continue
                 layer.record_of_abs_deriv_sum=0
 
+def clear_record_of_output(model):
+    subblocks = model.to_subblocks()
+    for _, layer in subblocks.items():
+                if not isinstance(layer, candle.proxy.ProxyConv2d):
+                    continue
+                layer.record_of_output=[]
+
+
+d
 
 def taylor_sample_batches(context, args):
     #note: this function may change a model slightly by changing its batch norm running averages
