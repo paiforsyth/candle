@@ -980,7 +980,7 @@ def taylor_sample_batches(context, args):
        if not isinstance(layer, candle.proxy.ProxyConv2d):
            continue
   #     layer.store_output=True
-   context.model.eval()`
+   context.model.eval()
    for i, (batch_in,*other) in enumerate(loader):
             #categories = other[0]
             scores = context.model(batch_in)
