@@ -44,7 +44,7 @@ from .genutil import modules
 from torchvision import transforms
 import torchvision.datasets as tvds
 import candle.prune
-import candl.proxy
+import candle.proxy
 def add_args(parser):
     if parser is None:
         parser= argparse.ArgumentParser() 
