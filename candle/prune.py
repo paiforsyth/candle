@@ -495,7 +495,8 @@ class CondenseMask(WeightMask):
 
 
 def _group_rank_abs_taylor(context, proxies):
-    outi_scores=[]
+    
+    out_scores=[]
     for proxy in proxies:
         this_proxy_out_scores=0
         for output in proxy.layer.record_of_output:
