@@ -993,7 +993,7 @@ def taylor_sample_batches(context, args):
                 break
 
 def taylor_sample_clear(context_args):
-      subblocks = context.model.to_subblocks()
+   subblocks = context.model.to_subblocks()
    for name, layer in subblocks.items():
        if not isinstance(layer, proxy.ProxyConv2d):
            continue

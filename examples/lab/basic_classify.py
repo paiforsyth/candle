@@ -976,7 +976,6 @@ def taylor_sample_batches(context, args):
    assert args.group_prune_strategy == "taylor" 
    loader=context.train_loader
    subblocks = context.model.to_subblocks()
-   subblocks = filter(lambda x: isinstance(x,candle.proxy.ProxyConv2d), subblocks)
    for name, layer in subblocks.items():
        if not isinstance(layer, proxy.ProxyConv2d):
            continue
