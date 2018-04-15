@@ -985,6 +985,7 @@ def get_pruning_func(context, args):
         else:
             raise Exception("cannot deterimine correct pruning function")
     elif args.prune_layer_mode == "global":
+        import pdb; pdb.set_trace()
         if args.global_prune_normalization =="no_normalization":
             normalize=False
             norm_mode =squeezenet.PruningNormalizationMode.NO_NORMALIZATION
