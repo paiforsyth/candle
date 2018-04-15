@@ -745,7 +745,6 @@ class PruneContext(Context):
                 '''
     given a tensor of magnitudes and a corresponding tensor of masks, prune the masks corresponding to the smallest magnitudes
                 '''
-                import pdb; pdb.set_trace()
                 _, indices = torch.sort(weight.view(-1))
                 ne0_indices = indices[mask.view(-1)[indices] != 0]
                 if ne0_indices.size(0) <= 1:
