@@ -981,10 +981,10 @@ def taylor_sample_batches(context, args):
   #     layer.store_output=True
    for i, (batch_in,*other) in enumerate(loader):
             #categories = other[0]
-            #scores = context.model(batch_in)
-            loss=  F.cross_entropy(scores,categories) 
+            scores = context.model(batch_in)
+            #loss=  F.cross_entropy(scores,categories) 
             #loss.backward()
-            context.model_parameters.zero_grad()
+            context.optimizer.zero_grad()
             #for name, layer in subblocks.items():
          #    layer.store_output=True  
             if i >= args.taylor_num_samples -1:
