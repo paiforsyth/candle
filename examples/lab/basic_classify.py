@@ -990,10 +990,11 @@ def taylor_sample_batches(context, args):
             if i >= args.taylor_num_samples -1:
                 break
             
-            for para1, para2 in zip(context.model.parameters(), oldmodel.parameters() ):
+            for para1, para2 in zip(context.model.proxy_ctx.list_params(), oldmodel.proxy_ctx.list_params() ):
                 nor= (para1-para2).norm()
                 if nor>0:
                     import pdb; pdb.set_trace()
+            
 
 def taylor_sample_clear(context,args):
    subblocks = context.model.to_subblocks()
