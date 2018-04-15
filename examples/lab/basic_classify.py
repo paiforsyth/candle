@@ -532,8 +532,14 @@ def run(args, ensemble_test=False):
              context.model.display_subblock_nonzero_masks()
              return
     elif args.group_prune_strategy == "taylor":
+        logging.info("pruning trained model using taylor method")
         taylor_sample_batches(context,args)
         prunefunc = get_pruning_func(context, args)
+        n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
+        logging.info("Unpruned masks: "+str(n_unpruned))
+        context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
+        taylor_sample_clear(context, args)
+        return
          
     else:
        prunefunc = get_pruning_func(context, args)
@@ -908,9 +914,11 @@ def get_pruning_func(context, args):
         elif args.group_prune_strategy == "taylor": 
             logging.info("using taylor channel pruning")
             return functools.partial(context.model.proxy_ctx.prune,  method = "taylor")
-        else:
+        elif args.proxy_context_type=="standard":
             logging.info("using  weight-norm pruning")
             return context.model.proxy_ctx.prune
+        else:
+            raise Exception("cannot deterimine correct pruning function")
     elif args.prune_layer_mode == "global":
             assert args.proxy_context_type == "l1reg_context_slimming" 
             return functools.partial(context.model.proxy_ctx.prune_global_smallest, mask_type=candle.prune.BatchNorm2DMask)
