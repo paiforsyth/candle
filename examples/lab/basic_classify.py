@@ -162,6 +162,7 @@ def make_context(args):
        
         if args.mode == "train":
             pass
+            test_dataset=None
         elif args.mode == "test":
             if args.use_custom_test_data_file:
                 f=open(args.custom_test_data_file,"rb")
@@ -234,7 +235,7 @@ def make_context(args):
        if args.mode == "train": #can probably remove this if block.  Now we have all loaders availible in all modes
             train_loader=data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle= True, collate_fn=basic_classification.make_var_wrap_collater(args))
             val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True ))
-            test_loader = data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args, volatile=True))
+            test_loader = data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args, volatile=True)) if test_dataset is not None else None
        elif  args.mode == "test":
             train_loader=data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle= True, collate_fn=basic_classification.make_var_wrap_collater(args))
             test_loader = data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args, volatile=True))
