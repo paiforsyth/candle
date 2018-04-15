@@ -989,7 +989,7 @@ def taylor_sample_batches(context, args):
             for _, layer in subblocks.items():
                 if not isinstance(layer, candle.proxy.ProxyConv2d):
                     continue
-                layer.output_grad()
+                layer.save_grads()
 
             context.optimizer.zero_grad()
             if i >= args.taylor_num_samples -1:
