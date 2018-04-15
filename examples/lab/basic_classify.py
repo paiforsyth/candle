@@ -973,6 +973,7 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
 def taylor_sample_batches(context, args):
    assert args.group_prune_strategy == "taylor" 
    loader=context.train_loader
+   oldmodel= copy.deepcopy(context.model)
    subblocks = context.model.to_subblocks()
    for name, layer in subblocks.items():
        if not isinstance(layer, candle.proxy.ProxyConv2d):
@@ -981,13 +982,15 @@ def taylor_sample_batches(context, args):
    for i, (batch_in,*other) in enumerate(loader):
             #categories = other[0]
             #scores = context.model(batch_in)
-            #loss=  F.cross_entropy(scores,categories) 
+            loss=  F.cross_entropy(scores,categories) 
             #loss.backward()
-            #context.model.zero_grad()
+            context.model_parameters.zero_grad()
             #for name, layer in subblocks.items():
          #    layer.store_output=True  
             if i >= args.taylor_num_samples -1:
                 break
+            
+            #for para1, para2 in zip(context.model.parametes())
 
 def taylor_sample_clear(context,args):
    subblocks = context.model.to_subblocks()
