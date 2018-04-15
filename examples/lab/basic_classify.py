@@ -993,7 +993,7 @@ def taylor_sample_batches(context, args):
                 break
    context.model.train()
             
-    for para1, para2 in zip(context.model.proxy_ctx.list_params(), oldparams ):
+   for para1, para2 in zip(context.model.proxy_ctx.list_params(), oldparams ):
                 nor= (para1-para2).norm()
                 if nor>0:
                     import pdb; pdb.set_trace()
