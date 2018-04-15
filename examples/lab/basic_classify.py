@@ -975,7 +975,7 @@ def taylor_sample_batches(context, args):
     #note: this function may change a model slightly by changing its batch norm running averages
    assert args.group_prune_strategy == "taylor" 
    context.model.eval()
-   loader=context.train_loader
+   loader=context.val_loader#context.train_loader
    subblocks = context.model.to_subblocks()
    for name, layer in subblocks.items():
        if not isinstance(layer, candle.proxy.ProxyConv2d):
