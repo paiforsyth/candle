@@ -980,18 +980,20 @@ def taylor_sample_batches(context, args):
        if not isinstance(layer, candle.proxy.ProxyConv2d):
            continue
   #     layer.store_output=True
+   context.model.eval()`
    for i, (batch_in,*other) in enumerate(loader):
             #categories = other[0]
             scores = context.model(batch_in)
             #loss=  F.cross_entropy(scores,categories) 
             #loss.backward()
-            context.optimizer.zero_grad()
+            #context.optimizer.zero_grad()
             #for name, layer in subblocks.items():
          #    layer.store_output=True  
             if i >= args.taylor_num_samples -1:
                 break
+    context.model.train()
             
-            for para1, para2 in zip(context.model.proxy_ctx.list_params(), oldparams ):
+    for para1, para2 in zip(context.model.proxy_ctx.list_params(), oldparams ):
                 nor= (para1-para2).norm()
                 if nor>0:
                     import pdb; pdb.set_trace()
