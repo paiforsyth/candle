@@ -718,7 +718,11 @@ class PruneContext(Context):
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
                assert ((mask == 0) | (mask == 1)).all()
+               if sum(mask.view(-1)) <=1: 
+                   continue # dont include layers with only one unmasked
                global_weights = weight[mask != 0] if global_weights is  None else torch.cat([global_weights, weight[mask != 0] ]) 
+        if global_weights is None: #no layers with more than one nozero mask
+            return
         global_weights,_=torch.sort(global_weights)
         proportion=percentage/100
         thresh_dex = min(math.ceil(proportion*global_weights.size(0)),global_weights.size(0)-1 )
@@ -730,6 +734,10 @@ class PruneContext(Context):
                     continue #if there is only one nozero mask in this weight group, dont prune it
 
                 indices = indices[(mask.view(-1)[indices] != 0) & (weight.view(-1)[indices] <=thresh) ] 
+
+                if indiices.size(0) == sum(mask.view(-1)): # we are about to prune them all
+                    indicies =indicies[:-1] #leave one 
+
                 if indices.size(0) > 0:
                     mask.data.view(-1)[indices.data] = 0
 
