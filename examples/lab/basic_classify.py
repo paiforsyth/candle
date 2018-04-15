@@ -958,6 +958,7 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
         logging.info("pruning {}".format(sb_name))
         sb_real.store_input= True
         sb_copy.store_output = True
+        sb_copy.store_output_grad = True
         for i,(batch_in, *other) in enumerate(loader): 
              with torch.no_grad():
                 context.model(batch_in)
