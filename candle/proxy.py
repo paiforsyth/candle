@@ -264,7 +264,7 @@ class _ProxyConvNd(ProxyLayer):
         return out
 
     def store_output_grad(self):
-       record_of_output_grad.append(record_of_output[-1].grad.data)
+       self.record_of_output_grad.append(self.record_of_output[-1].grad.data)
 
 
 
