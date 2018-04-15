@@ -739,9 +739,8 @@ class PruneContext(Context):
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
                 local_weight=weight
-                import pdb; pdb.set_trace()
                 if normalize:
-                   local_weight = local_weight/local_weight.pruning_normalization_factor
+                   local_weight = local_weight/proxy.layer.pruning_normalization_factor
 
                 _, indices = torch.sort(local_weight.view(-1)) #unnecesary
                 if sum(mask.view(-1)) <= 1: #changed 
