@@ -971,7 +971,7 @@ def taylor_sample_batches(context, args):
    subblocks = filter(lambda x: isinstance(x,candle.proxy.ProxyConv2d), subblocks)
    for name, layer in subblocks.items():
        layer.store_output=True
-   for i, (batch_in,*other) in enumerate(loader)
+   for i, (batch_in,*other) in enumerate(loader):
             categories = other[0]
             scores = context.model(batch_in):
             loss=  F.cross_entropy(scores,categories) 
