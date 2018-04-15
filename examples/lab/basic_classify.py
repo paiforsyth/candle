@@ -534,7 +534,7 @@ def run(args, ensemble_test=False):
              return
     elif args.group_prune_strategy == "taylor":
         #logging.info("pruning trained model using taylor method")
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         taylor_sample_batches(context,args)
         prunefunc = get_pruning_func(context, args)
        # prunefunc(args.prune_trained_pct)
@@ -977,7 +977,7 @@ def taylor_sample_batches(context, args):
    for name, layer in subblocks.items():
        if not isinstance(layer, candle.proxy.ProxyConv2d):
            continue
-       layer.store_output=True
+  #     layer.store_output=True
    for i, (batch_in,*other) in enumerate(loader):
             categories = other[0]
             scores = context.model(batch_in)
