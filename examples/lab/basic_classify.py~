@@ -997,9 +997,6 @@ def taylor_sample_clear(context_args):
    for name, layer in subblocks.items():
        if not isinstance(layer, proxy.ProxyConv2d):
            continue
-
-
-
        layer.store_output=False
        layer.record_of_output=[]
        layer.record_of_output_grad=[]
