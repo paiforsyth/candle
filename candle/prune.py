@@ -501,7 +501,7 @@ def _group_rank_abs_taylor(context, proxies):
         this_proxy_out_scores=0
        # for output in proxy.layer.record_of_output:
        #     this_proxy_out_scores+= (output.data*output.grad.data).abs().mean(dim=3).mean(dim=2).mean(dim=0)
-        for output, grad in zip(proxy.layer.record_of_output, proxy.layer_record_of_output_grad):
+        for output, grad in zip(proxy.layer.record_of_output, proxy.layer.record_of_output_grad):
             this_proxy_out_scores+=(output.data*grad).abs().mean(dim=3).mean(dim=2).mean(dim=0)
         out_scores.append(this_proxy_out_scores)
         import pdb; pdb.set_trace()
