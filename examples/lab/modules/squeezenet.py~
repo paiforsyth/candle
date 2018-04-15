@@ -1316,7 +1316,8 @@ class SqueezeNet(serialmodule.SerializableModule):
             self.total_exits+=1
         return x
 
-    def final_linear(self.)
+    def final_linear(self)
+        pass
 
     def adjust_out_dim(self, new_out_dim, linear):
         #replaces the final convolutional layer.  assumes we want to bypass it with the proxy ctx.
