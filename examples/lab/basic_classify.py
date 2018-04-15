@@ -1006,7 +1006,7 @@ def get_pruning_func(context, args):
                 logging.info("using global taylor pruning")
                 def do_global_taylor_prune(*pargs,**kwargs):
                     context.model.compute_pruning_normalization_factor(norm_mode)
-                    context.model.proxy_ctx.prune_gloval_smallest(*pargs,method="taylor",normalize=normalize,**kwargs)
+                    context.model.proxy_ctx.prune_global_smallest(*pargs,method="taylor",normalize=normalize,**kwargs)
          
 
                 return do_global_taylor_prune  #functools.partial(context.model.proxy_ctx.prune_global_smallest, method="taylor")
