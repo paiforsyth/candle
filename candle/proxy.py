@@ -241,6 +241,7 @@ class _ProxyConvNd(ProxyLayer):
             self._conv_kwargs["bias"] = None
         self.store_input=False
         self.store_output=False #used with pruning methods that required samples of input and output
+        self.store_output_grad=False
         self.record_of_input=[]
         self.record_of_output=[]
         self.record_of_output_grad=[] #used by the NVIDIA pruning method
@@ -259,13 +260,14 @@ class _ProxyConvNd(ProxyLayer):
         out=  self.conv_fn(x, *weights, **self._conv_kwargs)
 
         if self.store_output:
+            if self.store_output_grad:
+                out.retain_grad()
             self.record_of_output.append(out)
 
         return out
 
     def store_output_grad(self):
-       if self.record_of_output[-1].grad is None:
-           import pdb; pdb.set_trace()
+       import pdb; pdb.set_trace()
        self.record_of_output_grad.append(self.record_of_output[-1].grad.data)
 
 
