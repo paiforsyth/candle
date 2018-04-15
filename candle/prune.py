@@ -498,10 +498,16 @@ def _group_rank_abs_taylor(context, proxies):
     
     out_scores=[]
     for proxy in proxies:
-        this_proxy_out_scores=0
         out_scores.append(Package([proxy.layer.record_of_abs_deriv_sum ]))
     return out_scores
 
+def _group_rank_abs_taylor_normalized(context, proxies):
+    out_scores=[]
+    for proxy in proxies:
+        criterion=proxy.layer.record_of_abs_deriv_sum 
+        normalized_criterion = criterion/criterion.norm()
+        out_scores.append(Package([criterion]))
+    return out_scores
 
 def _group_rank_norm(context, proxies, p=1):
     return [proxy.split(proxy.root).norm(p, 0) for proxy in proxies]
@@ -705,7 +711,7 @@ class PruneContext(Context):
 
 
     
-    def prune_global_smallest(self, percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
+    def prune_global_smallest(self, percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask, normalize=False):
         '''
          Idea is to find the globally smallest weights (across layers) and set the corresponding masks to 0 
          only suitable for situations in which the wegiht norms being pruned have comparable magnitudes across channels
@@ -720,7 +726,10 @@ class PruneContext(Context):
                assert ((mask == 0) | (mask == 1)).all()
                if sum(mask.view(-1)) <=1: 
                    continue # dont include layers with only one unmasked
-               global_weights = weight[mask != 0] if global_weights is  None else torch.cat([global_weights, weight[mask != 0] ]) 
+               local_weight = weight[mask != 0] 
+               if normalize:
+                   local_weight=local_weight/proxy.layer.pruning_normalization_factor
+               global_weights = local_weight if global_weights is  None else torch.cat([global_weights, local_weight ]) 
         if global_weights is None: #no layers with more than one nozero mask
             return
         global_weights,_=torch.sort(global_weights)
@@ -729,11 +738,15 @@ class PruneContext(Context):
         thresh = float(global_weights[thresh_dex])
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
-                _, indices = torch.sort(weight.view(-1)) #unnecesary
+                local_weight=weight
+                if normalize:
+                   local_weight = local_weight/local_weight.pruning_normalization_factor
+
+                _, indices = torch.sort(local_weight.view(-1)) #unnecesary
                 if sum(mask.view(-1)) <= 1: #changed 
                     continue #if there is only one nozero mask in this weight group, dont prune it
 
-                indices = indices[(mask.view(-1)[indices] != 0) & (weight.view(-1)[indices] <=thresh) ] 
+                indices = indices[(mask.view(-1)[indices] != 0) & (local_weight.view(-1)[indices] <=thresh) ] 
 
                 if indices.size(0) == sum(mask.view(-1)): # we are about to prune them all
                     indices =indices[:-1] #leave one 
@@ -746,6 +759,7 @@ class PruneContext(Context):
 
             
     def _prune_one_mask(self, weight,mask, percentage):
+
                 '''
     given a tensor of magnitudes and a corresponding tensor of masks, prune the masks corresponding to the smallest magnitudes
                 '''
@@ -881,7 +895,7 @@ class GroupPruneContext(PruneContext):
     def prune(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
         super().prune(percentage, method, method_map, mask_type)
 
-    def prune_global_smallest(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
+    def prune_global_smallest(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup, normalize=False):
         super().prune_global_smallest(percentage, method, method_map, mask_type)
 
     def prune_proxy_layer(self, layer, provider_type,  percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):

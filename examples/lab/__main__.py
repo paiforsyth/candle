@@ -104,6 +104,7 @@ def default_parser(parser=None):
     parser.add_argument("--sense_adaptive_use_subblocks",action="store_true")
     parser.add_argument("--prune_unit",type=int, default=1)
     parser.add_argument("--group_prune_strategy",choices= ["standard","random", "taylor"],default="standard")
+    parser.add_argument("--global_prune_normalization",choices= ["no_normalization", "by_layer", "by_block"  ],default="no_normalization") #whether to use a normalization factor to compare pruning scores between layers
 
     parser.add_argument("--autocalc_prune_unit",action="store_true")#overrided the above.  Uses as prune_unit what is neccesary to achieve the prune target in default 10 epochs
     parser.add_argument("--prune_calc_type",choices=["absolute","relative"],default="relative")# How to calculate the prune unit.  will we be subtracting a fixed propriton of the original masks each prune iteration, or a proprtion of the current nonzero masks.  Must agree witht the pruning method

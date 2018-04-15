@@ -246,6 +246,7 @@ class _ProxyConvNd(ProxyLayer):
         self.record_of_output=[]
         self.record_of_output_grad=[] #used by the NVIDIA pruning method
         self.record_of_abs_deriv_sum=0 #used by the NVIDIA pruning method
+        self.pruning_normalization_factor=None #used to weight scores assigned to this layer in normalization
 
 
 

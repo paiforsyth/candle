@@ -985,12 +985,32 @@ def get_pruning_func(context, args):
         else:
             raise Exception("cannot deterimine correct pruning function")
     elif args.prune_layer_mode == "global":
-            if args.proxy_context_type == "l1reg_context_slimming" :
+        if args.global_prune_normalization =="no_normalization":
+            normalize=False
+            norm_mode =squeezenet.PruningNormalizationMode.NO_NORMALIZATION
+        elif args.global_prune_normalization == "by_layer":
+            normalize=True
+            norm_mode = squeezenet.PruningNormalizationMode.BY_LAYER
+        elif args.global_prune_normalization == "by_block":
+            logging.info("using by_block normalization")
+            normalize=True
+            norm_mode = squeezenet.PruningNormalizationMode.BY_BLOCK
+        else:
+            raise Exception("Unknown normalization mode")
+
+           
+
+        if args.proxy_context_type == "l1reg_context_slimming" :
                 return functools.partial(context.model.proxy_ctx.prune_global_smallest, mask_type=candle.prune.BatchNorm2DMask)
-            elif args.group_prune_strategy == "taylor": 
+        elif args.group_prune_strategy == "taylor": 
                 logging.info("using global taylor pruning")
-                return functools.partial(context.model.proxy_ctx.prune_global_smallest, method="taylor")
-            else:
+                def do_global_taylor_prune(*pargs,**kwargs):
+                    context.model.compute_pruning_normalization_factor(norm_mode)
+                    context.model.proxy_ctx.prune_gloval_smallest(*pargs,method="taylor",normalize=normalize,**kwargs)
+         
+
+                return do_global_taylor_prune  #functools.partial(context.model.proxy_ctx.prune_global_smallest, method="taylor")
+        else:
                 raise Exception("cannot deterimine correct pruning function")
 
     else:

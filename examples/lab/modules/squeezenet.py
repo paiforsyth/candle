@@ -373,6 +373,27 @@ class NextFire(serialmodule.SerializableModule):
     def change_store_output(self,val):
         change_store_output(self.seq,val)
 
+    def compute_pruning_normalization_factor(self, mode):
+        if mode == PruningNormalizationMode.BY_LAYER:
+            for layer in self.seq:
+                if isinstance(layer, candle.proxy.ProxyConv2d):
+                    layer.pruning_normalization_factor = float(layer.weight_provider.root().reify()[0].norm())
+
+        elif mode == PruningNormalizationMode.BY_BLOCK:
+            total_sq_norm=0    
+            for layer in self.seq:
+                if isinstance(layer, candle.proxy.ProxyConv2d):
+                    total_sq_norm+=   float(layer.weight_provider.root().reify()[0].norm())**2
+            for layer in self.seq:
+                if isinstance(layer, candle.proxy.ProxyConv2d):
+                    layer.pruning_normalization_factor =math.sqrt(total_sq_norm)
+        elif mode == PruningNormalizationMode.NO_NORMALIZATION:
+            return
+        else:
+            raise Exception("Unknown Pruning normalization Mode")
+
+
+
 
 
 
@@ -1316,13 +1337,14 @@ class SqueezeNet(serialmodule.SerializableModule):
             self.total_exits+=1
         return x
 
-    def final_linear(self):
-        pass
 
-    def adjust_out_dim(self, new_out_dim, linear):
+    def adjust_out_dim(self, new_out_dim, linear=False, spatial_dim=None):
         #replaces the final convolutional layer.  assumes we want to bypass it with the proxy ctx.
         #assert "final_conv" in self.layer_chunk_list[-1].keys()
-        new_final=nn.Conv2d(self.channel_counts[-1], new_out_dim, kernel_size=1)
+        if linear:
+            new_final=final_linear(self.channel_counts[-1],spatial_dim, spatial_dim, new_out_dim )
+        else:
+            new_final=nn.Conv2d(self.channel_counts[-1], new_out_dim, kernel_size=1)
         if next(self.layer_chunk_list[-1][-1].parameters()).is_cuda:
             new_final=new_final.cuda(next(self.layer_chunk_list[-1][-1].parameters()).get_device())
 
@@ -1330,6 +1352,11 @@ class SqueezeNet(serialmodule.SerializableModule):
         self.layer_chunk_list[-1][-1] = self.proxy_ctx.bypass(new_final )
         logging.info("new final conv has input channels {} and output channels {}".format(self.channel_counts[-1],new_out_dim))
         #seems this is automatically registered
+        
+
+
+
+
 
 
 
@@ -1484,6 +1511,14 @@ class SqueezeNet(serialmodule.SerializableModule):
 
         return sub_blocks
 
+
+
+    def compute_pruning_normalization_factor(self, mode):
+        for name, module in self.to_blocks.items():
+            if getattr(module,"compute_pruning_normalization_factor",None) is not None:
+                module.compute_pruning_normalization_factor(mode)
+
+
     def change_store_input(self,val):
         change_store_input(self.layer_chunk_list)
         
@@ -1548,6 +1583,23 @@ def forking_props_from_sample(squeezenet,  loader):
         squeezenet(batch) 
     squeezenet.calc_exit_proportions()
 
+class final_linear(nn.Module):
+    def __init__(self,in_c,in_h,in_w,out_c):
+        super().__init__()
+        self.in_dim=in_c*in_h*in_w
+        self.out_c=out_c
+        self.lin=nn.Linear(self.in_dim,out_c)
+    def forward(self, x):
+        x=x.view(-1, self.in_dim)
+        x=self.lin(x)
+        x=x.view(-1,self.out_c,1,1)
+        return x
 
 
 
+
+
+class PruningNormalizationMode(Enum):
+    BY_LAYER=0
+    BY_BLOCK=1
+    NO_NORMALIZATION=-1
