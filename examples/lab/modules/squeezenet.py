@@ -1324,7 +1324,7 @@ class SqueezeNet(serialmodule.SerializableModule):
             new_final=new_final.cuda(next(self.layer_chunk_list[-1][-1].parameters()).get_device())
 
 
-        self.layer_chunk_list[-1][-1] = self.proxy_ctx.bypass( )
+        self.layer_chunk_list[-1][-1] = self.proxy_ctx.bypass(new_final )
         logging.info("new final conv has input channels {} and output channels {}".format(self.channel_counts[-1],new_out_dim))
         #seems this is automatically registered
 
