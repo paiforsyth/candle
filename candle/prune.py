@@ -897,7 +897,7 @@ class GroupPruneContext(PruneContext):
         super().prune(percentage, method, method_map, mask_type)
 
     def prune_global_smallest(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup, normalize=False):
-        super().prune_global_smallest(percentage, method, method_map, mask_type)
+        super().prune_global_smallest(percentage, method, method_map, mask_type, normalize=normalize)
 
     def prune_proxy_layer(self, layer, provider_type,  percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
         return super().prune_proxy_layer(layer, provider_type, percentage, method, method_map, mask_type)

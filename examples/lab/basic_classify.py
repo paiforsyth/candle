@@ -579,7 +579,6 @@ def run(args, ensemble_test=False):
              return
     elif args.group_prune_strategy == "taylor":
         #logging.info("pruning trained model using taylor method")
-        #import pdb; pdb.set_trace()
         taylor_sample_batches(context,args)
         prunefunc = get_pruning_func(context, args)
         prunefunc(args.prune_trained_pct)
@@ -649,7 +648,6 @@ def run(args, ensemble_test=False):
             #For sequence-to-squence batch in will have dimension batchsize by the max sequence length in the batch. scores  will have dimension batchsize by max sqeunce_length by categoreis
 
             scores= context.model(batch_in,pad_mat) if context.data_type == DataType.SEQUENCE else context.model(batch_in)  #should have dimension batchsize by number of classes
-           # import pdb; pdb.set_trace() 
             if args.born_again_enable:
                 assert not args.multi_score_model
                 context = torch.no_grad() if args.use_no_grad else suppress 
@@ -846,7 +844,6 @@ def run(args, ensemble_test=False):
                  assert args.maintain_abs_deriv_sum 
              if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> prune_target:
                 logging.info("pruning...")
-                #import pdb; pdb.set_trace()
                 prunefunc = get_pruning_func(context, args)
                 if args.prune_calc_type =="relative":
                     pu = prune_unit
@@ -985,7 +982,6 @@ def get_pruning_func(context, args):
         else:
             raise Exception("cannot deterimine correct pruning function")
     elif args.prune_layer_mode == "global":
-        import pdb; pdb.set_trace()
         if args.global_prune_normalization =="no_normalization":
             normalize=False
             norm_mode =squeezenet.PruningNormalizationMode.NO_NORMALIZATION
