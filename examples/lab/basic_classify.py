@@ -918,8 +918,14 @@ def get_pruning_func(context, args):
         else:
             raise Exception("cannot deterimine correct pruning function")
     elif args.prune_layer_mode == "global":
-            assert args.proxy_context_type == "l1reg_context_slimming" 
-            return functools.partial(context.model.proxy_ctx.prune_global_smallest, mask_type=candle.prune.BatchNorm2DMask)
+            if args.proxy_context_type == "l1reg_context_slimming" 
+                return functools.partial(context.model.proxy_ctx.prune_global_smallest, mask_type=candle.prune.BatchNorm2DMask)
+            elif args.group_prune_strategy == "taylor": 
+                logging.info("using global taylor pruning")
+                return functools.partial(context.model.proxy_ctx.prune_global_smallest, method="taylor")
+            else:
+                raise Exception("cannot deterimine correct pruning function")
+
     else:
         raise Exception("Cannot determine correct pruning function")
 
