@@ -978,6 +978,8 @@ def taylor_sample_batches(context, args):
    subblocks = context.model.to_subblocks()
    subblocks = filter(lambda x: isinstance(x,candle.proxy.ProxyConv2d), subblocks)
    for name, layer in subblocks.items():
+       if not isinstance(layer, proxy.ProxyConv2d):
+           continue
        layer.store_output=True
    for i, (batch_in,*other) in enumerate(loader):
             categories = other[0]
@@ -991,9 +993,10 @@ def taylor_sample_batches(context, args):
                 break
 
 def taylor_sample_clear(context_args):
-   subblocks = context.model.to_subblocks()
-   subblocks = filter(lambda x: isinstance(x,candle.proxy.ProxyConv2d), subblocks)
+      subblocks = context.model.to_subblocks()
    for name, layer in subblocks.items():
+       if not isinstance(layer, proxy.ProxyConv2d):
+           continue
        layer.store_output=False
        layer.record_of_output=[]
        layer.record_of_output_grad=[]
