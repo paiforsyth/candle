@@ -991,7 +991,7 @@ def taylor_sample_batches(context, args):
          #    layer.store_output=True  
             if i >= args.taylor_num_samples -1:
                 break
-    context.model.train()
+   context.model.train()
             
     for para1, para2 in zip(context.model.proxy_ctx.list_params(), oldparams ):
                 nor= (para1-para2).norm()
