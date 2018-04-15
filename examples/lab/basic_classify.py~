@@ -989,7 +989,7 @@ def taylor_sample_batches(context, args):
             context.model.zero_grad()
             #for name, layer in subblocks.items():
          #    layer.store_output=True  
-            if i >= num_samples -1:
+            if i >= args.taylor_num_samples -1:
                 break
 
 def taylor_sample_clear(context_args):
