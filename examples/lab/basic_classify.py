@@ -577,7 +577,8 @@ def run(args, ensemble_test=False):
         logging.info("INIITIAL TEST ACCURACY:{}".format(test_acc))
         print("INIITIAL TEST ACCURACY:{}".format(test_acc))
 
-
+   if args.maintain_abs_deriv_sum:
+        enable_grad_storage(context.model)
 
    
    best_eval_score=-float("inf")
@@ -660,6 +661,10 @@ def run(args, ensemble_test=False):
                 loss+=l2l_stochastic
             loss.backward()
 #comment
+            if args.maintain_abs_deriv_sum:
+                update_abs_deriv_sum(context.model)
+
+
 
             if args.grad_norm_clip is not None:
                 torch.nn.utils.clip_grad.clip_grad_norm(context.model.parameters(), args.grad_norm_clip)
@@ -784,6 +789,8 @@ def run(args, ensemble_test=False):
                     logging.info(str(param))
         if args.enable_pruning: 
              assert(args.report_unpruned)
+             if args.group_prune_strategy == "taylor":
+                 assert args.maintain_abs_deriv_sum 
              if epoch_count >= args.prune_warmup_epochs and epoch_count % args.prune_epoch_freq==0 and n_unpruned> prune_target:
                 logging.info("pruning...")
                 #import pdb; pdb.set_trace()
@@ -792,10 +799,12 @@ def run(args, ensemble_test=False):
                     pu = prune_unit
                 elif args.prune_calc_type =="absolute":
                     pu=prune_abs_unit
-                if args.group_prune_strategy ==  "taylor":
-                    pass #get some sample data
 
                 prunefunc(pu)
+        if args.group_prune_strategy ==  "taylor" and args.maintain_abs_deriv_sum :
+                    clear_abs_deriv_sum(context.model)
+
+
         if args.do_condense and epoch_count >= args.condense_warmup and (epoch_count-args.condense_warmup) % args.condense_interval == 0 and conds_so_far<args.squeezenet_condense_num_c_groups-1:
             context.model.condense()
 
@@ -977,6 +986,29 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
 
         sb_real.record_of_input=[]
         sb_copy.record_of_output=[]
+
+def enable_grad_storage(model):
+   subblocks = model.to_subblocks()
+   for name, layer in subblocks.items():
+       if not isinstance(layer, candle.proxy.ProxyConv2d):
+           continue
+       layer.store_output=True
+       layer.store_output_grad=True
+
+def update_abs_deriv_sum(model):
+    subblocks = model.to_subblocks()
+    for _, layer in subblocks.items():
+                if not isinstance(layer, candle.proxy.ProxyConv2d):
+                    continue
+                layer.update_abs_deriv_sum()
+
+def clear_abs_deriv_sum(model):
+    subblocks = model.to_subblocks()
+    for _, layer in subblocks.items():
+                if not isinstance(layer, candle.proxy.ProxyConv2d):
+                    continue
+                layer.record_of_abs_deriv_sum=0
+
 
 def taylor_sample_batches(context, args):
     #note: this function may change a model slightly by changing its batch norm running averages

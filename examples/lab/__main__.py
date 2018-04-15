@@ -108,6 +108,8 @@ def default_parser(parser=None):
     
     parser.add_argument("--taylor_num_samples",type=int,default=3) #CURRENTLY NOT USED:how many sample batches to use to compute the gradient when pruning a pretrained model
 
+    parser.add_argument("--maintain_abs_deriv_sum",action="store_true")#for using the taylor method 
+
 
     parser.add_argument("--enable_l0reg",action = "store_true")
     parser.add_argument("--l0reg_lambda", type=float, default =1.5 / 50000 )
