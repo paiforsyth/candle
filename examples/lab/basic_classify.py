@@ -984,6 +984,11 @@ def taylor_sample_batches(context, args):
             scores = context.model(batch_in)
             loss=  F.cross_entropy(scores,categories) 
             loss.backward()
+            for _, layer in subblocks.items():
+                if not isinstance(layer, candle.proxy.ProxyConv2d):
+                    continue
+                layer.store_output_grad()
+
             context.optimizer.zero_grad()
             if i >= args.taylor_num_samples -1:
                 break
