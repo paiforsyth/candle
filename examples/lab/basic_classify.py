@@ -967,6 +967,7 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
         context.model.proxy_ctx.hz_lasso_prune(sb_real, target_num_channels=None,target_prop=target_prop, sample_inputs=sb_real.record_of_input, sample_outputs=sb_copy.record_of_output, solve_for_weights=solve_for_weights)
         sb_real.store_input=False
         sb_copy.store_output=False
+
         sb_real.record_of_input=[]
         sb_copy.record_of_output=[]
 
@@ -987,7 +988,7 @@ def taylor_sample_batches(context, args):
             for _, layer in subblocks.items():
                 if not isinstance(layer, candle.proxy.ProxyConv2d):
                     continue
-                layer.store_output_grad()
+                layer.output_grad()
 
             context.optimizer.zero_grad()
             if i >= args.taylor_num_samples -1:
