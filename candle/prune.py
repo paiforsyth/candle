@@ -566,7 +566,6 @@ class PruneContext(Context):
 
     def prune(self, percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask):
         rank_call = method_map[method]
-        import pdb; pdb.set_trace()
         proxies = self.list_proxies("weight_hook", mask_type)
         weights_list = rank_call(self, proxies)
         for weights, proxy in zip(weights_list, proxies):
