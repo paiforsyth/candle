@@ -1038,7 +1038,7 @@ def clear_record_of_output(model):
                 layer.record_of_output=[]
 
 
-d
+
 
 def taylor_sample_batches(context, args):
     #note: this function may change a model slightly by changing its batch norm running averages
