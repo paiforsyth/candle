@@ -958,7 +958,6 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
         logging.info("pruning {}".format(sb_name))
         sb_real.store_input= True
         sb_copy.store_output = True
-        sb_copy.store_output_grad = True
         for i,(batch_in, *other) in enumerate(loader): 
              with torch.no_grad():
                 context.model(batch_in)
@@ -981,6 +980,7 @@ def taylor_sample_batches(context, args):
        if not isinstance(layer, candle.proxy.ProxyConv2d):
            continue
        layer.store_output=True
+       layer.store_output_grad=True
    for i, (batch_in,*other) in enumerate(loader):
             categories = other[0]
             scores = context.model(batch_in)
@@ -989,7 +989,7 @@ def taylor_sample_batches(context, args):
             for _, layer in subblocks.items():
                 if not isinstance(layer, candle.proxy.ProxyConv2d):
                     continue
-                layer.output_grad()
+                layer.storeoutput_grad()
 
             context.optimizer.zero_grad()
             if i >= args.taylor_num_samples -1:
