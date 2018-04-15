@@ -245,6 +245,8 @@ class _ProxyConvNd(ProxyLayer):
         self.record_of_input=[]
         self.record_of_output=[]
         self.record_of_output_grad=[] #used by the NVIDIA pruning method
+        self.record_of_abs_deriv_sum=0 #used by the NVIDIA pruning method
+
 
 
     def __repr__(self):
@@ -266,9 +268,11 @@ class _ProxyConvNd(ProxyLayer):
 
         return out
 
-    def save_grads(self):
-       self.record_of_output_grad.append(self.record_of_output[-1].grad.data)
 
+    def update_abs_deriv_sum(self):
+        assert(len(self.record_of_output)==1)
+        self.record_of_abs_deriv_sum+=(self.record_of_output[0].data*self.record_of_output[0].grad.data).abs().mean(3).mean(2).mean(0)
+        self.record_of_output=[]
 
 
     #added by Peter 
