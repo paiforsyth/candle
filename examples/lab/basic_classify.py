@@ -990,7 +990,7 @@ def taylor_sample_batches(context, args):
             if i >= args.taylor_num_samples -1:
                 break
             
-            for para1, para2 in zip(context.model.parameters(), oldmodel.parameters() )
+            for para1, para2 in zip(context.model.parameters(), oldmodel.parameters() ):
                 nor= (para1-para2).norm()
                 if nor>0:
                     import pdb; pdb.set_trace()
