@@ -48,7 +48,7 @@ import candle.proxy
 def add_args(parser):
     if parser is None:
         parser= argparse.ArgumentParser() 
-    parser.add_argument("--dataset_for_classification",type=str,choices=["simple","moviepol", "mnist", "cifar_challenge", "cifar10"],default="simple")
+    parser.add_argument("--dataset_for_classification",type=str,choices=["simple","moviepol", "mnist", "cifar_challenge", "cifar10", "minicifar10"],default="simple")
 
     parser.add_argument("--ds_path", type=str,default=None)
     parser.add_argument("--fasttext_path", type=str,default="../data/fastText_word_vectors/" )
@@ -215,6 +215,48 @@ def make_context(args):
                 squashed_images=dictionary[b'data'][:args.num_custom_test_file_points]
                 test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=dictionary[b'labels'][:args.num_custom_test_file_points], transform=transforms.ToTensor())
                 f.close()
+   elif args.dataset_for_classification == "minicifar10":
+        minicifar_size=200+args.validation_set_size 
+        num_categories = 10
+        data_type = DataType.IMAGE
+        tr = transforms.Compose([transforms.RandomCrop(size=32 ,padding= 4), transforms.RandomHorizontalFlip(), transforms.ToTensor() ])
+        if args.cifar_random_erase:
+            tr=transforms.Compose([tr, img_tools.RandomErase()])
+
+        f=open('./local_data/cifar10/cifar-10-batches-py/data_batch_1','rb')
+        dictionary=pickle.load(f,encoding="bytes")
+        squashed_images = dictionary[b'data']
+        labels = dictionary[b'labels']
+        f.close()
+        for i in range(2,6):
+                f=open('local_data/cifar10/cifar-10-batches-py/data_batch_'+str(i),'rb')
+                dictionary = pickle.load(f, encoding='bytes')
+                squashed_images = np.concatenate((squashed_images, dictionary[b'data']),axis=0)
+                labels.extend(dictionary[b'labels'])
+                f.close()
+        #remove most images to make minicifar
+        squashed_images=squashed_images[:minicifar_size,:]
+        labels=labels[:minicifar_size]
+        logging.info("Counts of labels in minicifar:{}".format(collections.Counter(labels[args.validation_set_size:minicifar_size])))
+        train_dataset, val_dataset = set_cifar_challenge.make_train_val_datasets(squashed_images, labels, args.validation_set_size, transform=None, shuf=args.cifar_shuffle_val_set) 
+        train_dataset.transform = tr
+        val_dataset.transform = transforms.ToTensor()
+
+        f=open('./local_data/cifar10/cifar-10-batches-py/test_batch','rb')
+        dictionary=pickle.load(f,encoding="bytes")
+        squashed_images = dictionary[b'data']
+        labels = dictionary[b'labels']
+        f.close()
+        test_dataset= set_cifar_challenge.Dataset(data=squashed_images, labels=labels, transform=transforms.ToTensor())
+        if args.use_val_as_test:
+            test_dataset=val_dataset
+
+        
+        #train_dataset = tvds.CIFAR10("./local_data/cifar10/", train=True, download= True, transform=tr ) 
+        #val_dataset = tvds.CIFAR10("./local_data/cifar10/", train=False, download= True, transform=transforms.ToTensor() ) 
+        category_names = {0:"airplane", 1:"automobile", 2:"bird", 3:"cat", 4:"deer", 5:"dog", 6:"frog", 7:"horse", 8: "ship", 9: "truck" }
+
+
 
 
 
@@ -834,6 +876,9 @@ def run(args, ensemble_test=False):
         logging.info(repr(context.model.children()))
    
    if args.report_test_error_at_end:
+        if args.maintain_abs_deriv_sum:
+            disable_grad_storage(context.model)
+
         test_acc = basic_classification.evaluate(context, context.test_loader,no_grad=args.use_nograd)
         logging.info("FINAL TEST ACCURACY:{}".format(test_acc))
         print("FINAL TEST ACCURACY:{}".format(test_acc))
