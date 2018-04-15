@@ -974,6 +974,7 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
 def taylor_sample_batches(context, args):
     #note: this function may change a model slightly by changing its batch norm running averages
    assert args.group_prune_strategy == "taylor" 
+   context.model.eval()
    loader=context.train_loader
    subblocks = context.model.to_subblocks()
    for name, layer in subblocks.items():
@@ -994,6 +995,7 @@ def taylor_sample_batches(context, args):
             context.optimizer.zero_grad()
             if i >= args.taylor_num_samples -1:
                 break
+   context.model.train()
             
             
 
