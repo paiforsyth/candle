@@ -1514,7 +1514,7 @@ class SqueezeNet(serialmodule.SerializableModule):
 
 
     def compute_pruning_normalization_factor(self, mode):
-        for name, module in self.to_blocks.items():
+        for name, module in self.to_blocks().items():
             if getattr(module,"compute_pruning_normalization_factor",None) is not None:
                 module.compute_pruning_normalization_factor(mode)
 
