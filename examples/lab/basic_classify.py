@@ -974,7 +974,7 @@ def taylor_sample_batches(context, args):
    assert args.group_prune_strategy == "taylor" 
    loader=context.train_loader
    oldmodel= copy.deepcopy(context.model)
-   oldparams = copy.deepcopy(oldmodel.proxy_ctx.list_params())
+   oldparams = [ param.detach().clone() for param in oldmodel.proxy_ctx.list_params()) ]
    subblocks = context.model.to_subblocks()
    for name, layer in subblocks.items():
        if not isinstance(layer, candle.proxy.ProxyConv2d):
