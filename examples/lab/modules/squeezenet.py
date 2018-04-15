@@ -1279,7 +1279,7 @@ class SqueezeNet(serialmodule.SerializableModule):
 
         for i,layer_chunk in enumerate(self.layer_chunk_list):
             if self.chunk_across_devices:
-                r=x.cuda(self.layer_chunk_devices[i])
+                x=x.cuda(self.layer_chunk_devices[i])
             r=layer_chunk(x)
             if self.use_forking and i in self.fork_after_chunks:
                 assert isinstance(r, tuple)
