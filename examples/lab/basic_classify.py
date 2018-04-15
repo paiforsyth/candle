@@ -44,6 +44,7 @@ from .genutil import modules
 from torchvision import transforms
 import torchvision.datasets as tvds
 import candle.prune
+import candl.proxy
 def add_args(parser):
     if parser is None:
         parser= argparse.ArgumentParser() 
@@ -977,7 +978,7 @@ def taylor_sample_batches(context, args):
    loader=context.train_loader
    subblocks = context.model.to_subblocks()
    for name, layer in subblocks.items():
-       if not isinstance(layer, proxy.ProxyConv2d):
+       if not isinstance(layer, candle.proxy.ProxyConv2d):
            continue
        layer.store_output=True
    for i, (batch_in,*other) in enumerate(loader):
@@ -994,7 +995,7 @@ def taylor_sample_batches(context, args):
 def taylor_sample_clear(context_args):
    subblocks = context.model.to_subblocks()
    for name, layer in subblocks.items():
-       if not isinstance(layer, proxy.ProxyConv2d):
+       if not isinstance(layer, candle.proxy.ProxyConv2d):
            continue
        layer.store_output=False
        layer.record_of_output=[]
