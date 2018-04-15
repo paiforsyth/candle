@@ -974,6 +974,7 @@ def taylor_sample_batches(context, args):
    assert args.group_prune_strategy == "taylor" 
    loader=context.train_loader
    oldmodel= copy.deepcopy(context.model)
+   oldparams = copy.deepcopy(oldmodel.proxy_ctx.list_params())
    subblocks = context.model.to_subblocks()
    for name, layer in subblocks.items():
        if not isinstance(layer, candle.proxy.ProxyConv2d):
@@ -990,7 +991,7 @@ def taylor_sample_batches(context, args):
             if i >= args.taylor_num_samples -1:
                 break
             
-            for para1, para2 in zip(context.model.proxy_ctx.list_params(), oldmodel.proxy_ctx.list_params() ):
+            for para1, para2 in zip(context.model.proxy_ctx.list_params(), oldparams ):
                 nor= (para1-para2).norm()
                 if nor>0:
                     import pdb; pdb.set_trace()
