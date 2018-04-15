@@ -537,7 +537,7 @@ def run(args, ensemble_test=False):
         #import pdb; pdb.set_trace()
         taylor_sample_batches(context,args)
         prunefunc = get_pruning_func(context, args)
-       # prunefunc(args.prune_trained_pct)
+        prunefunc(args.prune_trained_pct)
         n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
         logging.info("Unpruned masks: "+str(n_unpruned))
         context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_taylor_" + str(args.prune_trained_pct) )  )
@@ -971,32 +971,23 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
         sb_copy.record_of_output=[]
 
 def taylor_sample_batches(context, args):
+    #note: this function may change a model slightly by changing its batch norm running averages
    assert args.group_prune_strategy == "taylor" 
    loader=context.train_loader
-   oldmodel= copy.deepcopy(context.model)
-   oldparams = [ param.detach().clone() for param in oldmodel.proxy_ctx.list_params() ]
    subblocks = context.model.to_subblocks()
    for name, layer in subblocks.items():
        if not isinstance(layer, candle.proxy.ProxyConv2d):
            continue
-  #     layer.store_output=True
-   context.model.eval()
+       layer.store_output=True
    for i, (batch_in,*other) in enumerate(loader):
-            #categories = other[0]
+            categories = other[0]
             scores = context.model(batch_in)
-            #loss=  F.cross_entropy(scores,categories) 
-            #loss.backward()
-            #context.optimizer.zero_grad()
-            #for name, layer in subblocks.items():
-         #    layer.store_output=True  
+            loss=  F.cross_entropy(scores,categories) 
+            loss.backward()
+            context.optimizer.zero_grad()
             if i >= args.taylor_num_samples -1:
                 break
-   context.model.train()
             
-   for para1, para2 in zip(context.model.proxy_ctx.list_params(), oldparams ):
-                nor= (para1-para2).norm()
-                if nor>0:
-                    import pdb; pdb.set_trace()
             
 
 def taylor_sample_clear(context,args):

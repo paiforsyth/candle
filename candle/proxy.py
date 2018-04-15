@@ -259,6 +259,7 @@ class _ProxyConvNd(ProxyLayer):
         out=  self.conv_fn(x, *weights, **self._conv_kwargs)
 
         if self.store_output:
+            import pdb; pdb.set_trace()
             self.record_of_output.append(out)
 
         return out
