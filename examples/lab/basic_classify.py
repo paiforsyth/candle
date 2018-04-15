@@ -889,7 +889,7 @@ def run(args, ensemble_test=False):
    #if context.data_type == DataType.SEQUENCE:
     #    datatools.sequence_classification.write_evaulation_report(context, context.val_loader,os.path.join(args.timestamp + report_path,args.save_prefix +".txt") , category_names=context.category_names) 
 def get_dims_from_dataset(dataset_for_classification):
-    if dataset_for_classification == "cifar_challenge" or dataset_for_classification == "cifar10":
+    if dataset_for_classification == "cifar_challenge" or dataset_for_classification == "cifar10" or dataset_for_classification =="minicifar10":
            img_h=32
            img_w=32
            channels=3
