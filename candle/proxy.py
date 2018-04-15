@@ -270,8 +270,8 @@ class _ProxyConvNd(ProxyLayer):
 
 
     def update_abs_deriv_sum(self):
-        if len(self.record_of_output)!=1:
-            import pdb; pdb.set_trace()
+        #if len(self.record_of_output)!=1:
+        #    import pdb; pdb.set_trace()
         assert(len(self.record_of_output)==1)
         self.record_of_abs_deriv_sum+=(self.record_of_output[0].data*self.record_of_output[0].grad.data).abs().mean(3).mean(2).mean(0)
         self.record_of_output=[]

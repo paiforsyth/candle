@@ -597,6 +597,12 @@ def run(args, ensemble_test=False):
 
             context.optimizer.zero_grad()
             
+            if args.group_prune_strategy ==  "taylor" and args.maintain_abs_deriv_sum :
+                    clear_abs_deriv_sum(context.model)
+
+
+
+
             #for image classification, batch_in will have dimension batchsize by imagesize and scores will have dimension batchsize by number of categories
             #For sequence-to-squence batch in will have dimension batchsize by the max sequence length in the batch. scores  will have dimension batchsize by max sqeunce_length by categoreis
 
