@@ -1611,6 +1611,10 @@ class SqueezeNet(serialmodule.SerializableModule):
             else:
                 logging.info("name:{} Unpruned Masks: {} / {} ".format(name, mask_nonzero, mask_len))
 
+    def compute_flog_reg_terms_standard(self):
+        pass
+    #compute the flop regularization terms for all proxy
+
 
        
 

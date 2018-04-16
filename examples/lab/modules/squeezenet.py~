@@ -12,7 +12,7 @@ import torch.cuda
 from . import serialmodule
 from . import shakedrop_func 
 from .countmult import count_approx_multiplies
-#from .reset_weights import reset_weight
+from .reset_weights import reset_weights
 from .reset_masks import reset_masks
 from .sample_storage import *
 from . import shake_shake
@@ -1610,6 +1610,9 @@ class SqueezeNet(serialmodule.SerializableModule):
                 logging.warning("name:{} Unpruned Masks: {} / {} ".format(name, mask_nonzero, mask_len))
             else:
                 logging.info("name:{} Unpruned Masks: {} / {} ".format(name, mask_nonzero, mask_len))
+
+    def compute_flog_reg_terms_standard(self)
+    #compute the flop regularization terms for all proxy
 
 
        
