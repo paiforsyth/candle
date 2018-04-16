@@ -251,6 +251,7 @@ class _ProxyConvNd(ProxyLayer):
         self.mults=None #these are for flops regularizated pruning
         self.mults_im1=None
         self.mults_om1=None
+        self.flop_reg_term=None
 
 
 

@@ -12,7 +12,7 @@ import torch.cuda
 from . import serialmodule
 from . import shakedrop_func 
 from .countmult import count_approx_multiplies
-from .reset_weights import reset_weights
+#from .reset_weights import reset_weight
 from .reset_masks import reset_masks
 from .sample_storage import *
 from . import shake_shake
@@ -196,7 +196,7 @@ class VGGFire(nn.Sequential):
             super().__init__()
             conv= nn.Conv2d(in_channels,out_channels, kernel_size=3, padding=1)
             conv = conv if proxy_ctx is None else proxy_ctx.wrap(conv) 
-            self.add_module("conv", )
+            self.add_module("conv", conv)
             self.add_module("relu", nn.ReLU())
 
 
@@ -469,6 +469,7 @@ class ZagFire(serialmodule.SerializableModule):
          super().__init__()
          self.in_channels = in_channels
          self.out_channels = out_channels
+         self.bypass_last = bypass_last
          if proxy_mode == "l1reg_context_slimming":
              bn_wrapper = proxy_ctx.wrap
              first_wrapper = proxy_ctx.wrap
@@ -512,7 +513,35 @@ class ZagFire(serialmodule.SerializableModule):
         return out
     def multiplies(self,img_h, img_w, input_channels, unpruned=False):
         mults, _,out_h,out_w =  count_approx_multiplies(layer = self.seq, img_h=img_h, img_w=img_w, input_channels=input_channels,unpruned=unpruned)        
+        
         return mults, self.out_channels,out_h ,out_w #residual branch means that we get the full number of out_channels even if we pruned some
+
+
+    def compute_pruning_normalization_factor(self, mode):
+
+        if mode == PruningNormalizationMode.BY_LAYER:
+            for layer in self.seq:
+                if isinstance(layer, candle.proxy.ProxyConv2d):
+                    layer.pruning_normalization_factor = float(layer.record_of_abs_deriv_sum.norm())
+
+        elif mode == PruningNormalizationMode.BY_BLOCK:
+            total_sq_norm=0    
+            for layer in self.seq:
+                if isinstance(layer, candle.proxy.ProxyConv2d):
+                    total_sq_norm+=   float(layer.record_of_abs_deriv_sum.norm())**2
+            for layer in self.seq:
+                if isinstance(layer, candle.proxy.ProxyConv2d):
+                    layer.pruning_normalization_factor =math.sqrt(total_sq_norm)
+        elif mode == PruningNormalizationMode.NO_NORMALIZATION:
+            return
+        else:
+            raise Exception("Unknown Pruning normalization Mode")
+
+
+
+
+
+
 
 class FinalZagBlockFire(serialmodule.SerializableModule):
     def __init__(self, in_channels, out_classes, proxy_ctx, activation, dropout_rate):
