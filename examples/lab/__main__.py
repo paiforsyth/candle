@@ -60,7 +60,7 @@ def default_parser(parser=None):
     parser.add_argument("--sgd_momentum",type=float, default=0)
     parser.add_argument("--sgd_weight_decay", type=float, default=0)
     parser.add_argument("--plateau_lr_scheduler_patience",type=int, default=10)
-    parser.add_argument("--lr_scheduler",type=str, choices=[None, "exponential", "plateau", "linear", "multistep", "epoch_anneal"], default="exponential")
+    parser.add_argument("--lr_scheduler",type=str, choices=[None, "exponential", "plateau", "linear", "multistep", "epoch_anneal","none"], default="exponential")
     parser.add_argument("--lr_gamma",type=float, default=0.99)
     parser.add_argument("--linear_scheduler_max_epoch", type=int, default=300)
     parser.add_argument("--linear_scheduler_subtract_factor", type=float, default=0.99)

@@ -360,7 +360,7 @@ def make_context(args):
        else:
            Tmax=args.num_epochs//args.epoch_anneal_numcycles
        scheduler= optimutil.MyAnneal(optimizer=optimizer, Tmax=Tmax,  init_lr=args.init_lr)
-   elif args.lr_scheduler == None:
+   elif args.lr_scheduler is None or args.lr_scheduler == "none":
        scheduler = None
    else: 
        raise Exception("Unknown Scheduler")
