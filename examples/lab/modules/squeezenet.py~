@@ -194,7 +194,9 @@ class ResFire(serialmodule.SerializableModule):
 class VGGFire(nn.Sequential):
     def __init__(self, in_channels, out_channels, proxy_ctx, proxy_mode):
             super().__init__()
-            self.add_module("conv", proxy_ctx.wrap(nn.Conv2d(in_channels,out_channels, kernel_size=3, padding=1)))
+            conv= nn.Conv2d(in_channels,out_channels, kernel_size=3, padding=1)
+            conv = conv if proxy_ctx is None else proxy_ctx.wrap(conv) 
+            self.add_module("conv", )
             self.add_module("relu", nn.ReLU())
 
 
@@ -1260,7 +1262,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 else:
                     layer_dict["final_conv"]=proxy_ctx.wrap(nn.Conv2d(self.channel_counts[-1], config.out_dim, kernel_size=1)) 
               elif config.final_mode == "linear":
-                  layer_dict["final_conv"] = FinalLinear(self.channel_counts[-1], config.final_side_length, config.final_side_length, config.out_dim)
+                  layer_dict["final_conv"] = FinalLinear(self.channel_counts[-1], config.final_side_length, config.final_side_length, config.out_dim, proxy_ctx=proxy_ctx)
             elif config.mode == "msd_fire":
                 layer_dict["msd_final_exit"]= msdnet.MSDExitBranchFire( in_channels=self.channel_counts[-1],num_classes= config.out_dim,num_scales=config.msd_num_scales, proxy_ctx=proxy_ctx, proxy_ctx_mode=config.proxy_context_type)
             else: 

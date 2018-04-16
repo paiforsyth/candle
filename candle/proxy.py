@@ -247,6 +247,10 @@ class _ProxyConvNd(ProxyLayer):
         self.record_of_output_grad=[] #used by the NVIDIA pruning method
         self.record_of_abs_deriv_sum=0 #used by the NVIDIA pruning method
         self.pruning_normalization_factor=None #used to weight scores assigned to this layer in normalization
+        
+        self.mults=None #these are for flops regularizated pruning
+        self.mults_im1=None
+        self.mults_om1=None
 
 
 
@@ -325,7 +329,7 @@ class ProxyConv2d(_ProxyConvNd):
     def __init__(self, weight_provider, **kwargs):
         super().__init__(weight_provider, F.conv2d, **kwargs)
         
-    def multiplies(self,img_h, img_w, input_channels, unpruned):
+    def multiplies(self,img_h, img_w, input_channels, unpruned, reduce_out_by_one=False):
         from . import prune
         w_dim = self.weight_provider.sizes.reify()[0]
         if self.groups == w_dim[0] and self.groups == w_dim[1]:
@@ -338,10 +342,22 @@ class ProxyConv2d(_ProxyConvNd):
                 effective_in = self.weight_provider.mask_unpruned[0]
             else:
                 effective_in = input_channels
+        if reduce_out_by_one:
+            effective_out=effective_out-1
         mults, out_channels, height, width = util.countmult_util.conv2d_mult_compute(img_h, img_w, in_channels=effective_in, out_channels=effective_out, groups=self.groups, stride=self.stride, padding=self.padding, kernel_size=self.kernel_size, dilation=self.dilation)
         logging.debug("number of mults is {}".format(mults))  #logging.debug("number of mults is {}*{}*{}*{}*{}*{} / {} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],self.groups,mults)  )
         
         return mults, out_channels, height, width
+
+    def compute_mults_for_flop_reg(self, img_h, img_w, input_channels, unpruned):
+        mults, out_channels, height,width = self.multiplies( img_h, img_w, input_channels, unpruned)
+        mults_im1, _,_,_ = self.multiplies( img_h, img_w, input_channels-1, unpruned)
+        mults_om1, _,_,_ = self.multiplies( img_h, img_w, input_channels, unpruned,reduce_out_by_one=True)
+        self.mults = mults
+        self.mults_im1=mults_im1
+        self.mults_om1=mults_om1
+        return mults, out_channels, height, width
+
 
     def reset_underlying_weights(self):
         logging.info("reseting ProxyConv2D weights")

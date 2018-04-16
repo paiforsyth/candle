@@ -194,7 +194,9 @@ class ResFire(serialmodule.SerializableModule):
 class VGGFire(nn.Sequential):
     def __init__(self, in_channels, out_channels, proxy_ctx, proxy_mode):
             super().__init__()
-            self.add_module("conv", proxy_ctx.wrap(nn.Conv2d(in_channels,out_channels, kernel_size=3, padding=1)))
+            conv= nn.Conv2d(in_channels,out_channels, kernel_size=3, padding=1)
+            conv = conv if proxy_ctx is None else proxy_ctx.wrap(conv) 
+            self.add_module("conv", )
             self.add_module("relu", nn.ReLU())
 
 
@@ -1614,7 +1616,7 @@ class FinalLinear(nn.Module):
         super().__init__()
         self.in_dim=in_c*in_h*in_w
         self.out_c=out_c
-        self.lin=proxy_ctx.bypass(nn.Linear(self.in_dim,out_c))
+        self.lin= proxy_ctx.bypass(nn.Linear(self.in_dim,out_c)) if proxy_ctx is not None else  nn.Linear(self.in_dim,out_c)
     def forward(self, x):
         x=x.view(-1, self.in_dim)
         x=self.lin(x)
