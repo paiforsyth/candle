@@ -203,18 +203,12 @@ class VGGFire(nn.Sequential):
 
 
         if mode == PruningNormalizationMode.BY_LAYER:
-            for layer in self.seq:
+            for layer in self:
                 if isinstance(layer, candle.proxy.ProxyConv2d):
                     layer.pruning_normalization_factor = float(layer.record_of_abs_deriv_sum.norm())
 
         elif mode == PruningNormalizationMode.BY_BLOCK:
-            total_sq_norm=0    
-            for layer in self.seq:
-                if isinstance(layer, candle.proxy.ProxyConv2d):
-                    total_sq_norm+=   float(layer.record_of_abs_deriv_sum.norm())**2
-            for layer in self.seq:
-                if isinstance(layer, candle.proxy.ProxyConv2d):
-                    layer.pruning_normalization_factor =math.sqrt(total_sq_norm)
+            raise Exception("Not compatible with VGG")  
         elif mode == PruningNormalizationMode.NO_NORMALIZATION:
             return
         else:
