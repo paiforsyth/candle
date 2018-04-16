@@ -746,7 +746,9 @@ def run(args, ensemble_test=False):
             param_tensors=new_param_tensors
         if args.maintain_abs_deriv_sum:
             disable_grad_storage(context.model)
-        eval_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
+        if epoch_count == 0 or epoch_count % args.eval_interval==0:
+            logging.info("recalculating eval score")
+            eval_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
         if args.maintain_abs_deriv_sum:
             enable_grad_storage(context.model)
 

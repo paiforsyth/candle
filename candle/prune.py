@@ -739,7 +739,7 @@ class PruneContext(Context):
             thresh_dex = min(math.ceil(proportion*global_weights.size(0)),global_weights.size(0)-1 )
             thresh = float(global_weights[thresh_dex])
         else:
-            thresh=float(global_weights[percentage])
+            thresh=float(global_weights[percentage-1])
         for weights, proxy in zip(weights_list, proxies):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()):
                 local_weight=weight
