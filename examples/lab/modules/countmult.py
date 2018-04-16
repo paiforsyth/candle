@@ -24,6 +24,8 @@ def count_approx_multiplies(layer,img_h,img_w, input_channels, unpruned=False):
     if isinstance(layer, nn.Dropout):
         logging.debug("returning 0 multiplies")
         return 0,input_channels, img_h,img_w
+    if isinstance(layer,nn.Linear):
+        raise Exception("not implemented")
     if isinstance(layer, nn.MaxPool2d):
         padding = layer.padding
         if isinstance(padding,int):
