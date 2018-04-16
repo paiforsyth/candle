@@ -558,6 +558,7 @@ def run(args, ensemble_test=False):
                 logging.info("absolute prune unit is {}".format(prune_abs_unit))
         else:
             prune_unit = args.prune_unit
+            prune_abs_unit= prune_unit
         if args.prune_target_frac is not None:
             prune_target = int(init_mask_count *args.prune_target_frac )
         else:
@@ -608,7 +609,8 @@ def run(args, ensemble_test=False):
    if args.do_condense:
         conds_so_far=0
 
-
+   if args.terminate_after_pruning:
+       iter_after_pruning=0
 
    if args.reset_weights_before_start:
        logging.info("resetting weights")
@@ -851,6 +853,12 @@ def run(args, ensemble_test=False):
                     pu=prune_abs_unit
 
                 prunefunc(pu)
+             if n_unpruned <=prune_target and args.terminate_after_pruning:
+                iter_after_pruning+=1
+                if iter_after_pruning > args.iterations_after_pruning:
+                    break
+
+
         if args.group_prune_strategy ==  "taylor" and args.maintain_abs_deriv_sum :
                     clear_abs_deriv_sum(context.model)
                     clear_record_of_output(context.model) #neccesary because evaluating the model may have caused additional output to be stored
@@ -1003,7 +1011,7 @@ def get_pruning_func(context, args):
                 logging.info("using global taylor pruning")
                 def do_global_taylor_prune(*pargs,**kwargs):
                     context.model.compute_pruning_normalization_factor(norm_mode)
-                    context.model.proxy_ctx.prune_global_smallest(*pargs,method="taylor",normalize=normalize,**kwargs)
+                    context.model.proxy_ctx.prune_global_smallest(*pargs,method="taylor",normalize=normalize, absolute=args.prune_absolute ,**kwargs)
          
 
                 return do_global_taylor_prune  #functools.partial(context.model.proxy_ctx.prune_global_smallest, method="taylor")

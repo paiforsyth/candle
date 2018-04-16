@@ -105,9 +105,12 @@ def default_parser(parser=None):
     parser.add_argument("--prune_unit",type=int, default=1)
     parser.add_argument("--group_prune_strategy",choices= ["standard","random", "taylor"],default="standard")
     parser.add_argument("--global_prune_normalization",choices= ["no_normalization", "by_layer", "by_block"  ],default="no_normalization") #whether to use a normalization factor to compare pruning scores between layers
+    parser.add_argument("--terminate_after_pruning",action="store_true", help="stop iterating a fixed number of iterations after pruning completes")
+    parser.add_argument("--iterations_after_pruning",type=int,default=40,  help="When terminate_after_pruning is true, number of iterations to perform after pruning complete")
+
 
     parser.add_argument("--autocalc_prune_unit",action="store_true")#overrided the above.  Uses as prune_unit what is neccesary to achieve the prune target in default 10 epochs
-    parser.add_argument("--prune_calc_type",choices=["absolute","relative"],default="relative")# How to calculate the prune unit.  will we be subtracting a fixed propriton of the original masks each prune iteration, or a proprtion of the current nonzero masks.  Must agree witht the pruning method
+    parser.add_argument("--prune_calc_type",choices=["absolute","relative"],default="relative")# How to calculate the prune unit with autocalc.  will we be subtracting a fixed propriton of the original masks each prune iteration, or a proprtion of the current nonzero masks.  Must agree witht the pruning method
     parser.add_argument("--prune_phase_duration",type=int,default=10) #for use with autocalc_prune_unit
 
     
@@ -149,6 +152,7 @@ def default_parser(parser=None):
     parser.add_argument("--prune_trained", action="store_true", help= "Prune a trained model, then resave it ")
     parser.add_argument("--prune_trained_pct", type=int, help="pct of weights to prune")
     parser.add_argument("--prune_trained_hz", action="store_true", help="use hz_lasso in pruning of trained model")
+    parser.add_argument("--prune_absolute",action="store_true",help="prune a fixed qunaitity of masks, instead of a percent")
 
     parser.add_argument("--validate_fr", action="store_true",help="get accuracy of a result report using ground truth")
     parser.add_argument("--validate_fr_reportfile",help="report file to validate")
