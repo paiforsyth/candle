@@ -1260,7 +1260,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                 else:
                     layer_dict["final_conv"]=proxy_ctx.wrap(nn.Conv2d(self.channel_counts[-1], config.out_dim, kernel_size=1)) 
               elif config.final_mode == "linear":
-                  layer_dict["final_conv"] = FinalLinear(self.channel_counts[-1], config.final_side_length, config.final_side_length, config.out_dim)
+                  layer_dict["final_conv"] = FinalLinear(self.channel_counts[-1], config.final_side_length, config.final_side_length, config.out_dim, proxy_ctx=proxy_ctx)
             elif config.mode == "msd_fire":
                 layer_dict["msd_final_exit"]= msdnet.MSDExitBranchFire( in_channels=self.channel_counts[-1],num_classes= config.out_dim,num_scales=config.msd_num_scales, proxy_ctx=proxy_ctx, proxy_ctx_mode=config.proxy_context_type)
             else: 
@@ -1610,11 +1610,11 @@ def forking_props_from_sample(squeezenet,  loader):
     squeezenet.calc_exit_proportions()
 
 class FinalLinear(nn.Module):
-    def __init__(self,in_c,in_h,in_w,out_c):
+    def __init__(self,in_c,in_h,in_w,out_c,proxy_ctx):
         super().__init__()
         self.in_dim=in_c*in_h*in_w
         self.out_c=out_c
-        self.lin=nn.Linear(self.in_dim,out_c)
+        self.lin=proxy_ctx.bypass(nn.Linear(self.in_dim,out_c))
     def forward(self, x):
         x=x.view(-1, self.in_dim)
         x=self.lin(x)

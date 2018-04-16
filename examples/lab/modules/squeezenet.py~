@@ -1610,18 +1610,18 @@ def forking_props_from_sample(squeezenet,  loader):
     squeezenet.calc_exit_proportions()
 
 class FinalLinear(nn.Module):
-    def __init__(self,in_c,in_h,in_w,out_c):
+    def __init__(self,in_c,in_h,in_w,out_c,proxy_ctx):
         super().__init__()
         self.in_dim=in_c*in_h*in_w
         self.out_c=out_c
-        self.lin=nn.Linear(self.in_dim,out_c)
+        self.lin=proxy_ctx.bypass(nn.Linear(self.in_dim,out_c))
     def forward(self, x):
         x=x.view(-1, self.in_dim)
         x=self.lin(x)
         x=x.view(-1,self.out_c,1,1)
         return x
     def multiplies(self,img_h, img_w, input_channels, unpruned ):
-        return self.lin.weight.shape[0]*self.lin.weight.shape[1],self.out_c,1,1,
+        return self.lin.weight.shape[0]*self.lin.weight.shape[1],self.out_c,1,1
 
 
 
