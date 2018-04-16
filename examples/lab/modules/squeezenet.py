@@ -196,7 +196,7 @@ class VGGFire(nn.Sequential):
             super().__init__()
             conv= nn.Conv2d(in_channels,out_channels, kernel_size=3, padding=1)
             conv = conv if proxy_ctx is None else proxy_ctx.wrap(conv) 
-            self.add_module("conv", )
+            self.add_module("conv", conv)
             self.add_module("relu", nn.ReLU())
 
 
