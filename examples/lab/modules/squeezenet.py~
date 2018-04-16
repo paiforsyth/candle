@@ -94,7 +94,7 @@ def add_args(parser):
     parser.add_argument("--squeezenet_bnn_prelu", action="store_true")
 
     parser.add_argument("--squeezenet_final_mode", choices=["normal","linear"], default="normal", help="use a standard convolution or a special linear layer to end the network") 
-    parser.add_argument("--squeezenet_final_side_length", type=int, defualt=8, help="sidelength of images before final layer.  Used if final_mode is linear") 
+    parser.add_argument("--squeezenet_final_side_length", type=int, default=8, help="sidelength of images before final layer.  Used if final_mode is linear") 
     parser.add_argument("--squeezenet_final_act_mode", choices=["enable", "disable",], default="enable", help="should there be an activation with the final conv. ")
     parser.add_argument("--squeezenet_scale_layer",action="store_true")
 
@@ -1620,6 +1620,8 @@ class FinalLinear(nn.Module):
         x=self.lin(x)
         x=x.view(-1,self.out_c,1,1)
         return x
+    def multiplies(self,img_h, img_w, input_channels, unpruned ):
+        return count_approx_multiplies(self.lin,img_h,img_w, input_channels, unpruned=False)
 
 
 

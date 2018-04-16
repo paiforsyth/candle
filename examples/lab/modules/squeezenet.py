@@ -1620,6 +1620,8 @@ class FinalLinear(nn.Module):
         x=self.lin(x)
         x=x.view(-1,self.out_c,1,1)
         return x
+    def multiplies(self,img_h, img_w, input_channels, unpruned ):
+        return count_approx_multiplies(self.lin,img_h,img_w, input_channels, unpruned)
 
 
 
