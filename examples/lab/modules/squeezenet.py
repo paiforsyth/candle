@@ -374,16 +374,18 @@ class NextFire(serialmodule.SerializableModule):
         change_store_output(self.seq,val)
 
     def compute_pruning_normalization_factor(self, mode):
-        if mode == PruningNormalizationMode.BY_LAYER:
+
+
+    if mode == PruningNormalizationMode.BY_LAYER:
             for layer in self.seq:
                 if isinstance(layer, candle.proxy.ProxyConv2d):
-                    layer.pruning_normalization_factor = float(layer.weight_provider.root().reify()[0].norm())
+                    layer.pruning_normalization_factor = float(layer.record_of_abs_deriv_sumi.norm())
 
         elif mode == PruningNormalizationMode.BY_BLOCK:
             total_sq_norm=0    
             for layer in self.seq:
                 if isinstance(layer, candle.proxy.ProxyConv2d):
-                    total_sq_norm+=   float(layer.weight_provider.root().reify()[0].norm())**2
+                    total_sq_norm+=   float(record_of_abs_deriv_sum.norm())**2
             for layer in self.seq:
                 if isinstance(layer, candle.proxy.ProxyConv2d):
                     layer.pruning_normalization_factor =math.sqrt(total_sq_norm)
@@ -391,6 +393,9 @@ class NextFire(serialmodule.SerializableModule):
             return
         else:
             raise Exception("Unknown Pruning normalization Mode")
+
+
+
 
 
 
