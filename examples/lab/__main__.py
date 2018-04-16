@@ -106,6 +106,9 @@ def default_parser(parser=None):
     parser.add_argument("--prune_unit",type=int, default=1)
     parser.add_argument("--group_prune_strategy",choices= ["standard","random", "taylor"],default="standard")
     parser.add_argument("--global_prune_normalization",choices= ["no_normalization", "by_layer", "by_block"  ],default="no_normalization") #whether to use a normalization factor to compare pruning scores between layers
+    parser.add_argument("--global_prune_flop_regularize",action="store_true")
+    parser.add_argument("--global_prune_flop_lambda",type=float)
+
     parser.add_argument("--terminate_after_pruning",action="store_true", help="stop iterating a fixed number of iterations after pruning completes")
     parser.add_argument("--iterations_after_pruning",type=int,default=40,  help="When terminate_after_pruning is true, number of iterations to perform after pruning complete")
 

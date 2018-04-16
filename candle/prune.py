@@ -711,7 +711,7 @@ class PruneContext(Context):
 
 
     
-    def prune_global_smallest(self, percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask, normalize=False, absolute=False):
+    def prune_global_smallest(self, percentage, method="magnitude", method_map=_single_rank_methods, mask_type=WeightMask, normalize=False, absolute=False, flop_reg=False, flop_reg_lambda=1):
         '''
         NOTE: IF ABSOLUTE IS TRUE, PERCENTAGE IS INTERPRETTED AS AN ABSOLUTE NUMBER OF MASKS TO PRUNE
          Idea is to find the globally smallest weights (across layers) and set the corresponding masks to 0 
@@ -730,6 +730,8 @@ class PruneContext(Context):
                local_weight = weight[mask != 0] 
                if normalize:
                    local_weight=local_weight/proxy.layer.pruning_normalization_factor
+               if flop_reg:
+                    local_weight += proxy.layer.flop_reg_term*flop_reg_lambda
                global_weights = local_weight if global_weights is  None else torch.cat([global_weights, local_weight ]) 
         if global_weights is None: #no layers with more than one nozero mask
             return
@@ -745,6 +747,8 @@ class PruneContext(Context):
                 local_weight=weight
                 if normalize:
                    local_weight = local_weight/proxy.layer.pruning_normalization_factor
+                if flop_reg:
+                    local_weight += proxy.layer.flop_reg_term*flop_reg_lambda
 
                 _, indices = torch.sort(local_weight.view(-1)) #unnecesary
                 if sum(mask.view(-1)) <= 1: #changed 
@@ -899,8 +903,8 @@ class GroupPruneContext(PruneContext):
     def prune(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
         super().prune(percentage, method, method_map, mask_type)
 
-    def prune_global_smallest(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup, normalize=False, absolute=False):
-        super().prune_global_smallest(percentage, method, method_map, mask_type, normalize=normalize, absolute=absolute)
+    def prune_global_smallest(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup, normalize=False, absolute=False, flop_reg=False, flop_reg_lambda=1):
+        super().prune_global_smallest(percentage, method, method_map, mask_type, normalize=normalize, absolute=absolute, flop_reg=flop_reg, flop_reg_lambda=flop_reg_lambda)
 
     def prune_proxy_layer(self, layer, provider_type,  percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
         return super().prune_proxy_layer(layer, provider_type, percentage, method, method_map, mask_type)

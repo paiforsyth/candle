@@ -1012,15 +1012,22 @@ def get_pruning_func(context, args):
         elif args.group_prune_strategy == "taylor": 
                 logging.info("using global taylor pruning")
                 def do_global_taylor_prune(*pargs,**kwargs):
+                    if args.global_prune_flop_regularize:
+                        img_h, img_w, channels = get_dims_from_dataset(args.dataset_for_classification)
+                        context.model.multiplies(img_h, img_w, channels, unpruned=False) #to record multiplies per layer
                     context.model.compute_pruning_normalization_factor(norm_mode)
-                    context.model.proxy_ctx.prune_global_smallest(*pargs,method="taylor",normalize=normalize, absolute=args.prune_absolute ,**kwargs)
+                    context.model.proxy_ctx.prune_global_smallest(*pargs,method="taylor",normalize=normalize, absolute=args.prune_absolute ,flop_reg = args.global_prune_flop_regularize, flop_reg_lambda=args.global_prune_flop_lambda, **kwargs)
          
 
                 return do_global_taylor_prune  #functools.partial(context.model.proxy_ctx.prune_global_smallest, method="taylor")
         elif args.group_prune_strategy == "random":  
                 logging.info("using global random pruning")
                 def do_global_random_prune(*pargs,**kwargs):
-                    context.model.proxy_ctx.prune_global_smallest(*pargs,method="random",normalize=normalize, absolute=args.prune_absolute ,**kwargs)
+                    if args.global_prune_flop_regularize:
+                        img_h, img_w, channels = get_dims_from_dataset(args.dataset_for_classification)
+                        context.model.multiplies(img_h, img_w, channels, unpruned=False) #to record multiplies per layer
+
+                    context.model.proxy_ctx.prune_global_smallest(*pargs,method="random",normalize=normalize, absolute=args.prune_absolute, flop_reg = args.global_prune_flop_regularize, flop_reg_lambda=args.global_prune_flop_lambda   ,**kwargs)
                 return do_global_random_prune
          
 

@@ -1611,7 +1611,27 @@ class SqueezeNet(serialmodule.SerializableModule):
             else:
                 logging.info("name:{} Unpruned Masks: {} / {} ".format(name, mask_nonzero, mask_len))
 
-    def compute_flog_reg_terms_standard(self)
+    def compute_flop_reg_terms_standard(self, img_h, img_w, input_channels, mode="output_prune"):
+        #assume all convolutions in the body of the neural network are proxy convs assoicated with output channel pruning
+        self.multiplies( img_h, img_w, input_channels,unpruned ) #causes Proxy layers to record mults
+        sub_dict=self.to_subblocks()
+        proxy_conv_list=[]
+        for s
+        for sb in sub_dict.values():
+            if isinstance(sb, candle.proxy.ProxyConv2d):
+                proxy_conv_list.append(sb)
+        
+        for i,proxy_conv in enumerate(proxy_conv_list):
+            flops_before=0
+            flops_after=0
+            flops_before+= proxy_conv.mults
+            flops_after+= proxy_conv.mults_om1
+
+            if  i< len(proxy_conv_list)-1:
+                flops_before+= proxy_conv_list[i+1].mults
+                flops_after += proxy_conv_list[i+1].mults_im1
+            proxy_conv.flop_reg_term=flops_before - flops_after
+        
     #compute the flop regularization terms for all proxy
 
 
@@ -1655,7 +1675,7 @@ class FinalLinear(nn.Module):
         x=x.view(-1,self.out_c,1,1)
         return x
     def multiplies(self,img_h, img_w, input_channels, unpruned ):
-        return self.lin.weight.shape[0]*self.lin.weight.shape[1],self.out_c,1,1
+        return input_channels*img_h*img_w*self.lin.weight.shape[1],self.out_c,1,1
 
 
 

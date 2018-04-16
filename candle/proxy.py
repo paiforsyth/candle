@@ -346,18 +346,21 @@ class ProxyConv2d(_ProxyConvNd):
         if reduce_out_by_one:
             effective_out=effective_out-1
         mults, out_channels, height, width = util.countmult_util.conv2d_mult_compute(img_h, img_w, in_channels=effective_in, out_channels=effective_out, groups=self.groups, stride=self.stride, padding=self.padding, kernel_size=self.kernel_size, dilation=self.dilation)
+        
+        # for flop regularization
+        mults_im1, _,_,_ =  util.countmult_util.conv2d_mult_compute(img_h, img_w, in_channels=effective_in-1, out_channels=effective_out, groups=self.groups, stride=self.stride, padding=self.padding, kernel_size=self.kernel_size, dilation=self.dilation) 
+        mults_om1, _,_,_ =  util.countmult_util.conv2d_mult_compute(img_h, img_w, in_channels=effective_in, out_channels=effective_out-1, groups=self.groups, stride=self.stride, padding=self.padding, kernel_size=self.kernel_size, dilation=self.dilation)
+        self.mults=mults
+        self.mults_im1=mults_im1
+        self.mults_om1=mults_om1
+
+
+
+
         logging.debug("number of mults is {}".format(mults))  #logging.debug("number of mults is {}*{}*{}*{}*{}*{} / {} = {}".format(img_h,img_w,effective_out,input_channels,w_dim[2],w_dim[3],self.groups,mults)  )
         
         return mults, out_channels, height, width
 
-    def compute_mults_for_flop_reg(self, img_h, img_w, input_channels, unpruned):
-        mults, out_channels, height,width = self.multiplies( img_h, img_w, input_channels, unpruned)
-        mults_im1, _,_,_ = self.multiplies( img_h, img_w, input_channels-1, unpruned)
-        mults_om1, _,_,_ = self.multiplies( img_h, img_w, input_channels, unpruned,reduce_out_by_one=True)
-        self.mults = mults
-        self.mults_im1=mults_im1
-        self.mults_om1=mults_om1
-        return mults, out_channels, height, width
 
 
     def reset_underlying_weights(self):
