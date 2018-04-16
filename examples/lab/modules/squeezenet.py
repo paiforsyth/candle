@@ -199,6 +199,27 @@ class VGGFire(nn.Sequential):
             self.add_module("conv", conv)
             self.add_module("relu", nn.ReLU())
 
+     def compute_pruning_normalization_factor(self, mode):
+
+
+        if mode == PruningNormalizationMode.BY_LAYER:
+            for layer in self:
+                if isinstance(layer, candle.proxy.ProxyConv2d):
+                    layer.pruning_normalization_factor = float(layer.record_of_abs_deriv_sum.norm())
+
+        elif mode == PruningNormalizationMode.BY_BLOCK:
+            raise Exception("Not compatible with VGG")  
+        elif mode == PruningNormalizationMode.NO_NORMALIZATION:
+            return
+        else:
+            raise Exception("Unknown Pruning normalization Mode")
+
+     def submods(self):
+        return self.named_children() 
+
+
+
+
 
 
 
