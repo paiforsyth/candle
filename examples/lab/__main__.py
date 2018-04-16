@@ -41,6 +41,7 @@ def default_parser(parser=None):
     parser.add_argument("--load_nonstrict", action="store_true") 
     parser.add_argument("--adjust_out_dim_after_loading", action="store_true") 
     parser.add_argument("--new_out_dim", type=int) 
+    parser.add_argument("--drop_last_training_batch",action="store_true")
 
 
 

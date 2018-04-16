@@ -275,7 +275,7 @@ def make_context(args):
    elif data_type == DataType.IMAGE:
        indexer= None
        if args.mode == "train": #can probably remove this if block.  Now we have all loaders availible in all modes
-            train_loader=data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle= True, collate_fn=basic_classification.make_var_wrap_collater(args))
+            train_loader=data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle= True, collate_fn=basic_classification.make_var_wrap_collater(args), drop_last= args.drop_last_training_batch)
             val_loader=data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args,volatile=True ))
             test_loader = data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle= False, collate_fn=basic_classification.make_var_wrap_collater(args, volatile=True)) if test_dataset is not None else None
        elif  args.mode == "test":
