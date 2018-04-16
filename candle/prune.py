@@ -718,6 +718,7 @@ class PruneContext(Context):
          only suitable for situations in which the wegiht norms being pruned have comparable magnitudes across channels
          (i.e. network slimming)
         '''
+        import pdb; pdb.set_trace()
         rank_call = method_map[method]
         proxies = self.list_proxies("weight_hook", mask_type)
         weights_list = rank_call(self, proxies)
