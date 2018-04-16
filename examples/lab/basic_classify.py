@@ -406,7 +406,7 @@ def run(args, ensemble_test=False):
        logging.info("loading saved model from file: "+args.res_file)
        context.model.load(os.path.join(args.model_save_path, args.res_file), strict= not args.load_nonstrict)
    if args.adjust_out_dim_after_loading:
-        context.model.adjust_out_dim(args.new_out_dim)
+        context.model.adjust_out_dim(args.new_out_dim, linear=args.new_final_linear,spatial_dim=args.squeezenet_final_side_length )
    if args.born_again_enable:
        if args.born_again_args_file is not None:
             logging.info("loading born again args from "+args.born_again_args_file)

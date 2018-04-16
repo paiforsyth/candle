@@ -1217,7 +1217,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                         num_stride_so_far+=1
                     else:
                         stride=1
-                    to_add = NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type, bypass_first_last = config.next_fire_bypass_first_last, stride= stride )
+                    to_add = NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type, bypass_first_last = config.next_fire_bypass_first_last, stride= stride, bypass_first= config.next_fire_bypass_first, bypass_second = config.next_fire_bypass_second, bypass_third=config.next_fire_bypass_third )
                     if config.excitation_shake_shake:
                         to_add2= NextFire(in_channels=self.channel_counts[i], num_squeeze=num_squeeze, num_expand=e, skip=skip_here, groups=config.next_fire_groups, skipmode=config.skipmode, final_bn=config.next_fire_final_bn, stochastic_depth=config.next_fire_stochastic_depth, survival_prob = survival_prob, shakedrop=config.next_fire_shakedrop, shake_shake= config.next_fire_shake_shake, proxy_ctx=proxy_ctx, proxy_mode = config.proxy_context_type,  bypass_first_last = config.next_fire_bypass_first_last  )
                 elif config.mode  == "zag_fire":
@@ -1403,14 +1403,14 @@ class SqueezeNet(serialmodule.SerializableModule):
         #replaces the final convolutional layer.  assumes we want to bypass it with the proxy ctx.
         #assert "final_conv" in self.layer_chunk_list[-1].keys()
         if linear:
-            new_final=final_linear(self.channel_counts[-1],spatial_dim, spatial_dim, new_out_dim )
+            new_final=FinalLinear(self.channel_counts[-1],spatial_dim, spatial_dim, new_out_dim, self.proxy_ctx)
         else:
-            new_final=nn.Conv2d(self.channel_counts[-1], new_out_dim, kernel_size=1)
+            new_final=self.proxy_ctx.bypass(nn.Conv2d(self.channel_counts[-1], new_out_dim, kernel_size=1))
         if next(self.layer_chunk_list[-1][-1].parameters()).is_cuda:
             new_final=new_final.cuda(next(self.layer_chunk_list[-1][-1].parameters()).get_device())
 
 
-        self.layer_chunk_list[-1][-1] = self.proxy_ctx.bypass(new_final )
+        self.layer_chunk_list[-1][-1] = new_final 
         logging.info("new final conv has input channels {} and output channels {}".format(self.channel_counts[-1],new_out_dim))
         #seems this is automatically registered
         
