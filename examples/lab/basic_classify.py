@@ -1017,6 +1017,16 @@ def get_pruning_func(context, args):
          
 
                 return do_global_taylor_prune  #functools.partial(context.model.proxy_ctx.prune_global_smallest, method="taylor")
+        elif args.group_prune_strategy == "random":  
+                logging.info("using global random pruning")
+                 def do_global_random_prune(*pargs,**kwargs):
+                    context.model.compute_pruning_normalization_factor(norm_mode)
+                    context.model.proxy_ctx.prune_global_smallest(*pargs,method="random",normalize=normalize, absolute=args.prune_absolute ,**kwargs)
+                return do_global_random_prune
+         
+
+
+
         else:
                 raise Exception("cannot deterimine correct pruning function")
 
