@@ -720,7 +720,7 @@ class PruneContext(Context):
             Ytensor= Variable(Ytensor.data) #remove any old graph connections
             iterations=1000
             def least_squares_loss(layer,in_img, out_img):
-                return (layer(in_img)-out_img).view(-1).norm()
+                return ((layer(in_img)-out_img).view(-1)*(layer(in_img)-out_img).view(-1)).sum()
             logging.info("correcting weights after lasso")
             logging.info("initial least squares loss: {}".format(least_squares_loss(proxy_layer,Atensor,Ytensor ) ))
             optimizer=torch.optim.Adam(proxy_layer.weight_provider.root().reify(),lr=0.01)
