@@ -1,4 +1,5 @@
-for PRUNE_PCT in 0 2 5 7 10 12 15 17 20 22 25 27 30 33 35 37 40 42 45 47 50 52 55 57 60 65 70; do
+for PRUNE_PCT in 60 70 80 90 95; do
+    #in 0 2 5 7 10 12 15 17 20 22 25 27 30 33 35 37 40 42 45 47 50 52 55 57 60 65 70; do
 ARGFILE=./sh/argfiles/resnet29_slimming
 RESUME_FILENAME=08_April_2018_Sunday_14_50_19resnet29_slimming_50_lambda0.00001_fixedmaxpool_endofcycle_checkpoint_0 
 SAVE_PREFIX=res_net_29_group_prune
