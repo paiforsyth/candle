@@ -1,6 +1,6 @@
 for PRUNE_PCT in 0 1 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do
 ARGFILE=./sh/argfiles/resnet29_filter_prune
-RESUME_FILENAME=11_April_2018_Wednesday_20_55_15resnet29_hz_lasso_70_before_hz_lasso
+RESUME_FILENAME=17_April_2018_Tuesday_13_25_45resnet29_hz_lasso_70_checkpoint_0
 SAVE_PREFIX=res_net29_hz
 REPORT_FILENAME=./reports/res29_hzprune_$PRUNE_PCT
 
