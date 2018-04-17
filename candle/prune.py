@@ -697,7 +697,7 @@ class PruneContext(Context):
             bar=tqdm(range(iterations)) if display else range(iterations)
             ls_loss=float("inf")
             for i in bar:
-               
+                import pdb; pdb.set_trace() 
                 oldloss=float(ls_loss)
                 ls_loss = least_squares_loss(proxy_layer,Atensor,Ytensor)
                 ls_loss.backward()
