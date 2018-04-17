@@ -1111,7 +1111,7 @@ def recalc_weights_pruned(context, args, num_samples, loader):
                 model_copy(batch_in)
              if i >= num_samples-1:
                 break
-        context.model.proxy_ctx.recalc_weights_pruned_layer(sb_real,torch.cat(sb_real.record_of_input,dim=0), Y_tensor=torch.cat(sb_copy.record_of_output,dim=0))
+        context.model.proxy_ctx.recalc_weights_pruned_layer(sb_real,Atensor=torch.cat(sb_real.record_of_input,dim=0), Ytensor=torch.cat(sb_copy.record_of_output,dim=0))
         sb_real.store_input=False
         sb_copy.store_output=False
 
