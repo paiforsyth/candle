@@ -1092,6 +1092,7 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
         sb_copy.record_of_output=[]
 
 def recalc_weights_pruned(context, args, num_samples, loader):
+    context.model.eval()
     logging.info("re-calculating weights")
     model_copy = copy.deepcopy(context.model)
     subblocks = context.model.to_subblocks()
@@ -1116,6 +1117,8 @@ def recalc_weights_pruned(context, args, num_samples, loader):
 
         sb_real.record_of_input=[]
         sb_copy.record_of_output=[]
+    context.model.train()
+
 
 
 
