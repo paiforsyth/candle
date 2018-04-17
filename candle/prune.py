@@ -694,11 +694,11 @@ class PruneContext(Context):
             logging.info("correcting weights after lasso")
             logging.info("initial least squares loss: {}".format(least_squares_loss(proxy_layer,Atensor,Ytensor ) ))
             optimizer=torch.optim.Adam(proxy_layer.weight_provider.root().reify(),lr=0.01)
+            from tqdm import tqdm
             optimizer.zero_grad()
             bar=tqdm(range(iterations)) if display else range(iterations)
             ls_loss=float("inf")
             for i in bar:
-                import pdb; pdb.set_trace() 
                 oldloss=float(ls_loss)
                 ls_loss = least_squares_loss(proxy_layer,Atensor,Ytensor)
                 ls_loss.backward()
