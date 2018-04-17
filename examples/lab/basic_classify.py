@@ -1062,6 +1062,7 @@ def get_one_layer_pruning_func(context, args, prune_unit):
 
 
 
+
 def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for_weights):
     #create a copy of the model
     logging.info("initiating hz_lasso pruning")
@@ -1088,6 +1089,36 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
 
         sb_real.record_of_input=[]
         sb_copy.record_of_output=[]
+
+def recalc_weights_pruned(context, args, num_samples, loader, solve_for_weights):
+    logging.info("re-calculating weights")
+    model_copy = copy.deepcopy(context.model)
+    subblocks = context.model.to_subblocks()
+    subblocks_copy = model_copy.to_subblocks()
+    for sb_name in subblocks.keys():
+        sb_real = subblocks[sb_name]
+        sb_copy = subblocks_copy[sb_name]
+        if not isinstance(sb_real, candle.proxy.ProxyConv2d):
+            continue
+        logging.info("pruning {}".format(sb_name))
+        sb_real.store_input= True
+        sb_copy.store_output = True
+        for i,(batch_in, *other) in enumerate(loader): 
+             with torch.no_grad():
+                context.model(batch_in)
+                model_copy(batch_in)
+             if i >= num_samples-1:
+                break
+        context.model.proxy_ctx.recalc_weights_pruned_layer(sb_real,torch.cat(sb_real.record_of_input,dim=0), Y_tensor=torch.cat(sb_copy.record_of_output,dim=0))
+        sb_real.store_input=False
+        sb_copy.store_output=False
+
+        sb_real.record_of_input=[]
+        sb_copy.record_of_output=[]
+
+
+
+
 
 def enable_grad_storage(model):
    subblocks = model.to_subblocks()

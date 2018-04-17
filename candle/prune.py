@@ -644,8 +644,8 @@ class PruneContext(Context):
         Ytensor = torch.cat( sample_outputs, dim=0 ) #dimensions  are num_samples*output_channels by h by w
         
         #added: tranfer bias from B to Y
-        Ytensor = Ytensor-  Btensor[:,:,:,:,-1]
-        Btensor = Btensor[:,:,:,:,:-1]
+        #Ytensor = Ytensor-  Btensor[:,:,:,:,-1]
+        #Btensor = Btensor[:,:,:,:,:-1]
 
 
         Yvec=Ytensor.contiguous().view(-1)
@@ -672,14 +672,14 @@ class PruneContext(Context):
 
         #update masks
         proxy_layer.weight_provider.masks.reify()[0].data[beta_chosen==0]=0
-        #proxy_layer.weight_provider.masks.reify()[0].data[beta_chosen[:-1]==0]=0 #old bias
+        proxy_layer.weight_provider.masks.reify()[0].data[beta_chosen[:-1]==0]=0 #old bias
 
         
         
-        proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen.view(1,-1,1,1) 
-        proxy_layer.weight_provider.root().reify()[1].data=proxy_layer.weight_provider.root().reify()[1].data #should do nothing. for debugging
-        #proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen[:-1].view(1,-1,1,1) old bias
-        #proxy_layer.weight_provider.root().reify()[1].data*=beta_chosen[-1] #bias old bias
+       # proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen.view(1,-1,1,1) 
+       # proxy_layer.weight_provider.root().reify()[1].data=proxy_layer.weight_provider.root().reify()[1].data #should do nothing. for debugging
+        proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen[:-1].view(1,-1,1,1) old bias
+        proxy_layer.weight_provider.root().reify()[1].data*=beta_chosen[-1] #bias old bias
         #for debugging
         Ytensor =Variable(Ytensor.data)
 
@@ -709,17 +709,34 @@ class PruneContext(Context):
                     bar.set_description("loss={}. dif={}".format(float(ls_loss),dif))
             logging.info("final least squares loss: {}".format(least_squares_loss(proxy_layer,Atensor,Ytensor ) ))
 
+     #Yvec= torch.cat([samp.transpose(1,0).view(-1) for samp in sample_outputs ],dim=0) #vector of length outchannels*batchsize*h*w
+    
+    def recalc_weights_pruned_layer(self,proxy_layer,A_tensor, Y_tensor):
+        '''
+        in_tensor should have dimensions samples by in_chanels by input image height by inpt image width
+        out_tensor should have dimesnions samples by out_channels by out height by out width
+        '''
+            iterations=1000
+            def least_squares_loss(layer,in_img, out_img):
+                return (layer(in_img)-out_img).view(-1).norm()
+            logging.info("correcting weights after lasso")
+            logging.info("initial least squares loss: {}".format(least_squares_loss(proxy_layer,Atensor,Ytensor ) ))
+            optimizer=torch.optim.Adam(proxy_layer.weight_provider.root().reify(),lr=0.01)
+            from tqdm import tqdm
+            optimizer.zero_grad()
+            bar=tqdm(range(iterations)) if display else range(iterations)
+            ls_loss=float("inf")
+            for i in bar:
+                oldloss=float(ls_loss)
+                ls_loss = least_squares_loss(proxy_layer,Atensor,Ytensor)
+                ls_loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+                dif=oldloss-float(ls_loss)
+                if display:
+                    bar.set_description("loss={}. dif={}".format(float(ls_loss),dif))
+            logging.info("final least squares loss: {}".format(least_squares_loss(proxy_layer,Atensor,Ytensor ) ))
 
-
-
-
-
-
-        
-            
-        
-        
-        #Yvec= torch.cat([samp.transpose(1,0).view(-1) for samp in sample_outputs ],dim=0) #vector of length outchannels*batchsize*h*w
 
 
     
