@@ -748,7 +748,7 @@ class PruneContext(Context):
                 if normalize:
                    local_weight = local_weight/proxy.layer.pruning_normalization_factor
                 if flop_reg:
-                    local_weight += proxy.layer.flop_reg_term*flop_reg_lambda
+                    local_weight -= proxy.layer.flop_reg_term*flop_reg_lambda
 
                 _, indices = torch.sort(local_weight.view(-1)) #unnecesary
                 if sum(mask.view(-1)) <= 1: #changed 
