@@ -1,6 +1,6 @@
 for PRUNE_PCT in 2 3 4 5 6 7 8 9 10; do   # 15 20 25 30 35 40 45 50 55 60 65 70; do
 COUNT=1
-while [$COUNT -le 100] ; do #since we are random pruning
+while [ $COUNT -le 100 ] ; do #since we are random pruning
 ARGFILE=./sh/argfiles/resnet29_group
 RESUME_FILENAME=11_April_2018_Wednesday_23_26_51_most_recent
 SAVE_PREFIX=res_net_29_group_prune
