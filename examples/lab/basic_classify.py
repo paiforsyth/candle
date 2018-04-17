@@ -576,7 +576,8 @@ def run(args, ensemble_test=False):
              after_score=basic_classification.evaluate(context, context.val_loader,no_grad=args.use_nograd)
              logging.info("accuracy after hz_lasso{}".format(after_score))
              context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
-             context.model.display_subblock_nonzero_masks()
+             if not  args.short_test_report:
+                context.model.display_subblock_nonzero_masks()
              return
     elif args.group_prune_strategy == "taylor":
         #logging.info("pruning trained model using taylor method")
