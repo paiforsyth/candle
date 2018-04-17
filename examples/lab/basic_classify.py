@@ -1100,7 +1100,9 @@ def recalc_weights_pruned(context, args, num_samples, loader,model_copy):
     logging.info("re-calculating weights")
     subblocks = context.model.to_subblocks()
     subblocks_copy = model_copy.to_subblocks()
-    for sb_name in subblocks.keys():
+    from tqdm import tqdm
+    sb_loader =tqdm(subblocks.keys())
+    for sb_name in sb_loader:
         sb_real = subblocks[sb_name]
         sb_copy = subblocks_copy[sb_name]
         if not isinstance(sb_real, candle.proxy.ProxyConv2d):
