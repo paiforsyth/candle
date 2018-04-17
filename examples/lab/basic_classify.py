@@ -593,8 +593,8 @@ def run(args, ensemble_test=False):
     else:
        prunefunc = get_pruning_func(context, args)
        prunefunc(args.prune_trained_pct)
-        context.model.display_subblock_nonzero_masks()
-        import pdb; pdb.set_trace()
+       context.model.display_subblock_nonzero_masks()
+       import pdb; pdb.set_trace()
 
        if args.recalc_weights_after_prune_trained:
             recalc_weights_pruned(context, args, num_samples=3, loader=context.train_loader)
