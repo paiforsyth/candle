@@ -986,7 +986,7 @@ def get_pruning_func(context, args):
         elif args.group_prune_strategy == "taylor": 
             logging.info("using taylor channel pruning")
             return functools.partial(context.model.proxy_ctx.prune,  method = "taylor")
-        elif args.proxy_context_type=="standard":
+        elif args.group_prune_strategy=="standard":
             logging.info("using  weight-norm pruning")
             return context.model.proxy_ctx.prune
         else:
