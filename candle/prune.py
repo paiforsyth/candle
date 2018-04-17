@@ -715,12 +715,12 @@ class PruneContext(Context):
             '''
         in_tensor should have dimensions samples by in_chanels by input image height by inpt image width
         out_tensor should have dimesnions samples by out_channels by out height by out width
-            '''
+            #'''
             Atensor= Variable(Atensor.data)
             Ytensor= Variable(Ytensor.data) #remove any old graph connections
             iterations=1000
             def least_squares_loss(layer,in_img, out_img):
-                return ((layer(in_img)-out_img).view(-1)*(layer(in_img)-out_img).view(-1)).sum()
+                return  (layer(in_img)-out_img).view(-1).norm()  #((layer(in_img)-out_img).view(-1)*(layer(in_img)-out_img).view(-1)).sum()
             logging.info("correcting weights after lasso")
             logging.info("initial least squares loss: {}".format(least_squares_loss(proxy_layer,Atensor,Ytensor ) ))
             optimizer=torch.optim.Adam(proxy_layer.weight_provider.root().reify(),lr=0.01)
