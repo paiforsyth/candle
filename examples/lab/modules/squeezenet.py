@@ -1638,7 +1638,7 @@ class SqueezeNet(serialmodule.SerializableModule):
 
     def compute_flop_reg_terms_standard(self, img_h, img_w, input_channels, mode="output_prune"):
         #assume all convolutions in the body of the neural network are proxy convs assoicated with output channel pruning
-        self.multiplies( img_h, img_w, input_channels,unpruned ) #causes Proxy layers to record mults
+        self.multiplies( img_h, img_w, input_channels,unpruned=False ) #causes Proxy layers to record mults
         sub_dict=self.to_subblocks()
         proxy_conv_list=[]
         for sb in sub_dict.values():

@@ -199,7 +199,7 @@ class VGGFire(nn.Sequential):
             self.add_module("conv", conv)
             self.add_module("relu", nn.ReLU())
 
-     def compute_pruning_normalization_factor(self, mode):
+    def compute_pruning_normalization_factor(self, mode):
 
 
         if mode == PruningNormalizationMode.BY_LAYER:
@@ -214,7 +214,7 @@ class VGGFire(nn.Sequential):
         else:
             raise Exception("Unknown Pruning normalization Mode")
 
-     def submods(self):
+    def submods(self):
         return self.named_children() 
 
 
