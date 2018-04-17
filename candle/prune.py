@@ -680,6 +680,8 @@ class PruneContext(Context):
         proxy_layer.weight_provider.root().reify()[1].data=proxy_layer.weight_provider.root().reify()[1].data #should do nothing. for debugging
         #proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen[:-1].view(1,-1,1,1) old bias
         #proxy_layer.weight_provider.root().reify()[1].data*=beta_chosen[-1] #bias old bias
+        #for debugging
+        Ytensor =Variable(Ytensor.data)
 
         if not solve_for_weights:
             return
@@ -689,10 +691,9 @@ class PruneContext(Context):
             Atensor =Variable(torch.cat(sample_inputs, dim=0))
             def least_squares_loss(layer,in_img, out_img):
                 return (layer(in_img)-out_img).view(-1).norm()
-            logging.info("correcting wieghts after lasso")
+            logging.info("correcting weights after lasso")
             logging.info("initial least squares loss: {}".format(least_squares_loss(proxy_layer,Atensor,Ytensor ) ))
             optimizer=torch.optim.Adam(proxy_layer.weight_provider.root().reify(),lr=0.01)
-            from tqdm import tqdm
             optimizer.zero_grad()
             bar=tqdm(range(iterations)) if display else range(iterations)
             ls_loss=float("inf")
