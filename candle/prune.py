@@ -678,7 +678,7 @@ class PruneContext(Context):
         
        # proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen.view(1,-1,1,1) 
        # proxy_layer.weight_provider.root().reify()[1].data=proxy_layer.weight_provider.root().reify()[1].data #should do nothing. for debugging
-        proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen[:-1].view(1,-1,1,1) old bias
+        proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen[:-1].view(1,-1,1,1) #old bias
         proxy_layer.weight_provider.root().reify()[1].data*=beta_chosen[-1] #bias old bias
         #for debugging
         Ytensor =Variable(Ytensor.data)
