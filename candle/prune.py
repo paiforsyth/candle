@@ -716,7 +716,7 @@ class PruneContext(Context):
         in_tensor should have dimensions samples by in_chanels by input image height by inpt image width
         out_tensor should have dimesnions samples by out_channels by out height by out width
             '''
-            Atensor= Varaible(Atensor.data)
+            Atensor= Variable(Atensor.data)
             Ytensor= Variable(Ytensor.data) #remove any old graph connections
             iterations=1000
             def least_squares_loss(layer,in_img, out_img):
