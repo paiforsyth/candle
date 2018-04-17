@@ -277,7 +277,6 @@ class _ProxyConvNd(ProxyLayer):
 
     def update_abs_deriv_sum(self):
         #if len(self.record_of_output)!=1:
-        #    import pdb; pdb.set_trace()
         assert(len(self.record_of_output)==1)
         self.record_of_abs_deriv_sum+=(self.record_of_output[0].data*self.record_of_output[0].grad.data).mean(3).mean(2).abs().mean(0) # correction:sum over feature map occurs before abs.  sum over batch occurs after
         self.record_of_output=[]
