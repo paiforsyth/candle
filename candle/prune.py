@@ -649,7 +649,7 @@ class PruneContext(Context):
 
 
         Yvec=Ytensor.contiguous().view(-1)
-        Bmat=Btensor.contiguous().view(-1,input_channels)     #changed to reflect o position of biasold: Bmat =Btensor.contiguous().view(-1, input_channels+1) 
+        Bmat=Btensor.contiguous().view(-1,input_channels+1)     #changed to reflect o position of biasold: Bmat =Btensor.contiguous().view(-1, input_channels+1) 
 
         import sklearn
         from sklearn.linear_model import lasso_path
