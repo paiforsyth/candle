@@ -677,6 +677,7 @@ class PruneContext(Context):
         
         
         proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen.view(1,-1,1,1) 
+        proxy_layer.weight_provider.root().reify()[1].data=proxy_layer.weight_provider.root().reify()[1].data #should do nothing. for debugging
         #proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen[:-1].view(1,-1,1,1) old bias
         #proxy_layer.weight_provider.root().reify()[1].data*=beta_chosen[-1] #bias old bias
 
@@ -696,6 +697,7 @@ class PruneContext(Context):
             bar=tqdm(range(iterations)) if display else range(iterations)
             ls_loss=float("inf")
             for i in bar:
+               
                 oldloss=float(ls_loss)
                 ls_loss = least_squares_loss(proxy_layer,Atensor,Ytensor)
                 ls_loss.backward()
