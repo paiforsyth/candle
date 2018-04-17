@@ -671,7 +671,7 @@ class PruneContext(Context):
             beta_chosen =beta_chosen.cuda(device)
 
         #update masks
-        proxy_layer.weight_provider.masks.reify()[0].data[beta_chosen==0]=0
+        proxy_layer.weight_provider.masks.reify()[0].data[beta_chosen[:-1]==0]=0
         proxy_layer.weight_provider.masks.reify()[0].data[beta_chosen[:-1]==0]=0 #old bias
 
         
