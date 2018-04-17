@@ -594,7 +594,7 @@ def run(args, ensemble_test=False):
        prunefunc = get_pruning_func(context, args)
        prunefunc(args.prune_trained_pct)
        if args.recalc_weights_after_prune_trained:
-            recalc_weights_pruned(context, args, num_samples=10, context.train_loader)
+            recalc_weights_pruned(context, args, num_samples=10, loader=context.train_loader)
        n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
        logging.info("Unpruned masks: "+str(n_unpruned))
        context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
