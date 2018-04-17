@@ -1015,6 +1015,7 @@ def get_pruning_func(context, args):
                     if args.global_prune_flop_regularize:
                         img_h, img_w, channels = get_dims_from_dataset(args.dataset_for_classification)
                         context.model.multiplies(img_h, img_w, channels, unpruned=False) #to record multiplies per layer
+                        context.model.compute_flop_reg_terms_standard( img_h, img_w, channels)
                     context.model.compute_pruning_normalization_factor(norm_mode)
                     context.model.proxy_ctx.prune_global_smallest(*pargs,method="taylor",normalize=normalize, absolute=args.prune_absolute ,flop_reg = args.global_prune_flop_regularize, flop_reg_lambda=args.global_prune_flop_lambda, **kwargs)
          

@@ -731,6 +731,7 @@ class PruneContext(Context):
                if normalize:
                    local_weight=local_weight/proxy.layer.pruning_normalization_factor
                if flop_reg:
+                    import pdb; pdb.set_trace()
                     local_weight += proxy.layer.flop_reg_term*flop_reg_lambda
                global_weights = local_weight if global_weights is  None else torch.cat([global_weights, local_weight ]) 
         if global_weights is None: #no layers with more than one nozero mask
