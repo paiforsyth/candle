@@ -654,7 +654,7 @@ class PruneContext(Context):
         import sklearn
         from sklearn.linear_model import lasso_path
 
-        np_Yvec= Yvec.cpu().numpy()
+        np_Yvec= Yvec.cpu().detach().numpy()
         np_Bmat = Bmat.cpu().detach().numpy()
         alphas, coefs, _ =lasso_path(np_Bmat,np_Yvec, n_alphas= min(input_channels,500) )
         nonzero_counts = (coefs!=0).sum(0)
