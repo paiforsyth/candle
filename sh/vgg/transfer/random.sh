@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for PRUNE_TARG_DECIMAL in 90 80 70 60 50 40 30 10 20 10 05 01; do
+for PRUNE_TARG_DECIMAL in 90 80 70 60 50 40 30  20 10 05 01; do
 RUNTYPE=vgg_cifar100
 
 LAYER_MODE=global

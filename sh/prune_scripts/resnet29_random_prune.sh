@@ -1,5 +1,5 @@
 for PRUNE_PCT in 2 3 4 5 6 7 8 9 10; do   # 15 20 25 30 35 40 45 50 55 60 65 70; do
-COUNT=1
+COUNT=0
 while [ $COUNT -le 100 ] ; do #since we are random pruning
 ARGFILE=./sh/argfiles/resnet29_group
 RESUME_FILENAME=11_April_2018_Wednesday_23_26_51_most_recent
@@ -16,6 +16,6 @@ python  -W ignore -m examples.lab --validate_fr  --validate_fr_reportfile=$REPOR
 
 python  -W ignore -m examples.lab --save_prefix=$SAVE_PREFIX $(cat $ARGFILE) --resume_mode=standard  --res_file=${RESUME_FILENAME}_prune_$PRUNE_PCT   --count_multiplies    --output_level=warning   --short_test_report
 
-
+COUNT=$(($COUNT+1))
 done
 done
