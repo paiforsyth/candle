@@ -905,6 +905,7 @@ class GroupPruneContext(PruneContext):
         super().prune(percentage, method, method_map, mask_type)
 
     def prune_global_smallest(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup, normalize=False, absolute=False, flop_reg=False, flop_reg_lambda=1):
+        import pdb; pdb.set_trace()
         super().prune_global_smallest(percentage, method, method_map, mask_type, normalize=normalize, absolute=absolute, flop_reg=flop_reg, flop_reg_lambda=flop_reg_lambda)
 
     def prune_proxy_layer(self, layer, provider_type,  percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
