@@ -618,7 +618,7 @@ class PruneContext(Context):
         input_channels = sample_inputs[0].shape[1]
         def process_input_img_batch(img_batch, weights ,**conv_kwargs):
             '''
-            given a batch of input images (as a tensor) and some convolutinal weights and paramers, returns a tesnor T with  dimensions batches by output channels by h by w by input_channels+1. where h and w are the height and width of the image.  the (q,a,b,c,d) entry of this tensor is the contribution of  input channeln d to output channel a at location (b,c) in output image q in the batch.  the final "input channel" is the contribution of the bias term
+            given a batch of input images (as a tensor) and some convolutinal weights and paramers, returns a tesnor T with  dimensions batches by output channels by h by w by input_channels+1. where h and w are the height and width of the image.  the (q,a,b,c,d) entry of this tensor is the contribution of  input channeln d to output channel a at location (b,c) in output image q in the batch.  the final "input channel" is the contribution of the bias term. 
             '''
             nonlocal output_h
             nonlocal output_w
@@ -642,9 +642,14 @@ class PruneContext(Context):
             return out_tensor
         Btensor = torch.cat([process_input_img_batch(img_batch,  proxy_layer.weight_provider.root().reify(),**proxy_layer._conv_kwargs) for img_batch in sample_inputs ], dim=0 )#dimensions are (num_samples)*(output channels) by h by w by input_channels+1
         Ytensor = torch.cat( sample_outputs, dim=0 ) #dimensions  are num_samples*output_channels by h by w
+        
+        #added: tranfer bias from B to Y
+        Ytensor = Ytensor-  Btensor[:,:,:,:,-1]
+        Btensor = Btensor[:,:,:,:,:-1]
+
 
         Yvec=Ytensor.contiguous().view(-1)
-        Bmat =Btensor.contiguous().view(-1, input_channels+1) 
+        Bmat=Btensor.contiguous().view(-1,input_channels)     #changed to reflect o position of biasold: Bmat =Btensor.contiguous().view(-1, input_channels+1) 
 
         import sklearn
         from sklearn.linear_model import lasso_path
@@ -666,10 +671,14 @@ class PruneContext(Context):
             beta_chosen =beta_chosen.cuda(device)
 
         #update masks
-        proxy_layer.weight_provider.masks.reify()[0].data[beta_chosen[:-1]==0]=0
+        proxy_layer.weight_provider.masks.reify()[0].data[beta_chosen==0]=0
+        #proxy_layer.weight_provider.masks.reify()[0].data[beta_chosen[:-1]==0]=0 #old bias
 
-        proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen[:-1].view(1,-1,1,1)
-        proxy_layer.weight_provider.root().reify()[1].data*=beta_chosen[-1] #bias
+        
+        
+        proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen.view(1,-1,1,1) 
+        #proxy_layer.weight_provider.root().reify()[0].data*=beta_chosen[:-1].view(1,-1,1,1) old bias
+        #proxy_layer.weight_provider.root().reify()[1].data*=beta_chosen[-1] #bias old bias
 
         if not solve_for_weights:
             return
