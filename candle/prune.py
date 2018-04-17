@@ -712,10 +712,10 @@ class PruneContext(Context):
      #Yvec= torch.cat([samp.transpose(1,0).view(-1) for samp in sample_outputs ],dim=0) #vector of length outchannels*batchsize*h*w
     
     def recalc_weights_pruned_layer(self,proxy_layer,A_tensor, Y_tensor):
-        '''
+            '''
         in_tensor should have dimensions samples by in_chanels by input image height by inpt image width
         out_tensor should have dimesnions samples by out_channels by out height by out width
-        '''
+            '''
             iterations=1000
             def least_squares_loss(layer,in_img, out_img):
                 return (layer(in_img)-out_img).view(-1).norm()
