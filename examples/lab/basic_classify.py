@@ -593,7 +593,8 @@ def run(args, ensemble_test=False):
     else:
        prunefunc = get_pruning_func(context, args)
        prunefunc(args.prune_trained_pct)
-
+       if args.recalc_weights_after_prune_trained:
+            recalc_weights_pruned(context, args, num_samples=10, context.train_loader)
        n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
        logging.info("Unpruned masks: "+str(n_unpruned))
        context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
@@ -1090,7 +1091,7 @@ def hz_lasso_whole_model(context,args,num_samples, target_prop, loader,solve_for
         sb_real.record_of_input=[]
         sb_copy.record_of_output=[]
 
-def recalc_weights_pruned(context, args, num_samples, loader, solve_for_weights):
+def recalc_weights_pruned(context, args, num_samples, loader):
     logging.info("re-calculating weights")
     model_copy = copy.deepcopy(context.model)
     subblocks = context.model.to_subblocks()
