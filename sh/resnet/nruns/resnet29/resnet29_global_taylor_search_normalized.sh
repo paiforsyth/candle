@@ -1,6 +1,6 @@
 #!/bin/bash
 for PRUNE_TARG_DECIMAL in  90 85 80 75 70 40 30 20 10 01; do
-RUNTYPE=group_prune
+RUNTYPE=group_prune_normalized
 NETNAME=resnet29
 PRUNE_STRAT=taylor
 LAYER_MODE=global
