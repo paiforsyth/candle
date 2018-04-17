@@ -682,7 +682,6 @@ class PruneContext(Context):
         proxy_layer.weight_provider.root().reify()[1].data*=beta_chosen[-1] #bias old bias
         #for debugging
         Ytensor =Variable(Ytensor.data)
-        import pdb; pdb.set_trace()
 
         if not solve_for_weights:
             return
