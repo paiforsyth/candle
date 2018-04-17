@@ -731,7 +731,6 @@ class PruneContext(Context):
                if normalize:
                    local_weight=local_weight/proxy.layer.pruning_normalization_factor
                if flop_reg:
-                    import pdb; pdb.set_trace()
                     local_weight += proxy.layer.flop_reg_term*flop_reg_lambda
                global_weights = local_weight if global_weights is  None else torch.cat([global_weights, local_weight ]) 
         if global_weights is None: #no layers with more than one nozero mask
@@ -905,7 +904,6 @@ class GroupPruneContext(PruneContext):
         super().prune(percentage, method, method_map, mask_type)
 
     def prune_global_smallest(self, percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup, normalize=False, absolute=False, flop_reg=False, flop_reg_lambda=1):
-        import pdb; pdb.set_trace()
         super().prune_global_smallest(percentage, method, method_map, mask_type, normalize=normalize, absolute=absolute, flop_reg=flop_reg, flop_reg_lambda=flop_reg_lambda)
 
     def prune_proxy_layer(self, layer, provider_type,  percentage, method="l2_norm", method_map=_group_rank_methods, mask_type=WeightMaskGroup):
