@@ -584,6 +584,8 @@ def run(args, ensemble_test=False):
         taylor_sample_batches(context,args)
         prunefunc = get_pruning_func(context, args)
         prunefunc(args.prune_trained_pct)
+        context.model.display_subblock_nonzero_masks()
+        import pdb; pdb.set_trace()
         n_unpruned = context.model.proxy_ctx.count_unpruned_masks()
         logging.info("Unpruned masks: "+str(n_unpruned))
         context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_taylor_" + str(args.prune_trained_pct) )  )
