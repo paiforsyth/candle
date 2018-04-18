@@ -1633,7 +1633,7 @@ class SqueezeNet(serialmodule.SerializableModule):
             mask_nonzero = sb.weight_provider.mask_unpruned[0]
             if nodesc:
                 print("{}/{}".format(mask_nonzero, mask_len))
-            if warning:
+            elif warning:
                 logging.warning("name:{} Unpruned Masks: {} / {} ".format(name, mask_nonzero, mask_len))
             else:
                 logging.info("name:{} Unpruned Masks: {} / {} ".format(name, mask_nonzero, mask_len))
