@@ -232,6 +232,7 @@ def default_parser(parser=None):
     parser.add_argument("--report_test_error_before_start", action="store_true")
 
     parser.add_argument("--short_test_report", action="store_true")
+    parser.add_argument("--short_run_report", action="store_true")
 
     parser.add_argument("--eval_interval",type=int, default=1, help="interval at which to evaluate model on test set")
 

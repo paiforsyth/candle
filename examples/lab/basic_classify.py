@@ -907,7 +907,12 @@ def run(args, ensemble_test=False):
 
         test_acc = basic_classification.evaluate(context, context.test_loader,no_grad=args.use_nograd)
         logging.info("FINAL TEST ACCURACY:{}".format(test_acc))
-        print("FINAL TEST ACCURACY:{}".format(test_acc))
+        if args.short_run_report:
+                img_h, img_w, channels=get_dims_from_dataset(args.dataset_for_classification)
+                mults = countmult.count_approx_multiplies(context.model, img_h=img_h, img_w=img_w, input_channels=channels)
+                print("{},{}".format(mults,test_acc))
+        else:
+            print("FINAL TEST ACCURACY:{}".format(test_acc))
 
 
          # logging.info("Loading best model")
