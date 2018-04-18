@@ -1623,7 +1623,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                     if key in name:
                         sb.weight_provider.local_l0_lambd=val
 
-    def display_subblock_nonzero_masks(self, warning=True):
+    def display_subblock_nonzero_masks(self, warning=Truel,nodesc=False):
         import candle.prune
         sub_dict=self.to_subblocks()
         for name, sb in sub_dict.items():
@@ -1631,6 +1631,8 @@ class SqueezeNet(serialmodule.SerializableModule):
                 continue
             mask_len = sb.weight_provider._flattened_masks[0].size(0)
             mask_nonzero = sb.weight_provider.mask_unpruned[0]
+            if nodesc:
+                print("{}/{}".format(mask_nonzero, mask_len))
             if warning:
                 logging.warning("name:{} Unpruned Masks: {} / {} ".format(name, mask_nonzero, mask_len))
             else:

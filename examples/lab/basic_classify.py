@@ -577,7 +577,7 @@ def run(args, ensemble_test=False):
              logging.info("accuracy after hz_lasso{}".format(after_score))
              context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_" + str(args.prune_trained_pct) )  )
              if not  args.short_test_report:
-                context.model.display_subblock_nonzero_masks()
+                context.model.display_subblock_nonzero_masks(nodesc=args.verbose_prune_trained_nodesc)
              return
     elif args.group_prune_strategy == "taylor":
         #logging.info("pruning trained model using taylor method")
@@ -589,7 +589,7 @@ def run(args, ensemble_test=False):
         context.model.save(os.path.join( args.model_save_path, args.res_file+"_prune_taylor_" + str(args.prune_trained_pct) )  )
         #taylor_sample_clear(context, args)
         if args.verbose_prune_trained:
-            context.model.display_subblock_nonzero_masks()
+            context.model.display_subblock_nonzero_masks(nodesc=args.verbose_prune_trained_nodesc)
 
         return
          

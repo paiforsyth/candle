@@ -160,6 +160,7 @@ def default_parser(parser=None):
     parser.add_argument("--prune_absolute",action="store_true",help="prune a fixed qunaitity of masks, instead of a percent")
     parser.add_argument("--recalc_weights_after_prune_trained", action="store_true")
     parser.add_argument("--verbose_prune_trained", action="store_true")
+    parser.add_argument("--verbose_prune_trained_nodesc", action="store_true")
     parser.add_argument("--iterative_prune_trained", action="store_true")
 
 
