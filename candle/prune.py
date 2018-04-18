@@ -515,7 +515,7 @@ def _group_rank_norm(context, proxies, p=1):
     return [proxy.split(proxy.root).norm(p, 0) for proxy in proxies]
 
 def _masked_normalized_channel_norm_rank(context,proxies):
-    return [Package([proxy().reify()[0].norm(dim=1)/proxy().reify()[0].view(-1).norm()]) for proxy in proxies]
+    return [Package([proxy().reify()[0].view(proxy().reify()[0].shape[0],-1).norm(dim=1)/proxy().reify()[0].view(-1).norm()]) for proxy in proxies]
 
 #added by Peter
 def _group_rank_random(context, proxies):
@@ -772,7 +772,6 @@ class PruneContext(Context):
                    local_weight=local_weight/proxy.layer.pruning_normalization_factor
                if flop_reg:
                     local_weight -= proxy.layer.flop_reg_term*flop_reg_lambda
-               import pdb; pdb.set_trace()
                global_weights = local_weight if global_weights is  None else torch.cat([global_weights, local_weight ]) 
         if global_weights is None: #no layers with more than one nozero mask
             return
