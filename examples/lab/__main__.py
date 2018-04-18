@@ -105,7 +105,7 @@ def default_parser(parser=None):
     parser.add_argument("--sense_adaptive_pruning",action="store_true")
     parser.add_argument("--sense_adaptive_use_subblocks",action="store_true")
     parser.add_argument("--prune_unit",type=int, default=1)
-    parser.add_argument("--group_prune_strategy",choices= ["standard","random", "taylor"],default="standard")
+    parser.add_argument("--group_prune_strategy",choices= ["standard","random", "taylor", "normalized_channel"],default="standard")
     parser.add_argument("--global_prune_normalization",choices= ["no_normalization", "by_layer", "by_block"  ],default="no_normalization") #whether to use a normalization factor to compare pruning scores between layers
     parser.add_argument("--global_prune_flop_regularize",action="store_true")
     parser.add_argument("--global_prune_flop_lambda",type=float)

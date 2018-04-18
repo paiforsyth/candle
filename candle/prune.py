@@ -501,16 +501,21 @@ def _group_rank_abs_taylor(context, proxies):
         out_scores.append(Package([proxy.layer.record_of_abs_deriv_sum ]))
     return out_scores
 
-def _group_rank_abs_taylor_normalized(context, proxies):
-    out_scores=[]
-    for proxy in proxies:
-        criterion=proxy.layer.record_of_abs_deriv_sum 
-        normalized_criterion = criterion/criterion.norm()
-        out_scores.append(Package([criterion]))
-    return out_scores
+#def _group_rank_abs_taylor_normalized(context, proxies):
+#    out_scores=[]
+#    for proxy in proxies:
+#        criterion=proxy.layer.record_of_abs_deriv_sum 
+#        normalized_criterion = criterion/criterion.norm()
+#        out_scores.append(Package([criterion]))
+#    return out_scores
+
+
 
 def _group_rank_norm(context, proxies, p=1):
     return [proxy.split(proxy.root).norm(p, 0) for proxy in proxies]
+
+def _masked_normalized_channel_norm_rank(context,proxies):
+    return [proxy().reify()[0].norm(dim=1)/proxy().reify()[0].view(-1).norm() for proxy in proxies]
 
 #added by Peter
 def _group_rank_random(context, proxies):
@@ -530,7 +535,7 @@ def _single_rank_magnitude(context, proxies):
     return ranks
 
 _single_rank_methods = dict(magnitude=_single_rank_magnitude)
-_group_rank_methods = dict(l1_norm=_group_rank_l1, l2_norm=_group_rank_l2, random=_group_rank_random, taylor=_group_rank_abs_taylor)
+_group_rank_methods = dict(l1_norm=_group_rank_l1, l2_norm=_group_rank_l2, random=_group_rank_random, taylor=_group_rank_abs_taylor, normalized_channel_norm=_masked_normalized_channel_norm_rank)
 
 class PruneContext(Context):
     def __init__(self, stochastic=False, **kwargs):
@@ -591,6 +596,10 @@ class PruneContext(Context):
             for weight, mask in flatten_zip(weights.reify(), proxy.masks.reify()): 
                 success_list.append(self._prune_one_mask_absolute_pct(weight, mask, percentage) )  
         return all(success_list)
+
+
+
+   
 
     
     def hz_lasso_prune(self, proxy_layer, target_num_channels,target_prop, sample_inputs, sample_outputs, solve_for_weights,display=False):
@@ -810,6 +819,24 @@ class PruneContext(Context):
                 indices = ne0_indices[:length]
                 if indices.size(0) > 0:
                     mask.data.view(-1)[indices.data] = 0
+
+
+    def _prune_one_mask_one_group(self, weight, mask):
+
+                '''
+                given a tensor of magnitudes and a corresponding tensor of masks, prune the single mask corresponding to the smallest magnitudes
+                '''
+                _, indices = torch.sort(weight.view(-1))
+                ne0_indices = indices[mask.view(-1)[indices] != 0]
+                if ne0_indices.size(0) <= 1:
+                    return
+                length = 1
+                indices = ne0_indices[:length]
+                if indices.size(0) > 0:
+                    mask.data.view(-1)[indices.data] = 0
+
+
+
 
 
     def _prune_one_mask_absolute_pct(self, weight,mask, percentage):

@@ -1036,9 +1036,12 @@ def get_pruning_func(context, args):
 
                     context.model.proxy_ctx.prune_global_smallest(*pargs,method="random",normalize=normalize, absolute=args.prune_absolute, flop_reg = args.global_prune_flop_regularize, flop_reg_lambda=args.global_prune_flop_lambda   ,**kwargs)
                 return do_global_random_prune
-         
-
-
+        elif args.group_prune_strategy == "normalized_channel":
+            logging.info("using global normalized channel norm pruning")
+            def do_global_normalized_channel(*pargs,**kwargs):
+                    assert normalize == False #we use a different normalization implementation
+                    context.model.proxy_ctx.prune_global_smallest(*pargs,method="normalized_channel_norm",normalize=False, absolute=args.prune_absolute, flop_reg = args.global_prune_flop_regularize, flop_reg_lambda=args.global_prune_flop_lambda   ,**kwargs)
+            return do_global_normalized_channel
 
         else:
                 raise Exception("cannot deterimine correct pruning function")
