@@ -159,6 +159,8 @@ def default_parser(parser=None):
     parser.add_argument("--prune_trained_hz", action="store_true", help="use hz_lasso in pruning of trained model")
     parser.add_argument("--prune_absolute",action="store_true",help="prune a fixed qunaitity of masks, instead of a percent")
     parser.add_argument("--recalc_weights_after_prune_trained", action="store_true")
+    parser.add_argument("--verbose_prune_trained", action="store_true")
+
 
     parser.add_argument("--validate_fr", action="store_true",help="get accuracy of a result report using ground truth")
     parser.add_argument("--validate_fr_reportfile",help="report file to validate")
