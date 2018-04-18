@@ -1623,7 +1623,7 @@ class SqueezeNet(serialmodule.SerializableModule):
                     if key in name:
                         sb.weight_provider.local_l0_lambd=val
 
-    def display_subblock_nonzero_masks(self, warning=Truel,nodesc=False):
+    def display_subblock_nonzero_masks(self, warning=True,nodesc=False):
         import candle.prune
         sub_dict=self.to_subblocks()
         for name, sb in sub_dict.items():
