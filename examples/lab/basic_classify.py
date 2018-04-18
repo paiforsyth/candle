@@ -593,15 +593,14 @@ def run(args, ensemble_test=False):
     else:
 
        prunefunc = get_pruning_func(context, args)
-       import pdb;pdb.set_trace()
        if args.iterative_prune_trained: 
            assert args.prune_absolute
            init_mask_count = context.model.proxy_ctx.count_unpruned_masks()
            target_mask_count=math.ceil(init_mask_count*(100-args.prune_trained_pct)/100 )
            while True:
-               prunefunc(1)
                if context.model.proxy_ctx.count_unpruned_masks()<= target_mask_count:
-                   break
+                   break 
+               prunefunc(1)
        else:
             prunefunc(args.prune_trained_pct)
       # context.model.display_subblock_nonzero_masks()
