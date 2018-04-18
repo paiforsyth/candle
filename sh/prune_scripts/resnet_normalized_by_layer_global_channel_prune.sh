@@ -1,4 +1,5 @@
-for PRUNE_PCT in 0 2 5 7 10 12 15 17 20 23 25 27 30 32 35 37 40 42 45 47 50 52 55 57 60 65 70; do
+for PRUNE_PCT in 75 80 85 90 95; do 
+    #0 2 5 7 10 12 15 17 20 23 25 27 30 32 35 37 40 42 45 47 50 52 55 57 60 65 70; do
 ARGFILE=./sh/argfiles/resnet29_group
 RESUME_FILENAME=11_April_2018_Wednesday_23_26_51_most_recent
 SAVE_PREFIX=res_net_29_group_prune_global_norm
