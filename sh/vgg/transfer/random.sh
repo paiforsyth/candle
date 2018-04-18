@@ -1,8 +1,8 @@
 #!/bin/bash
 
 for PRUNE_TARG_DECIMAL in 99 95 92 90 80 70 60 50 40 30  20 10 05 01; do
+echo $PRUNE_TARG_DECIMAL
 for COUNT in 1 2 3 4 5 6 7 8 9 10; do
-echo $COUNT
 RUNTYPE=vgg_cifar100
 
 LAYER_MODE=global
