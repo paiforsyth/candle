@@ -4,7 +4,7 @@ RESUME_FILENAME=11_April_2018_Wednesday_23_26_51_most_recent
 SAVE_PREFIX=res_net_29_group_prune
 REPORT_FILENAME=./reports/medium_res_net_164_naive_prune_$PRUNE_PCT
 
-python -W ignore -m examples.lab $(cat $ARGFILE) --save_prefix=$SAVE_PREFIX  --resume_mode=standard  --res_file=$RESUME_FILENAME   --prune_trained --prune_trained_pct=$PRUNE_PCT  --group_prune_strategy=taylor --prune_layer_mode=global --global_prune_normalization=by_layer  --set_prune_deemph   --prune_deemph_string=expand  --cuda    --short_test_report  --verbose_prune_trained  --verbose_prune_trained_nodesc # --output_level=warning
+python -W ignore -m examples.lab $(cat $ARGFILE) --save_prefix=$SAVE_PREFIX  --resume_mode=standard  --res_file=$RESUME_FILENAME   --prune_trained --prune_trained_pct=$PRUNE_PCT  --group_prune_strategy=taylor --prune_layer_mode=global --global_prune_normalization=by_layer  --set_prune_deemph   --prune_deemph_string=expand  --cuda    --short_test_report  --verbose_prune_trained  --verbose_prune_trained_nodesc  --output_level=warning
 
 python  -W ignore -m examples.lab $(cat $ARGFILE) --save_prefix=$SAVE_PREFIX --mode=test --resume_mode=standard  --res_file=${RESUME_FILENAME}_prune_taylor_$PRUNE_PCT   --test_report_filename=$REPORT_FILENAME  --cuda  --output_level=warning
 
