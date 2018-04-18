@@ -593,6 +593,7 @@ def run(args, ensemble_test=False):
     else:
 
        prunefunc = get_pruning_func(context, args)
+       import pdb;pdb.set_trace()
        if args.iterative_prune_trained: 
            assert args.prune_absolute
            init_mask_count = context.model.proxy_ctx.count_unpruned_masks()
