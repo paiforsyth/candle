@@ -1632,7 +1632,7 @@ class SqueezeNet(serialmodule.SerializableModule):
             mask_len = sb.weight_provider._flattened_masks[0].size(0)
             mask_nonzero = sb.weight_provider.mask_unpruned[0]
             if nodesc:
-                print("{}/{}".format(mask_nonzero, mask_len))
+                print("{},{},{}".format(name,mask_nonzero, mask_len))
             elif warning:
                 logging.warning("name:{} Unpruned Masks: {} / {} ".format(name, mask_nonzero, mask_len))
             else:
@@ -1660,6 +1660,14 @@ class SqueezeNet(serialmodule.SerializableModule):
         
     #compute the flop regularization terms for all proxy
 
+
+    def deemph_string(self, string): #demphsizes for pruning proxy layers whose names contain  a given string
+        import candle.proxy
+        for name, layer in self.to_subblocks().items():
+            if not isinstance(layer, candle.proxy._ProxyConvNd):
+                continue
+            if string in name:
+                logging.info("deemphasizing {}".format(name))
 
        
 

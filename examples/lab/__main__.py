@@ -236,6 +236,10 @@ def default_parser(parser=None):
     parser.add_argument("--short_run_report", action="store_true")
 
     parser.add_argument("--eval_interval",type=int, default=1, help="interval at which to evaluate model on test set")
+    
+
+    parser.add_argument("--set_prune_deemph",action="store_true")
+    parser.add_argument("--prune_deemph_string",default="expand")
 
 
 

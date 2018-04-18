@@ -544,6 +544,11 @@ def run(args, ensemble_test=False):
        else:
            print("Approx number of multiplies: ",cm )    
        return
+
+
+   if args.set_prune_deemph:
+       context.model.deemph_string(args.prune_deemph_string)
+
    if args.enable_pruning:
         init_mask_count = context.model.proxy_ctx.count_unpruned_masks()
         logging.info("Initial number of masks {}".format(init_mask_count))

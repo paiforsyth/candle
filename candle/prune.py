@@ -772,6 +772,8 @@ class PruneContext(Context):
                    local_weight=local_weight/proxy.layer.pruning_normalization_factor
                if flop_reg:
                     local_weight -= proxy.layer.flop_reg_term*flop_reg_lambda
+               if proxy.layer.deemph:
+                   local_weight= local_weight+1000
                global_weights = local_weight if global_weights is  None else torch.cat([global_weights, local_weight ]) 
         if global_weights is None: #no layers with more than one nozero mask
             return
@@ -789,6 +791,9 @@ class PruneContext(Context):
                    local_weight = local_weight/proxy.layer.pruning_normalization_factor
                 if flop_reg:
                     local_weight -= proxy.layer.flop_reg_term*flop_reg_lambda
+                if proxy.layer.deemph:
+                   local_weight= local_weight+1000
+
 
                 _, indices = torch.sort(local_weight.view(-1)) #unnecesary
                 if sum(mask.view(-1)) <= 1: #changed 

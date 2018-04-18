@@ -1661,6 +1661,15 @@ class SqueezeNet(serialmodule.SerializableModule):
     #compute the flop regularization terms for all proxy
 
 
+    def deemph_string(self, string): #demphsizes for pruning proxy layers whose names contain  a given string
+        import candle.proxy
+        for name, layer in self.to_subblocks().items():
+            if not isinstance(layer, candle.proxy._ProxyConvNd):
+                continue
+            if string in name:
+                logging.info("deemphasizing {}".format(name))
+                layer.deemph=True
+
        
 
 

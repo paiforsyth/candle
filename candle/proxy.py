@@ -254,6 +254,9 @@ class _ProxyConvNd(ProxyLayer):
         self.flop_reg_term=None
 
 
+        self.deemph=False #set to emphesize this layer in global pruning
+
+
 
     def __repr__(self):
             s= "{}(conv_fn = {}, stride = {}, padding ={}, dilation = {}, groups = {} ).  Weight provider ={}".format(self.__class__.__name__, self.conv_fn, self.stride, self.padding, self.dilation, self.groups, self.weight_provider )
