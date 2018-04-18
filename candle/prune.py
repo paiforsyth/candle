@@ -515,7 +515,7 @@ def _group_rank_norm(context, proxies, p=1):
     return [proxy.split(proxy.root).norm(p, 0) for proxy in proxies]
 
 def _masked_normalized_channel_norm_rank(context,proxies):
-    return [proxy().reify()[0].norm(dim=1)/proxy().reify()[0].view(-1).norm() for proxy in proxies]
+    return [Package([proxy().reify()[0].norm(dim=1)/proxy().reify()[0].view(-1).norm()]) for proxy in proxies]
 
 #added by Peter
 def _group_rank_random(context, proxies):
