@@ -1,7 +1,7 @@
 #!/bin/bash
 
 for PRUNE_TARG_DECIMAL in 10 20 30; do   #in 90 80 70 60 50 40 30 10 20 10 05 01; do
-RUNTYPE=vgg_cifar100
+RUNTYPE=vgg_cifar100_SLOW_
 
 LAYER_MODE=global
 PRUNE_STRAT=taylor
